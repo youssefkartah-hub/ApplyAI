@@ -16,11 +16,14 @@ import http.server
 import socketserver
 import sys
 import os
+import json
 import webbrowser
 import threading
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
 DIRECTORY = os.path.dirname(os.path.abspath(__file__))
+OVERRIDES_FILE = os.path.join(DIRECTORY, "overrides.json")
+MAX_BODY = 1_000_000  # 1 MB cap on override writes
 
 # Never serve these over HTTP, even though they live in the folder.
 BLOCKED = {"credentials.json", "token.json", ".sync_state.json"}
@@ -45,6 +48,33 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.send_error(404, "Not found")
             return
         super().do_HEAD()
+
+    def do_POST(self):
+        # Single tiny API: persist the dashboard's manual edits to overrides.json.
+        if self.path.split("?", 1)[0] != "/api/overrides":
+            self.send_error(404, "Not found")
+            return
+        length = int(self.headers.get("Content-Length", 0))
+        if length <= 0 or length > MAX_BODY:
+            self.send_error(413, "Bad size")
+            return
+        try:
+            payload = json.loads(self.rfile.read(length).decode("utf-8"))
+            if not isinstance(payload, dict):
+                raise ValueError("expected object")
+            tmp = OVERRIDES_FILE + ".tmp"
+            with open(tmp, "w") as f:
+                json.dump(payload, f, indent=2, ensure_ascii=False)
+            os.replace(tmp, OVERRIDES_FILE)
+        except Exception as e:
+            self.send_error(400, f"Bad request: {e}")
+            return
+        body = b'{"ok":true}'
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def end_headers(self):
         # Never cache data.json, so every poll sees the latest sync.

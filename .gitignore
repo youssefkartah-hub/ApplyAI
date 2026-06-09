@@ -151,6 +151,7 @@ client_secret*.json
 # Local sync state and user data
 .sync_state.json
 data.json
+overrides.json
 
 # Python
 __pycache__/

@@ -35,6 +35,7 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE = os.path.join(HERE, "data.json")
 STATE_FILE = os.path.join(HERE, ".sync_state.json")
+OVERRIDES_FILE = os.path.join(HERE, "overrides.json")
 TOKEN_FILE = os.path.join(HERE, "token.json")
 CREDS_FILE = os.path.join(HERE, "credentials.json")
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
@@ -282,6 +283,25 @@ def log(msg):
     print(f"[{dt.datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
+def notify(title, message):
+    """Best-effort native desktop notification; silently no-ops if unsupported."""
+    import platform
+    import shutil
+    import subprocess
+    try:
+        sysname = platform.system()
+        if sysname == "Darwin":
+            safe = message.replace('"', "'")
+            subprocess.run(
+                ["osascript", "-e", f'display notification "{safe}" with title "{title}"'],
+                check=False, capture_output=True, timeout=5)
+        elif sysname == "Linux" and shutil.which("notify-send"):
+            subprocess.run(["notify-send", title, message], check=False,
+                           capture_output=True, timeout=5)
+    except Exception:
+        pass  # notifications are a nicety, never fatal
+
+
 def load_json(path, default):
     try:
         with open(path) as f:
@@ -413,12 +433,16 @@ def merge_into_thread(apps_by_thread, thread_id, entry, date, note):
     return None, None
 
 
-def sync_once(service, verbose=False, days=2, use_ai=True):
+def sync_once(service, verbose=False, days=2, use_ai=True, notifications=True):
     data = load_json(DATA_FILE, {"applications": [], "targets": dict(DEFAULT_TARGETS)})
     data.setdefault("targets", dict(DEFAULT_TARGETS))
     state = load_json(STATE_FILE, {"seen_ids": [], "skipped_ids": []})
     seen = set(state.get("seen_ids", []))
     skipped = set(state.get("skipped_ids", []))
+
+    # Threads the user archived in the dashboard (false positives) are ignored.
+    overrides = load_json(OVERRIDES_FILE, {})
+    archived = {tid for tid, o in overrides.items() if isinstance(o, dict) and o.get("archived")}
 
     # Rebuild the thread index from whatever is already in data.json.
     apps_by_thread = {}
@@ -454,6 +478,10 @@ def sync_once(service, verbose=False, days=2, use_ai=True):
         body = extract_body(payload)
         thread_id = full.get("threadId", mid)
 
+        if thread_id in archived:
+            seen.add(mid)  # respect the user's archive; don't resurrect it
+            continue
+
         entry = classify_email(subject, sender, body, use_ai=use_ai)
         if not entry:
             skipped.add(mid)
@@ -483,6 +511,13 @@ def sync_once(service, verbose=False, days=2, use_ai=True):
         for u in updated:
             log(f"  ~ updated {u}")
         log(f"data.json updated — {len(added)} added, {len(updated)} updated.")
+        if notifications:
+            parts = []
+            if added:
+                parts.append(f"{len(added)} new application{'s' if len(added) != 1 else ''}")
+            if updated:
+                parts.append(f"{len(updated)} status update{'s' if len(updated) != 1 else ''}")
+            notify("Job Dashboard", " · ".join(parts))
     else:
         log("no change — tracker is up to date.")
 
@@ -495,11 +530,13 @@ def main():
                     help="seconds between passes when --loop (default 300, min 30)")
     ap.add_argument("--days", type=int, default=2, help="Gmail lookback window in days")
     ap.add_argument("--no-ai", action="store_true", help="force heuristic classification")
+    ap.add_argument("--no-notify", action="store_true", help="disable desktop notifications")
     ap.add_argument("--verbose", action="store_true")
     args = ap.parse_args()
 
     interval = max(30, args.interval)
     use_ai = not args.no_ai
+    notifications = not args.no_notify
     if use_ai and not os.environ.get("ANTHROPIC_API_KEY"):
         log("ANTHROPIC_API_KEY not set — using built-in heuristics.")
     elif use_ai:
@@ -512,14 +549,14 @@ def main():
         try:
             while True:
                 try:
-                    sync_once(service, args.verbose, args.days, use_ai)
+                    sync_once(service, args.verbose, args.days, use_ai, notifications)
                 except Exception as e:
                     log(f"error during sync: {e}")
                 time.sleep(interval)
         except KeyboardInterrupt:
             log("stopped.")
     else:
-        sync_once(service, args.verbose, args.days, use_ai)
+        sync_once(service, args.verbose, args.days, use_ai, notifications)
 
 
 if __name__ == "__main__":

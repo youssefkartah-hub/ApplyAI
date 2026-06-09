@@ -52,6 +52,22 @@ Useful flags: `--days 7` (wider lookback), `--no-ai` (skip Claude).
 - Each email is classified once and cached in `.sync_state.json`; re-runs never
   re-classify the same message.
 
+## Dashboard features
+
+Open `http://localhost:8000/job-dashboard.html` (via `serve.py`):
+
+- **Stats header** — totals per status, response rate, follow-up count.
+- **Targets by region** — progress bars vs. your `targets`.
+- **Filters** — status chips, search, sort, a "Follow-up" view for applications
+  with no response in N days, and a "show archived" toggle.
+- **Edit any row** — change status/country, edit the note, or archive a
+  false positive. Edits are saved to `overrides.json` (via a tiny localhost
+  endpoint) and **respected by future syncs** — archived threads stay gone.
+- **Export CSV** — one-click download of the current view.
+
+Desktop notifications fire on new applications / status changes (macOS &
+Linux). Disable with `--no-notify`.
+
 ## Security note
 
 `credentials.json`, `token.json`, and `.sync_state.json` are never served over
