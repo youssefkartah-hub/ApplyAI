@@ -1,0 +1,7 @@
+google-api-python-client>=2.0.0
+google-auth-httplib2>=0.1.0
+google-auth-oauthlib>=1.0.0
+
+# Optional: enables AI-powered email classification.
+# Without an ANTHROPIC_API_KEY set, the sync falls back to built-in heuristics.
+anthropic>=0.40.0
