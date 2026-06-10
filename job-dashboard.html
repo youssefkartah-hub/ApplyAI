@@ -184,6 +184,8 @@ function eff(a){ const o=ov(a);
 function daysSince(t){ if(!t) return 0; return Math.floor((Date.now()-t)/86400000); }
 function isFollowUp(a){ return a.status==="Applied" && a.date && daysSince(a.date)>=+$("followDays").value; }
 function fmtDate(a){ if(a.date) return new Date(a.date).toLocaleDateString(undefined,{month:"short",day:"numeric"}); return "—"; }
+function todayStr(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+function isToday(a){ return (a.rawDate||"").slice(0,10)===todayStr(); }
 
 async function loadData(flash){
   try{
@@ -231,16 +233,21 @@ function render(){
   const heard=all.filter(a=>a.status!=="Applied").length;
   const rate=all.length?Math.round(100*heard/all.length):0;
   const fu=all.filter(isFollowUp).length;
+  const appliedToday=all.filter(isToday).length;
+  const dailyGoal=Object.values(TARGETS).reduce((a,b)=>a+b,0);
   $("stats").innerHTML=[
-    {n:all.length,l:"Total active",cls:""},{n:c("Applied"),l:"Applied",cls:"applied"},
+    {n:all.length,l:"Total (all time)",cls:""},
+    {n:`${appliedToday}/${dailyGoal}`,l:"Applied today",cls:appliedToday>=dailyGoal?"offer":"applied"},
+    {n:c("Applied"),l:"Applied",cls:"applied"},
     {n:c("Interview Scheduled"),l:"Interviews",cls:"interview"},{n:c("Offer Received"),l:"Offers",cls:"offer"},
     {n:c("Rejected"),l:"Rejected",cls:"rejected"},{n:rate+"%",l:"Response rate",cls:""},
     {n:fu,l:"Need follow-up",cls:fu?"rejected":""},
   ].map(s=>`<div class="stat ${s.cls}"><div class="n">${s.n}</div><div class="l">${s.l}</div></div>`).join("");
   $("totalSub").textContent=`${all.length} application${all.length!==1?"s":""}`;
 
-  $("targetsBox").innerHTML=`<h3>Targets by region</h3><div class="tgrid">`+Object.keys(TARGETS).map(k=>{
-    const have=all.filter(a=>a.country===k).length, goal=TARGETS[k], pct=goal?Math.min(100,Math.round(100*have/goal)):0;
+  const todays=all.filter(isToday);
+  $("targetsBox").innerHTML=`<h3>Daily goal by region · today (${todayStr()}) · resets each day</h3><div class="tgrid">`+Object.keys(TARGETS).map(k=>{
+    const have=todays.filter(a=>a.country===k).length, goal=TARGETS[k], pct=goal?Math.min(100,Math.round(100*have/goal)):0;
     return `<div class="tcell"><div class="tlabel"><span>${FLAGS[k]||""} ${k}</span><span class="muted">${have}/${goal}</span></div>
       <div class="bar"><span class="${have>=goal?'done':''}" style="width:${pct}%"></span></div></div>`; }).join("")+`</div>`;
 
