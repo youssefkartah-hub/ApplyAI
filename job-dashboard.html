@@ -46,6 +46,25 @@
   .bar{height:8px;background:var(--panel2);border-radius:5px;overflow:hidden}
   .bar>span{display:block;height:100%;background:linear-gradient(90deg,#3b82f6,#22c55e);border-radius:5px;transition:width .5s}
   .bar>span.done{background:linear-gradient(90deg,#22c55e,#16a34a)}
+  .cal{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px 16px;margin-bottom:18px}
+  .cal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .cal-head h3{margin:0;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .cal-nav{display:flex;align-items:center;gap:6px}
+  .cal-nav button{padding:3px 10px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+  .cal-dow{font-size:11px;color:var(--muted);text-align:center;padding:2px 0}
+  .cal-cell{aspect-ratio:1/1;min-height:46px;border:1px solid var(--line);border-radius:8px;padding:5px 6px;
+    display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;background:var(--panel2);transition:.1s}
+  .cal-cell:hover{border-color:var(--accent)}
+  .cal-cell.empty{visibility:hidden;cursor:default}
+  .cal-cell .d{font-size:11px;color:var(--muted)}
+  .cal-cell .ct{font-size:15px;font-weight:700;align-self:flex-end}
+  .cal-cell.l1{background:rgba(59,130,246,.14)} .cal-cell.l2{background:rgba(59,130,246,.30)}
+  .cal-cell.l3{background:rgba(59,130,246,.48)} .cal-cell.l4{background:rgba(59,130,246,.68)}
+  .cal-cell.sel{outline:2px solid var(--accent);outline-offset:-1px}
+  .cal-cell.today .d{color:#fff;font-weight:700}
+  .daybanner{display:flex;gap:10px;align-items:center;margin-bottom:12px;color:var(--muted);font-size:13px}
+  .daybanner b{color:var(--txt)}
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
   .chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 13px;cursor:pointer;font-size:13px;color:var(--muted);transition:.15s}
   .chip:hover{color:#fff}
@@ -122,6 +141,8 @@
   <div id="main" style="display:none">
     <div class="stats" id="stats"></div>
     <div class="targets" id="targetsBox"></div>
+    <div class="cal" id="calBox"></div>
+    <div class="daybanner" id="dayBanner" style="display:none"></div>
     <div class="chips" id="chips"></div>
     <div class="controls" style="margin-bottom:12px;gap:12px">
       <input id="search" placeholder="Search company, role, note…"/>
@@ -160,6 +181,7 @@ const TARGETS={USA:10,Australia:3,UK:3,UAE:3,Europe:1};
 let rowsData=[], overrides=JSON.parse(localStorage.getItem("jd_overrides")||"{}");
 let activeFilter="all", searchTerm="", sortKey="date", sortDir=-1;
 let intervalSec=60, secsLeft=60, tickTimer=null, editing=null, lastLoad=0;
+let calY=new Date().getFullYear(), calM=new Date().getMonth(), selectedDay=null;
 
 function normCountry(c){ c=(c||"").trim(); if(FLAGS[c]) return c; const l=c.toLowerCase();
   if(/(usa|u\.s|united states|america)/.test(l)) return "USA";
@@ -221,6 +243,7 @@ function visibleRows(){
   if(!$("showArchived").checked) r=r.filter(a=>!a.archived);
   if(activeFilter==="followup") r=r.filter(isFollowUp);
   else if(activeFilter!=="all") r=r.filter(a=>a.status===activeFilter);
+  if(selectedDay) r=r.filter(a=>(a.rawDate||"").slice(0,10)===selectedDay);
   if(searchTerm) r=r.filter(a=>[a.company,a.position,a.country,a.note].join(" ").toLowerCase().includes(searchTerm));
   r.sort((a,b)=>{ let va=a[sortKey]??"",vb=b[sortKey]??""; if(sortKey==="date"){va=a.date||0;vb=b.date||0;}
     return va<vb?-sortDir:va>vb?sortDir:0; });
@@ -251,6 +274,16 @@ function render(){
     return `<div class="tcell"><div class="tlabel"><span>${FLAGS[k]||""} ${k}</span><span class="muted">${have}/${goal}</span></div>
       <div class="bar"><span class="${have>=goal?'done':''}" style="width:${pct}%"></span></div></div>`; }).join("")+`</div>`;
 
+  // activity calendar (counts per day, all-time browsable by month)
+  const counts={};
+  all.forEach(a=>{ const k=(a.rawDate||"").slice(0,10); if(k) counts[k]=(counts[k]||0)+1; });
+  renderCalendar(counts);
+  if(selectedDay){
+    const n=all.filter(a=>(a.rawDate||"").slice(0,10)===selectedDay).length;
+    $("dayBanner").style.display="flex";
+    $("dayBanner").innerHTML=`📅 Showing <b>${n}</b> application${n!==1?"s":""} from <b>${selectedDay}</b> <button class="rowbtn" id="clearDay">Show all</button>`;
+  } else $("dayBanner").style.display="none";
+
   const defs=[["all","All",all.length],["Applied","Applied",c("Applied")],
     ["Interview Scheduled","Interview",c("Interview Scheduled")],["Offer Received","Offer",c("Offer Received")],
     ["Rejected","Rejected",c("Rejected")],["followup","Follow-up",fu]];
@@ -276,6 +309,32 @@ function render(){
     if(editing===key) html+=editorRow(key,a);
     return html;
   }).join("");
+}
+
+const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+function renderCalendar(counts){
+  const pad=n=>String(n).padStart(2,"0");
+  const firstDow=new Date(calY,calM,1).getDay();
+  const ndays=new Date(calY,calM+1,0).getDate();
+  let monthTotal=0;
+  let cells=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d=>`<div class="cal-dow">${d}</div>`).join("");
+  for(let i=0;i<firstDow;i++) cells+=`<div class="cal-cell empty"></div>`;
+  for(let d=1;d<=ndays;d++){
+    const ds=`${calY}-${pad(calM+1)}-${pad(d)}`, ct=counts[ds]||0; monthTotal+=ct;
+    const lvl=ct===0?"":ct<=2?"l1":ct<=5?"l2":ct<=9?"l3":"l4";
+    const cls=[lvl, selectedDay===ds?"sel":"", ds===todayStr()?"today":""].join(" ").trim();
+    cells+=`<div class="cal-cell ${cls}" data-day="${ds}"><span class="d">${d}</span><span class="ct">${ct||""}</span></div>`;
+  }
+  const allTotal=Object.values(counts).reduce((a,b)=>a+b,0);
+  $("calBox").innerHTML=`<div class="cal-head"><h3>📅 Activity calendar</h3>
+    <div class="cal-nav">
+      <button data-cal="prev" title="Previous month">‹</button>
+      <span style="min-width:130px;text-align:center;color:var(--txt)">${MONTHS[calM]} ${calY}</span>
+      <button data-cal="next" title="Next month">›</button>
+      <button data-cal="today">Today</button>
+      <span class="muted" style="margin-left:8px">${monthTotal} this month · ${allTotal} all-time</span>
+    </div></div>
+    <div class="cal-grid">${cells}</div>`;
 }
 
 function editorRow(key,a){
@@ -338,6 +397,18 @@ $("tbody").addEventListener("click",e=>{
   if(reset){ delete overrides[reset.dataset.reset]; localStorage.setItem("jd_overrides",JSON.stringify(overrides));
     editing=null; toast("Reset"); render(); }
 });
+$("calBox").addEventListener("click",e=>{
+  const nav=e.target.closest("[data-cal]");
+  if(nav){ const a=nav.dataset.cal;
+    if(a==="prev"){ if(calM===0){calM=11;calY--;}else calM--; }
+    else if(a==="next"){ if(calM===11){calM=0;calY++;}else calM++; }
+    else if(a==="today"){ const d=new Date(); calY=d.getFullYear(); calM=d.getMonth(); }
+    render(); return; }
+  const cell=e.target.closest("[data-day]");
+  if(cell && !cell.classList.contains("empty")){ const ds=cell.dataset.day;
+    selectedDay=selectedDay===ds?null:ds; render(); }
+});
+$("dayBanner").addEventListener("click",e=>{ if(e.target.id==="clearDay"){ selectedDay=null; render(); } });
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) loadData(false); });
 
 intervalSec=+$("intervalSel").value; resetTimer();
