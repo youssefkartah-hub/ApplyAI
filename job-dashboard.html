@@ -8,8 +8,7 @@
   :root{
     --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --line:#262d3a;
     --txt:#e6edf3; --muted:#8b949e; --accent:#3b82f6;
-    --applied:#3b82f6; --interview:#a855f7; --offer:#22c55e; --rejected:#ef4444;
-    --warn:#f59e0b;
+    --applied:#3b82f6; --interview:#a855f7; --offer:#22c55e; --rejected:#ef4444; --warn:#f59e0b;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--txt);
@@ -20,7 +19,7 @@
   h1{font-size:20px;margin:0;letter-spacing:.2px}
   .sub{color:var(--muted);font-size:12px;margin-top:2px}
   .live{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
-  #livedot{width:9px;height:9px;border-radius:50%;background:var(--offer);box-shadow:0 0 0 0 rgba(34,197,94,.5)}
+  #livedot{width:9px;height:9px;border-radius:50%;background:var(--offer)}
   #livedot.off{background:var(--rejected)}
   #livedot.flash{animation:pulse .6s ease}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.6)}100%{box-shadow:0 0 0 10px rgba(34,197,94,0)}}
@@ -31,26 +30,22 @@
   button:hover{border-color:var(--accent)}
   button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
   #search{min-width:200px}
-
   .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
   .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
   .stat .n{font-size:24px;font-weight:700}
   .stat .l{font-size:12px;color:var(--muted);margin-top:2px}
   .stat.applied .n{color:var(--applied)} .stat.interview .n{color:var(--interview)}
   .stat.offer .n{color:var(--offer)} .stat.rejected .n{color:var(--rejected)}
-
   .targets{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:18px}
   .targets h3{margin:0 0 10px;font-size:13px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
   .tgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
   .tcell .tlabel{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
   .bar{height:7px;background:var(--panel2);border-radius:4px;overflow:hidden}
   .bar>span{display:block;height:100%;background:var(--accent);border-radius:4px}
-
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
   .chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 13px;cursor:pointer;font-size:13px;color:var(--muted)}
   .chip.active{color:#fff;border-color:var(--accent);background:rgba(59,130,246,.18)}
   .chip .c{opacity:.7;margin-left:6px}
-
   table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
   th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
   th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;cursor:pointer;user-select:none;background:var(--panel2)}
@@ -58,8 +53,7 @@
   tr:last-child td{border-bottom:none}
   tr.row:hover{background:var(--panel2)}
   .company{font-weight:600}
-  .position{color:var(--muted);font-size:12px}
-  .loc{color:var(--muted);font-size:12px}
+  .position,.loc{color:var(--muted);font-size:12px}
   .country-pill{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-size:12px}
   .badge{display:inline-block;border-radius:6px;padding:3px 9px;font-size:12px;font-weight:600}
   .b-Applied{background:rgba(59,130,246,.18);color:#93c5fd}
@@ -77,6 +71,12 @@
   .editrow label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
   .muted{color:var(--muted)}
   .hist{font-size:12px;color:var(--muted);margin-top:6px}
+  .setup{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px 24px;margin:30px 0}
+  .setup h2{margin:0 0 8px;font-size:17px}
+  .setup ol{margin:10px 0 16px 18px;color:var(--muted)} .setup li{margin:5px 0}
+  .setup .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .setup input{flex:1;min-width:260px}
+  .err{color:#fca5a5;font-size:13px;margin-top:8px}
   .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);
     border-radius:10px;padding:10px 16px;opacity:0;transition:opacity .2s;pointer-events:none}
   .toast.show{opacity:1}
@@ -87,246 +87,284 @@
   <header>
     <div>
       <h1>Job Search Dashboard</h1>
-      <div class="sub">Auto-synced from Gmail · <span id="totalSub">0 applications</span></div>
+      <div class="sub">Synced from your Google Sheet · <span id="totalSub">0 applications</span></div>
     </div>
     <div class="controls">
       <span class="live"><span id="livedot"></span><span id="connText">Live</span></span>
-      <span class="live">synced <span id="syncAgo">—</span></span>
+      <span class="live">loaded <span id="syncAgo">—</span></span>
       <select id="intervalSel" title="Auto-refresh interval">
-        <option value="15">15s</option>
-        <option value="30" selected>30s</option>
-        <option value="60">60s</option>
-        <option value="300">5m</option>
+        <option value="30">30s</option><option value="60" selected>60s</option>
+        <option value="300">5m</option><option value="900">15m</option>
       </select>
-      <span class="live">next <span id="countdown">30s</span></span>
+      <span class="live">next <span id="countdown">60s</span></span>
       <button id="refreshNow">Refresh</button>
       <button id="exportCsv">Export CSV</button>
+      <button id="settingsBtn" title="Data source">⚙</button>
     </div>
   </header>
 
-  <div class="stats" id="stats"></div>
-  <div class="targets" id="targetsBox"></div>
-
-  <div class="chips" id="chips"></div>
-
-  <div class="controls" style="margin-bottom:12px;gap:12px">
-    <input id="search" placeholder="Search company, role, note…"/>
-    <label class="muted" style="display:flex;align-items:center;gap:6px;font-size:13px">
-      <input type="checkbox" id="showArchived" style="width:auto"/> show archived
-    </label>
-    <label class="muted" style="display:flex;align-items:center;gap:6px;font-size:13px">
-      follow-up after
-      <select id="followDays"><option>5</option><option selected>7</option><option>10</option><option>14</option></select>
-      days
-    </label>
+  <div id="setup" class="setup" style="display:none">
+    <h2>Connect your Google Sheet</h2>
+    <p class="muted">Your hourly routine fills a Google Sheet — paste its published CSV link here and this dashboard becomes the front-end for it.</p>
+    <ol>
+      <li>Open your tracking Google Sheet.</li>
+      <li><b>File → Share → Publish to web</b>.</li>
+      <li>Pick the sheet tab, choose <b>Comma-separated values (.csv)</b>, click <b>Publish</b>.</li>
+      <li>Copy the link it gives you and paste it below.</li>
+    </ol>
+    <div class="row">
+      <input id="urlInput" placeholder="https://docs.google.com/spreadsheets/d/e/…/pub?output=csv"/>
+      <button class="primary" id="urlSave">Connect</button>
+    </div>
+    <div id="setupErr" class="err"></div>
   </div>
 
-  <table>
-    <thead><tr id="headRow">
-      <th data-k="company">Company / Role <span class="arrow">↕</span></th>
-      <th data-k="country">Country <span class="arrow">↕</span></th>
-      <th data-k="date">Updated <span class="arrow">↕</span></th>
-      <th data-k="status">Status <span class="arrow">↕</span></th>
-      <th data-k="note">Note <span class="arrow">↕</span></th>
-      <th></th>
-    </tr></thead>
-    <tbody id="tbody"></tbody>
-  </table>
+  <div id="main" style="display:none">
+    <div class="stats" id="stats"></div>
+    <div class="targets" id="targetsBox"></div>
+    <div class="chips" id="chips"></div>
+    <div class="controls" style="margin-bottom:12px;gap:12px">
+      <input id="search" placeholder="Search company, role, note…"/>
+      <label class="muted" style="display:flex;align-items:center;gap:6px;font-size:13px">
+        <input type="checkbox" id="showArchived" style="width:auto"/> show archived
+      </label>
+      <label class="muted" style="display:flex;align-items:center;gap:6px;font-size:13px">
+        follow-up after
+        <select id="followDays"><option>5</option><option selected>7</option><option>10</option><option>14</option></select>
+        days
+      </label>
+    </div>
+    <table>
+      <thead><tr id="headRow">
+        <th data-k="company">Company / Role <span class="arrow">↕</span></th>
+        <th data-k="country">Country <span class="arrow">↕</span></th>
+        <th data-k="date">Updated <span class="arrow">↕</span></th>
+        <th data-k="status">Status <span class="arrow">↕</span></th>
+        <th data-k="note">Note <span class="arrow">↕</span></th>
+        <th></th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
 const $ = id => document.getElementById(id);
-const STATUS_META = {
-  "Applied":{cls:"Applied"}, "Interview Scheduled":{cls:"Interview"},
-  "Offer Received":{cls:"Offer"}, "Rejected":{cls:"Rejected"}
-};
-const STATUS_OPTS = ["Applied","Interview Scheduled","Offer Received","Rejected"];
-const FLAGS = {USA:"🇺🇸",UK:"🇬🇧",UAE:"🇦🇪",Australia:"🇦🇺",Europe:"🇪🇺",Other:"🌐"};
+const STATUS_META={"Applied":{cls:"Applied"},"Interview Scheduled":{cls:"Interview"},
+  "Offer Received":{cls:"Offer"},"Rejected":{cls:"Rejected"}};
+const STATUS_OPTS=["Applied","Interview Scheduled","Offer Received","Rejected"];
+const STATUS_RANK={"Applied":1,"Interview Scheduled":2,"Rejected":3,"Offer Received":4};
+const FLAGS={USA:"🇺🇸",UK:"🇬🇧",UAE:"🇦🇪",Australia:"🇦🇺",Europe:"🇪🇺",Other:"🌐"};
+const TARGETS={USA:10,Australia:3,UK:3,UAE:3,Europe:1};
 
-let data = {applications:[],targets:{}}, overrides = {};
+let rowsData=[], overrides=JSON.parse(localStorage.getItem("jd_overrides")||"{}");
+let sheetUrl=localStorage.getItem("jd_sheet_url")||"";
 let activeFilter="all", searchTerm="", sortKey="date", sortDir=-1;
-let intervalSec=30, secsLeft=30, tickTimer=null, editing=null, prevKeys=new Set();
+let intervalSec=60, secsLeft=60, tickTimer=null, editing=null, lastLoad=0;
 
-function rowKey(a){ return a.threadId || (a.company+"|"+(a.position||"")).toLowerCase(); }
-function ov(a){ return overrides[rowKey(a)] || {}; }
-function eff(a){ // effective row = data merged with manual override
-  const o = ov(a);
-  return {
-    ...a,
-    company:o.company ?? a.company, position:o.position ?? a.position,
-    location:o.location ?? a.location, country:o.country ?? a.country,
-    status:o.status ?? a.status, note:o.note ?? a.note,
-    archived: !!o.archived, edited: !!(o.status||o.note||o.company||o.position||o.country||o.location)
-  };
+// ---------- CSV parsing ----------
+function parseCSV(text){
+  const rows=[]; let row=[], field="", inq=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(inq){
+      if(ch==='"'){ if(text[i+1]==='"'){ field+='"'; i++; } else inq=false; }
+      else field+=ch;
+    }else{
+      if(ch==='"') inq=true;
+      else if(ch===','){ row.push(field); field=""; }
+      else if(ch==='\n'){ row.push(field); rows.push(row); row=[]; field=""; }
+      else if(ch==='\r'){}
+      else field+=ch;
+    }
+  }
+  if(field.length||row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r=>r.some(c=>c.trim()!==""));
 }
-function daysSince(d){ if(!d) return 0; return Math.floor((Date.now()-new Date(d+"T00:00:00").getTime())/86400000); }
-function isFollowUp(a){ return a.status==="Applied" && daysSince(a.date) >= +$("followDays").value; }
-function fmtDate(d){ if(!d) return "—"; const dt=new Date(d+"T00:00:00");
-  return dt.toLocaleDateString(undefined,{month:"short",day:"numeric"}); }
+function findCol(headers,...keys){
+  for(let i=0;i<headers.length;i++){ const h=headers[i].toLowerCase();
+    if(keys.some(k=>h.includes(k))) return i; }
+  return -1;
+}
+function normStatus(s){ s=(s||"").toLowerCase();
+  if(s.includes("offer")) return "Offer Received";
+  if(s.includes("interview")||s.includes("assessment")) return "Interview Scheduled";
+  if(s.includes("reject")||s.includes("declin")||s.includes("not mov")) return "Rejected";
+  if(s.includes("appl")||s.includes("submit")||s.includes("received")) return "Applied";
+  return "Applied";
+}
+function normCountry(c){ c=(c||"").trim(); const l=c.toLowerCase();
+  if(/\b(usa|u\.s|united states|america)\b/.test(l)||l==="us") return "USA";
+  if(/\b(uk|united kingdom|england|britain)\b/.test(l)) return "UK";
+  if(/\b(uae|emirates|dubai|abu dhabi)\b/.test(l)) return "UAE";
+  if(/austral/.test(l)) return "Australia";
+  if(/(europe|german|france|spain|italy|netherl|ireland|sweden|swiss|eu)/.test(l)) return "Europe";
+  if(FLAGS[c]) return c;
+  return "Other";
+}
+const MONTHS={jan:0,fév:1,fev:1,feb:1,mar:2,mär:2,avr:3,apr:3,mai:4,may:4,juin:5,jun:5,
+  juil:6,jul:6,aoû:7,aou:7,aug:7,sep:8,oct:9,nov:10,déc:11,dec:11};
+function parseDate(s){ if(!s) return null;
+  let t=Date.parse(s); if(!isNaN(t)) return t;
+  // Fallback for localized dates like "9 juin 2026 16:07" (French) etc.
+  const m=String(s).match(/(\d{1,2})\s+([A-Za-zÀ-ÿ]+)\.?\s+(\d{4})(?:[ ,]+(\d{1,2}):(\d{2}))?/);
+  if(m){ const mon=MONTHS[m[2].slice(0,4).toLowerCase()] ?? MONTHS[m[2].slice(0,3).toLowerCase()];
+    if(mon!=null) return new Date(+m[3],mon,+m[1],+(m[4]||0),+(m[5]||0)).getTime(); }
+  return null;
+}
 
+function mapRows(grid){
+  if(!grid.length) return [];
+  const H=grid[0];
+  const ci={
+    company:findCol(H,"company","employer","organization"),
+    position:findCol(H,"position","role","title","job"),
+    country:findCol(H,"country","region","location"),
+    status:findCol(H,"status"),
+    note:findCol(H,"note","detail","summary"),
+    date:findCol(H,"updated","date","timestamp"),
+  };
+  const get=(r,i)=> i>=0 ? (r[i]||"").trim() : "";
+  return grid.slice(1).map(r=>{
+    const rawDate=get(r,ci.date);
+    const company=get(r,ci.company)||"Unknown";
+    const position=get(r,ci.position);
+    return {
+      company, position, location:"",
+      country:normCountry(get(r,ci.country)),
+      status:normStatus(get(r,ci.status)),
+      note:get(r,ci.note),
+      rawDate, date:parseDate(rawDate),
+    };
+  });
+}
+
+// ---------- overrides / effective rows ----------
+function rowKey(a){ return (a.company+"|"+(a.position||"")).toLowerCase(); }
+function ov(a){ return overrides[rowKey(a)]||{}; }
+function eff(a){ const o=ov(a);
+  return {...a, company:o.company??a.company, position:o.position??a.position,
+    country:o.country??a.country, status:o.status??a.status, note:o.note??a.note,
+    archived:!!o.archived, edited:!!(o.status||o.note||o.country||o.company)}; }
+function daysSince(t){ if(!t) return 0; return Math.floor((Date.now()-t)/86400000); }
+function isFollowUp(a){ return a.status==="Applied" && a.date && daysSince(a.date)>=+$("followDays").value; }
+function fmtDate(a){ if(a.date) return new Date(a.date).toLocaleDateString(undefined,{month:"short",day:"numeric"});
+  return a.rawDate? a.rawDate.split(" ").slice(0,3).join(" ") : "—"; }
+
+// ---------- load ----------
 async function loadData(flash){
+  if(!sheetUrl){ $("setup").style.display="block"; $("main").style.display="none"; return; }
   try{
-    const d = await fetch("data.json",{cache:"no-store"}).then(r=>r.json());
-    data = d; setConnected(true);
-    try{ overrides = await fetch("overrides.json",{cache:"no-store"}).then(r=>r.ok?r.json():{}); }
-    catch(e){ overrides = JSON.parse(localStorage.getItem("jd_overrides")||"{}"); }
+    const txt=await fetch(sheetUrl,{cache:"no-store"}).then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); });
+    if(txt.trim().startsWith("<")) throw new Error("That link returned a web page, not CSV. Use the Publish-to-web CSV link.");
+    rowsData=mapRows(parseCSV(txt));
+    lastLoad=Date.now(); setConnected(true);
+    $("setup").style.display="none"; $("main").style.display="block";
     if(flash) flashDot();
-    detectNew();
     render();
-  }catch(e){ setConnected(false); }
+  }catch(e){
+    setConnected(false);
+    if(!rowsData.length){ $("setup").style.display="block"; $("main").style.display="none";
+      $("setupErr").textContent="Couldn't load that sheet: "+e.message; }
+  }
   updateSyncAgo();
 }
 
-function detectNew(){
-  const keys = new Set((data.applications||[]).map(rowKey));
-  if(prevKeys.size){
-    let n=0; keys.forEach(k=>{ if(!prevKeys.has(k)) n++; });
-    if(n>0) toast(`${n} new application${n>1?"s":""} synced`);
-  }
-  prevKeys = keys;
-}
-
-function rows(){
-  let r = (data.applications||[]).map(eff);
-  if(!$("showArchived").checked) r = r.filter(a=>!a.archived);
-  if(activeFilter==="followup") r = r.filter(isFollowUp);
-  else if(activeFilter!=="all") r = r.filter(a=>a.status===activeFilter);
-  if(searchTerm){
-    r = r.filter(a=>[a.company,a.position,a.location,a.country,a.note]
-      .join(" ").toLowerCase().includes(searchTerm));
-  }
-  r.sort((a,b)=>{ let va=a[sortKey]??"",vb=b[sortKey]??"";
-    return va<vb?-sortDir : va>vb?sortDir : 0; });
+function visibleRows(){
+  let r=rowsData.map(eff);
+  if(!$("showArchived").checked) r=r.filter(a=>!a.archived);
+  if(activeFilter==="followup") r=r.filter(isFollowUp);
+  else if(activeFilter!=="all") r=r.filter(a=>a.status===activeFilter);
+  if(searchTerm) r=r.filter(a=>[a.company,a.position,a.country,a.note].join(" ").toLowerCase().includes(searchTerm));
+  r.sort((a,b)=>{ let va=a[sortKey]??"",vb=b[sortKey]??""; if(sortKey==="date"){va=a.date||0;vb=b.date||0;}
+    return va<vb?-sortDir:va>vb?sortDir:0; });
   return r;
 }
 
-function renderStats(){
-  const all=(data.applications||[]).map(eff).filter(a=>!a.archived);
+function render(){
+  const all=rowsData.map(eff).filter(a=>!a.archived);
   const c=s=>all.filter(a=>a.status===s).length;
   const heard=all.filter(a=>a.status!=="Applied").length;
   const rate=all.length?Math.round(100*heard/all.length):0;
   const fu=all.filter(isFollowUp).length;
-  const cards=[
-    {n:all.length,l:"Total active",cls:""},
-    {n:c("Applied"),l:"Applied",cls:"applied"},
-    {n:c("Interview Scheduled"),l:"Interviews",cls:"interview"},
-    {n:c("Offer Received"),l:"Offers",cls:"offer"},
-    {n:c("Rejected"),l:"Rejected",cls:"rejected"},
-    {n:rate+"%",l:"Response rate",cls:""},
+  $("stats").innerHTML=[
+    {n:all.length,l:"Total active",cls:""},{n:c("Applied"),l:"Applied",cls:"applied"},
+    {n:c("Interview Scheduled"),l:"Interviews",cls:"interview"},{n:c("Offer Received"),l:"Offers",cls:"offer"},
+    {n:c("Rejected"),l:"Rejected",cls:"rejected"},{n:rate+"%",l:"Response rate",cls:""},
     {n:fu,l:"Need follow-up",cls:fu?"rejected":""},
-  ];
-  $("stats").innerHTML = cards.map(s=>
-    `<div class="stat ${s.cls}"><div class="n">${s.n}</div><div class="l">${s.l}</div></div>`).join("");
-  $("totalSub").textContent = `${all.length} application${all.length!==1?"s":""}`;
-}
+  ].map(s=>`<div class="stat ${s.cls}"><div class="n">${s.n}</div><div class="l">${s.l}</div></div>`).join("");
+  $("totalSub").textContent=`${all.length} application${all.length!==1?"s":""}`;
 
-function renderTargets(){
-  const t=data.targets||{}; const all=(data.applications||[]).map(eff).filter(a=>!a.archived);
-  const keys=Object.keys(t); if(!keys.length){ $("targetsBox").style.display="none"; return; }
-  $("targetsBox").style.display="block";
-  $("targetsBox").innerHTML = `<h3>Targets by region</h3><div class="tgrid">`+keys.map(k=>{
-    const have=all.filter(a=>a.country===k).length, goal=t[k]||0;
-    const pct=goal?Math.min(100,Math.round(100*have/goal)):0;
+  $("targetsBox").innerHTML=`<h3>Targets by region</h3><div class="tgrid">`+Object.keys(TARGETS).map(k=>{
+    const have=all.filter(a=>a.country===k).length, goal=TARGETS[k], pct=goal?Math.min(100,Math.round(100*have/goal)):0;
     return `<div class="tcell"><div class="tlabel"><span>${FLAGS[k]||""} ${k}</span><span class="muted">${have}/${goal}</span></div>
-      <div class="bar"><span style="width:${pct}%"></span></div></div>`;
-  }).join("")+`</div>`;
-}
+      <div class="bar"><span style="width:${pct}%"></span></div></div>`; }).join("")+`</div>`;
 
-function renderChips(){
-  const all=(data.applications||[]).map(eff).filter(a=>!a.archived);
-  const fu=all.filter(isFollowUp).length;
-  const defs=[["all","All",all.length],["Applied","Applied",all.filter(a=>a.status==="Applied").length],
-    ["Interview Scheduled","Interview",all.filter(a=>a.status==="Interview Scheduled").length],
-    ["Offer Received","Offer",all.filter(a=>a.status==="Offer Received").length],
-    ["Rejected","Rejected",all.filter(a=>a.status==="Rejected").length],
-    ["followup","Follow-up",fu]];
-  $("chips").innerHTML = defs.map(([f,label,n])=>
-    `<div class="chip ${activeFilter===f?"active":""}" data-f="${f}">${label}<span class="c">${n}</span></div>`).join("");
-}
+  const defs=[["all","All",all.length],["Applied","Applied",c("Applied")],
+    ["Interview Scheduled","Interview",c("Interview Scheduled")],["Offer Received","Offer",c("Offer Received")],
+    ["Rejected","Rejected",c("Rejected")],["followup","Follow-up",fu]];
+  $("chips").innerHTML=defs.map(([f,l,n])=>`<div class="chip ${activeFilter===f?"active":""}" data-f="${f}">${l}<span class="c">${n}</span></div>`).join("");
 
-function render(){
-  renderStats(); renderTargets(); renderChips();
-  document.querySelectorAll("th[data-k]").forEach(th=>{
-    const k=th.dataset.k;
-    th.querySelector(".arrow").textContent = k===sortKey ? (sortDir===1?"↑":"↓") : "↕";
-  });
-  const r=rows(), tb=$("tbody");
+  document.querySelectorAll("th[data-k]").forEach(th=>{ const k=th.dataset.k;
+    th.querySelector(".arrow").textContent=k===sortKey?(sortDir===1?"↑":"↓"):"↕"; });
+
+  const r=visibleRows(), tb=$("tbody");
   if(!r.length){ tb.innerHTML=`<tr><td colspan="6" class="empty">No applications match your filters.</td></tr>`; return; }
-  tb.innerHTML = r.map(a=>{
-    const meta=STATUS_META[a.status]||{cls:"Applied"};
-    const key=rowKey(a);
+  tb.innerHTML=r.map(a=>{
+    const meta=STATUS_META[a.status]||{cls:"Applied"}, key=rowKey(a);
     const fu=isFollowUp(a)?`<span class="followup">follow up · ${daysSince(a.date)}d</span>`:"";
     const ed=a.edited?`<span class="edited" title="manually edited">✎</span>`:"";
-    let html=`<tr class="row" data-k="${key}">
+    let html=`<tr class="row">
       <td><div class="company">${esc(a.company)}${a.archived?' <span class="muted">(archived)</span>':''}</div>
-          <div class="position">${esc(a.position||"")}</div><div class="loc">${esc(a.location||"")}</div></td>
+          <div class="position">${esc(a.position||"")}</div></td>
       <td><span class="country-pill">${FLAGS[a.country]||""} ${esc(a.country)}</span></td>
-      <td>${fmtDate(a.date)}</td>
+      <td>${fmtDate(a)}</td>
       <td><span class="badge b-${meta.cls}">${esc(a.status)}</span>${fu}${ed}</td>
       <td class="note-cell">${esc(a.note||"")}</td>
-      <td class="actions"><button class="rowbtn" data-edit="${key}">Edit</button></td></tr>`;
-    if(editing===key){
-      const cur=data.applications.find(x=>rowKey(eff(x))===key) || a;
-      html+=editorRow(key,a,cur);
-    }
+      <td class="actions"><button class="rowbtn" data-edit="${esc(key)}">Edit</button></td></tr>`;
+    if(editing===key) html+=editorRow(key,a);
     return html;
   }).join("");
 }
 
-function editorRow(key,a,cur){
-  const hist=(cur.history||[]).slice(-6).map(h=>`${fmtDate(h.date)}: ${h.status}`).join("  ·  ");
-  return `<tr class="editor"><td colspan="6">
-    <div class="editrow">
-      <label>Status<select data-f="status">${STATUS_OPTS.map(s=>
-        `<option ${a.status===s?"selected":""}>${s}</option>`).join("")}</select></label>
-      <label>Country<select data-f="country">${Object.keys(FLAGS).map(c=>
-        `<option ${a.country===c?"selected":""}>${c}</option>`).join("")}</select></label>
-      <label style="flex:1;min-width:220px">Note<input data-f="note" value="${esc(a.note||"")}"/></label>
-      <label>Archived<input type="checkbox" data-f="archived" ${a.archived?"checked":""} style="width:auto"/></label>
-      <div style="display:flex;gap:8px;align-self:flex-end">
-        <button class="primary" data-save="${key}">Save</button>
-        <button data-cancel="1">Cancel</button>
-        ${Object.keys(ov(a)).length?`<button data-reset="${key}">Reset</button>`:""}
-      </div>
-    </div>
-    ${hist?`<div class="hist">History: ${hist}</div>`:""}
-  </td></tr>`;
+function editorRow(key,a){
+  return `<tr class="editor"><td colspan="6"><div class="editrow">
+    <label>Status<select data-f="status">${STATUS_OPTS.map(s=>`<option ${a.status===s?"selected":""}>${s}</option>`).join("")}</select></label>
+    <label>Country<select data-f="country">${Object.keys(FLAGS).map(c=>`<option ${a.country===c?"selected":""}>${c}</option>`).join("")}</select></label>
+    <label style="flex:1;min-width:220px">Note<input data-f="note" value="${esc(a.note||"")}"/></label>
+    <label>Archived<input type="checkbox" data-f="archived" ${a.archived?"checked":""} style="width:auto"/></label>
+    <div style="display:flex;gap:8px;align-self:flex-end">
+      <button class="primary" data-save="${esc(key)}">Save</button>
+      <button data-cancel="1">Cancel</button>
+      ${Object.keys(ov(a)).length?`<button data-reset="${esc(key)}">Reset</button>`:""}
+    </div></div>
+    <div class="hist muted">Edits are saved in this browser and layer on top of the sheet.</div></td></tr>`;
 }
-
-async function saveOverride(key,patch){
-  const o = overrides[key] || {};
-  Object.assign(o,patch);
-  // drop empties so a reset truly clears
+function saveOverride(key,patch){
+  const o=overrides[key]||{}; Object.assign(o,patch);
   Object.keys(o).forEach(k=>{ if(o[k]===""||o[k]===false||o[k]==null) delete o[k]; });
   if(Object.keys(o).length) overrides[key]=o; else delete overrides[key];
   localStorage.setItem("jd_overrides",JSON.stringify(overrides));
-  try{
-    await fetch("/api/overrides",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify(overrides)});
-  }catch(e){ toast("Saved locally (server not writable)"); }
 }
 
 function esc(s){ return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
-function setConnected(ok){ $("livedot").classList.toggle("off",!ok); $("connText").textContent=ok?"Live":"Offline (cached)"; }
+function setConnected(ok){ $("livedot").classList.toggle("off",!ok); $("connText").textContent=ok?"Live":"Offline"; }
 function flashDot(){ const d=$("livedot"); d.classList.add("flash"); setTimeout(()=>d.classList.remove("flash"),600); }
-function updateSyncAgo(){ if(!data.lastSync) return;
-  const s=Math.max(0,Math.round((Date.now()-new Date(data.lastSync).getTime())/1000));
-  $("syncAgo").textContent = s<60?s+"s ago":s<3600?Math.floor(s/60)+"m ago":Math.floor(s/3600)+"h ago"; }
+function updateSyncAgo(){ if(!lastLoad) return; const s=Math.round((Date.now()-lastLoad)/1000);
+  $("syncAgo").textContent=s<60?s+"s ago":s<3600?Math.floor(s/60)+"m ago":Math.floor(s/3600)+"h ago"; }
 function resetTimer(){ secsLeft=intervalSec; $("countdown").textContent=secsLeft+"s"; }
 function startTicking(){ if(tickTimer) clearInterval(tickTimer);
   tickTimer=setInterval(()=>{ secsLeft--; updateSyncAgo();
     if(secsLeft<=0){ loadData(false); resetTimer(); } else $("countdown").textContent=secsLeft+"s"; },1000); }
 let toastTimer=null;
-function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show");
-  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),2600); }
+function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),2400); }
 
 function exportCsv(){
-  const r=rows(); const cols=["company","position","location","country","date","status","note"];
-  const lines=[cols.join(",")].concat(r.map(a=>cols.map(c=>
-    `"${String(a[c]??"").replace(/"/g,'""')}"`).join(",")));
-  const blob=new Blob([lines.join("\n")],{type:"text/csv"});
-  const url=URL.createObjectURL(blob), link=document.createElement("a");
+  const r=visibleRows(), cols=["company","position","country","status","note","rawDate"];
+  const lines=[cols.join(",")].concat(r.map(a=>cols.map(c=>`"${String(a[c]??"").replace(/"/g,'""')}"`).join(",")));
+  const blob=new Blob([lines.join("\n")],{type:"text/csv"}), url=URL.createObjectURL(blob), link=document.createElement("a");
   link.href=url; link.download="applications.csv"; link.click(); URL.revokeObjectURL(url);
 }
 
@@ -334,25 +372,26 @@ function exportCsv(){
 $("intervalSel").addEventListener("change",e=>{ intervalSec=+e.target.value; resetTimer(); });
 $("refreshNow").addEventListener("click",()=>{ loadData(true); resetTimer(); });
 $("exportCsv").addEventListener("click",exportCsv);
+$("settingsBtn").addEventListener("click",()=>{ $("urlInput").value=sheetUrl;
+  $("setup").style.display="block"; $("main").style.display="none"; });
+$("urlSave").addEventListener("click",()=>{ const v=$("urlInput").value.trim();
+  if(!v){ $("setupErr").textContent="Paste a link first."; return; }
+  sheetUrl=v; localStorage.setItem("jd_sheet_url",v); $("setupErr").textContent=""; loadData(true); });
 $("showArchived").addEventListener("change",render);
 $("followDays").addEventListener("change",render);
 $("search").addEventListener("input",e=>{ searchTerm=e.target.value.toLowerCase().trim(); render(); });
-$("chips").addEventListener("click",e=>{ const c=e.target.closest(".chip"); if(!c) return;
-  activeFilter=c.dataset.f; render(); });
+$("chips").addEventListener("click",e=>{ const c=e.target.closest(".chip"); if(!c) return; activeFilter=c.dataset.f; render(); });
 $("headRow").addEventListener("click",e=>{ const th=e.target.closest("th[data-k]"); if(!th) return;
   const k=th.dataset.k; if(k===sortKey) sortDir*=-1; else { sortKey=k; sortDir=1; } render(); });
-$("tbody").addEventListener("click",async e=>{
+$("tbody").addEventListener("click",e=>{
   const edit=e.target.closest("[data-edit]"); if(edit){ editing=editing===edit.dataset.edit?null:edit.dataset.edit; render(); return; }
   if(e.target.dataset.cancel){ editing=null; render(); return; }
   const save=e.target.closest("[data-save]");
-  if(save){ const key=save.dataset.save; const tr=save.closest("tr");
-    const patch={}; tr.querySelectorAll("[data-f]").forEach(el=>{
-      patch[el.dataset.f]= el.type==="checkbox"?el.checked:el.value; });
-    // only keep status/country if they differ from auto value would require base; store as-is (effective)
-    await saveOverride(key,patch); editing=null; toast("Saved"); render(); return; }
+  if(save){ const tr=save.closest("tr"), patch={};
+    tr.querySelectorAll("[data-f]").forEach(el=>{ patch[el.dataset.f]=el.type==="checkbox"?el.checked:el.value; });
+    saveOverride(save.dataset.save,patch); editing=null; toast("Saved"); render(); return; }
   const reset=e.target.closest("[data-reset]");
   if(reset){ delete overrides[reset.dataset.reset]; localStorage.setItem("jd_overrides",JSON.stringify(overrides));
-    try{ await fetch("/api/overrides",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(overrides)});}catch(e){}
     editing=null; toast("Reset"); render(); }
 });
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) loadData(false); });
