@@ -11,12 +11,14 @@
     --applied:#3b82f6; --interview:#a855f7; --offer:#22c55e; --rejected:#ef4444; --warn:#f59e0b;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--txt);
-    font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  body{margin:0;background:
+    radial-gradient(1200px 600px at 80% -10%,rgba(59,130,246,.10),transparent 60%),
+    radial-gradient(900px 500px at -10% 0%,rgba(168,85,247,.08),transparent 55%),var(--bg);
+    color:var(--txt);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   a{color:var(--accent)}
   .wrap{max-width:1180px;margin:0 auto;padding:24px 20px 60px}
   header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
-  h1{font-size:20px;margin:0;letter-spacing:.2px}
+  h1{font-size:21px;margin:0;letter-spacing:.2px;display:flex;align-items:center;gap:9px}
   .sub{color:var(--muted);font-size:12px;margin-top:2px}
   .live{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
   #livedot{width:9px;height:9px;border-radius:50%;background:var(--offer)}
@@ -26,32 +28,35 @@
   .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   select,input,button{font:inherit;color:var(--txt);background:var(--panel2);
     border:1px solid var(--line);border-radius:8px;padding:7px 10px}
-  button{cursor:pointer}
+  button{cursor:pointer;transition:.15s}
   button:hover{border-color:var(--accent)}
   button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
   #search{min-width:200px}
   .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
-  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
-  .stat .n{font-size:24px;font-weight:700}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px 16px;transition:.15s}
+  .stat:hover{border-color:#33405a;transform:translateY(-1px)}
+  .stat .n{font-size:25px;font-weight:700}
   .stat .l{font-size:12px;color:var(--muted);margin-top:2px}
   .stat.applied .n{color:var(--applied)} .stat.interview .n{color:var(--interview)}
   .stat.offer .n{color:var(--offer)} .stat.rejected .n{color:var(--rejected)}
-  .targets{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:18px}
+  .targets{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px 16px;margin-bottom:18px}
   .targets h3{margin:0 0 10px;font-size:13px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
-  .tgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
-  .tcell .tlabel{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
-  .bar{height:7px;background:var(--panel2);border-radius:4px;overflow:hidden}
-  .bar>span{display:block;height:100%;background:var(--accent);border-radius:4px}
+  .tgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+  .tcell .tlabel{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px}
+  .bar{height:8px;background:var(--panel2);border-radius:5px;overflow:hidden}
+  .bar>span{display:block;height:100%;background:linear-gradient(90deg,#3b82f6,#22c55e);border-radius:5px;transition:width .5s}
+  .bar>span.done{background:linear-gradient(90deg,#22c55e,#16a34a)}
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-  .chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 13px;cursor:pointer;font-size:13px;color:var(--muted)}
+  .chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 13px;cursor:pointer;font-size:13px;color:var(--muted);transition:.15s}
+  .chip:hover{color:#fff}
   .chip.active{color:#fff;border-color:var(--accent);background:rgba(59,130,246,.18)}
   .chip .c{opacity:.7;margin-left:6px}
-  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
   th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
   th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;cursor:pointer;user-select:none;background:var(--panel2)}
   th .arrow{opacity:.5;font-size:11px}
   tr:last-child td{border-bottom:none}
-  tr.row:hover{background:var(--panel2)}
+  tr.row{transition:.1s} tr.row:hover{background:var(--panel2)}
   .company{font-weight:600}
   .position,.loc{color:var(--muted);font-size:12px}
   .country-pill{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-size:12px}
@@ -60,8 +65,9 @@
   .b-Interview{background:rgba(168,85,247,.18);color:#d8b4fe}
   .b-Offer{background:rgba(34,197,94,.18);color:#86efac}
   .b-Rejected{background:rgba(239,68,68,.18);color:#fca5a5}
+  .b-Other{background:var(--panel2);color:var(--muted)}
   .followup{display:inline-block;margin-left:6px;background:rgba(245,158,11,.18);color:#fcd34d;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:600}
-  .note-cell{color:var(--muted);font-size:13px;max-width:320px}
+  .note-cell{color:var(--muted);font-size:13px;max-width:340px}
   .edited{margin-left:6px;font-size:11px;color:var(--warn)}
   .rowbtn{background:transparent;border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:12px;color:var(--muted)}
   td.actions{white-space:nowrap}
@@ -71,12 +77,11 @@
   .editrow label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
   .muted{color:var(--muted)}
   .hist{font-size:12px;color:var(--muted);margin-top:6px}
-  .setup{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px 24px;margin:30px 0}
+  .setup{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin:30px 0}
   .setup h2{margin:0 0 8px;font-size:17px}
-  .setup ol{margin:10px 0 16px 18px;color:var(--muted)} .setup li{margin:5px 0}
-  .setup .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-  .setup input{flex:1;min-width:260px}
-  .err{color:#fca5a5;font-size:13px;margin-top:8px}
+  .setup ol{margin:10px 0 6px 18px;color:var(--muted)} .setup li{margin:6px 0}
+  .setup code{background:var(--panel2);padding:2px 6px;border-radius:5px}
+  .err{color:#fca5a5;font-size:13px;margin-top:10px}
   .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);
     border-radius:10px;padding:10px 16px;opacity:0;transition:opacity .2s;pointer-events:none}
   .toast.show{opacity:1}
@@ -86,36 +91,31 @@
 <div class="wrap">
   <header>
     <div>
-      <h1>Job Search Dashboard</h1>
-      <div class="sub">Synced from your Google Sheet · <span id="totalSub">0 applications</span></div>
+      <h1>⚡ Job Search Dashboard</h1>
+      <div class="sub">Live from your Notion tracker · <span id="totalSub">0 applications</span></div>
     </div>
     <div class="controls">
       <span class="live"><span id="livedot"></span><span id="connText">Live</span></span>
-      <span class="live">loaded <span id="syncAgo">—</span></span>
+      <span class="live">updated <span id="syncAgo">—</span></span>
       <select id="intervalSel" title="Auto-refresh interval">
         <option value="30">30s</option><option value="60" selected>60s</option>
-        <option value="300">5m</option><option value="900">15m</option>
+        <option value="300">5m</option>
       </select>
       <span class="live">next <span id="countdown">60s</span></span>
       <button id="refreshNow">Refresh</button>
       <button id="exportCsv">Export CSV</button>
-      <button id="settingsBtn" title="Data source">⚙</button>
     </div>
   </header>
 
   <div id="setup" class="setup" style="display:none">
-    <h2>Connect your Google Sheet</h2>
-    <p class="muted">Your hourly routine fills a Google Sheet — paste its published CSV link here and this dashboard becomes the front-end for it.</p>
+    <h2>Connect your Notion tracker</h2>
+    <p class="muted" id="setupMsg">This dashboard reads your Notion "Job Application Tracker" through a private token.</p>
     <ol>
-      <li>Open your tracking Google Sheet.</li>
-      <li><b>File → Share → Publish to web</b>.</li>
-      <li>Pick the sheet tab, choose <b>Comma-separated values (.csv)</b>, click <b>Publish</b>.</li>
-      <li>Copy the link it gives you and paste it below.</li>
+      <li>Create an integration at <a href="https://www.notion.so/my-integrations" target="_blank">notion.so/my-integrations</a> → <b>New integration</b> → <b>Internal</b> → copy the secret (<code>ntn_…</code>).</li>
+      <li>Open your <b>Job Application Tracker</b> in Notion → top-right <b>•••</b> → <b>Connections</b> → add your integration.</li>
+      <li>Create a file named <code>notion_token.txt</code> in the app folder and paste the secret into it.</li>
+      <li>Restart the app (re-run <code>python3 notion_server.py</code>) and refresh this page.</li>
     </ol>
-    <div class="row">
-      <input id="urlInput" placeholder="https://docs.google.com/spreadsheets/d/e/…/pub?output=csv"/>
-      <button class="primary" id="urlSave">Connect</button>
-    </div>
     <div id="setupErr" class="err"></div>
   </div>
 
@@ -138,7 +138,7 @@
       <thead><tr id="headRow">
         <th data-k="company">Company / Role <span class="arrow">↕</span></th>
         <th data-k="country">Country <span class="arrow">↕</span></th>
-        <th data-k="date">Updated <span class="arrow">↕</span></th>
+        <th data-k="date">Date <span class="arrow">↕</span></th>
         <th data-k="status">Status <span class="arrow">↕</span></th>
         <th data-k="note">Note <span class="arrow">↕</span></th>
         <th></th>
@@ -152,95 +152,29 @@
 <script>
 const $ = id => document.getElementById(id);
 const STATUS_META={"Applied":{cls:"Applied"},"Interview Scheduled":{cls:"Interview"},
-  "Offer Received":{cls:"Offer"},"Rejected":{cls:"Rejected"}};
-const STATUS_OPTS=["Applied","Interview Scheduled","Offer Received","Rejected"];
-const STATUS_RANK={"Applied":1,"Interview Scheduled":2,"Rejected":3,"Offer Received":4};
+  "Offer Received":{cls:"Offer"},"Rejected":{cls:"Rejected"},"Withdrawn":{cls:"Other"}};
+const STATUS_OPTS=["Applied","Interview Scheduled","Offer Received","Rejected","Withdrawn"];
 const FLAGS={USA:"🇺🇸",UK:"🇬🇧",UAE:"🇦🇪",Australia:"🇦🇺",Europe:"🇪🇺",Other:"🌐"};
 const TARGETS={USA:10,Australia:3,UK:3,UAE:3,Europe:1};
 
 let rowsData=[], overrides=JSON.parse(localStorage.getItem("jd_overrides")||"{}");
-let sheetUrl=localStorage.getItem("jd_sheet_url")||"";
 let activeFilter="all", searchTerm="", sortKey="date", sortDir=-1;
 let intervalSec=60, secsLeft=60, tickTimer=null, editing=null, lastLoad=0;
 
-// ---------- CSV parsing ----------
-function parseCSV(text){
-  const rows=[]; let row=[], field="", inq=false;
-  for(let i=0;i<text.length;i++){
-    const ch=text[i];
-    if(inq){
-      if(ch==='"'){ if(text[i+1]==='"'){ field+='"'; i++; } else inq=false; }
-      else field+=ch;
-    }else{
-      if(ch==='"') inq=true;
-      else if(ch===','){ row.push(field); field=""; }
-      else if(ch==='\n'){ row.push(field); rows.push(row); row=[]; field=""; }
-      else if(ch==='\r'){}
-      else field+=ch;
-    }
-  }
-  if(field.length||row.length){ row.push(field); rows.push(row); }
-  return rows.filter(r=>r.some(c=>c.trim()!==""));
-}
-function findCol(headers,...keys){
-  for(let i=0;i<headers.length;i++){ const h=headers[i].toLowerCase();
-    if(keys.some(k=>h.includes(k))) return i; }
-  return -1;
-}
-function normStatus(s){ s=(s||"").toLowerCase();
-  if(s.includes("offer")) return "Offer Received";
-  if(s.includes("interview")||s.includes("assessment")) return "Interview Scheduled";
-  if(s.includes("reject")||s.includes("declin")||s.includes("not mov")) return "Rejected";
-  if(s.includes("appl")||s.includes("submit")||s.includes("received")) return "Applied";
-  return "Applied";
-}
-function normCountry(c){ c=(c||"").trim(); const l=c.toLowerCase();
-  if(/\b(usa|u\.s|united states|america)\b/.test(l)||l==="us") return "USA";
-  if(/\b(uk|united kingdom|england|britain)\b/.test(l)) return "UK";
-  if(/\b(uae|emirates|dubai|abu dhabi)\b/.test(l)) return "UAE";
+function normCountry(c){ c=(c||"").trim(); if(FLAGS[c]) return c; const l=c.toLowerCase();
+  if(/(usa|u\.s|united states|america)/.test(l)) return "USA";
+  if(/(uk|united kingdom|england|britain)/.test(l)) return "UK";
+  if(/(uae|emirates|dubai|abu dhabi)/.test(l)) return "UAE";
   if(/austral/.test(l)) return "Australia";
-  if(/(europe|german|france|spain|italy|netherl|ireland|sweden|swiss|eu)/.test(l)) return "Europe";
-  if(FLAGS[c]) return c;
-  return "Other";
-}
-const MONTHS={jan:0,fév:1,fev:1,feb:1,mar:2,mär:2,avr:3,apr:3,mai:4,may:4,juin:5,jun:5,
-  juil:6,jul:6,aoû:7,aou:7,aug:7,sep:8,oct:9,nov:10,déc:11,dec:11};
-function parseDate(s){ if(!s) return null;
-  let t=Date.parse(s); if(!isNaN(t)) return t;
-  // Fallback for localized dates like "9 juin 2026 16:07" (French) etc.
-  const m=String(s).match(/(\d{1,2})\s+([A-Za-zÀ-ÿ]+)\.?\s+(\d{4})(?:[ ,]+(\d{1,2}):(\d{2}))?/);
-  if(m){ const mon=MONTHS[m[2].slice(0,4).toLowerCase()] ?? MONTHS[m[2].slice(0,3).toLowerCase()];
-    if(mon!=null) return new Date(+m[3],mon,+m[1],+(m[4]||0),+(m[5]||0)).getTime(); }
-  return null;
-}
+  if(/(europe|german|france|spain|italy|netherl|ireland|sweden|swiss)/.test(l)) return "Europe";
+  return c?"Other":"Other"; }
+function normStatus(s){ s=(s||"").trim(); if(STATUS_META[s]) return s; const l=s.toLowerCase();
+  if(l.includes("offer")) return "Offer Received";
+  if(l.includes("interview")||l.includes("assessment")) return "Interview Scheduled";
+  if(l.includes("reject")||l.includes("declin")) return "Rejected";
+  if(l.includes("withdraw")) return "Withdrawn";
+  return "Applied"; }
 
-function mapRows(grid){
-  if(!grid.length) return [];
-  const H=grid[0];
-  const ci={
-    company:findCol(H,"company","employer","organization"),
-    position:findCol(H,"position","role","title","job"),
-    country:findCol(H,"country","region","location"),
-    status:findCol(H,"status"),
-    note:findCol(H,"note","detail","summary"),
-    date:findCol(H,"updated","date","timestamp"),
-  };
-  const get=(r,i)=> i>=0 ? (r[i]||"").trim() : "";
-  return grid.slice(1).map(r=>{
-    const rawDate=get(r,ci.date);
-    const company=get(r,ci.company)||"Unknown";
-    const position=get(r,ci.position);
-    return {
-      company, position, location:"",
-      country:normCountry(get(r,ci.country)),
-      status:normStatus(get(r,ci.status)),
-      note:get(r,ci.note),
-      rawDate, date:parseDate(rawDate),
-    };
-  });
-}
-
-// ---------- overrides / effective rows ----------
 function rowKey(a){ return (a.company+"|"+(a.position||"")).toLowerCase(); }
 function ov(a){ return overrides[rowKey(a)]||{}; }
 function eff(a){ const o=ov(a);
@@ -249,26 +183,35 @@ function eff(a){ const o=ov(a);
     archived:!!o.archived, edited:!!(o.status||o.note||o.country||o.company)}; }
 function daysSince(t){ if(!t) return 0; return Math.floor((Date.now()-t)/86400000); }
 function isFollowUp(a){ return a.status==="Applied" && a.date && daysSince(a.date)>=+$("followDays").value; }
-function fmtDate(a){ if(a.date) return new Date(a.date).toLocaleDateString(undefined,{month:"short",day:"numeric"});
-  return a.rawDate? a.rawDate.split(" ").slice(0,3).join(" ") : "—"; }
+function fmtDate(a){ if(a.date) return new Date(a.date).toLocaleDateString(undefined,{month:"short",day:"numeric"}); return "—"; }
 
-// ---------- load ----------
 async function loadData(flash){
-  if(!sheetUrl){ $("setup").style.display="block"; $("main").style.display="none"; return; }
   try{
-    const txt=await fetch(sheetUrl,{cache:"no-store"}).then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); });
-    if(txt.trim().startsWith("<")) throw new Error("That link returned a web page, not CSV. Use the Publish-to-web CSV link.");
-    rowsData=mapRows(parseCSV(txt));
+    const res=await fetch("/api/applications",{cache:"no-store"});
+    const j=await res.json();
+    if(j.error){ showSetup(j); setConnected(false); return; }
+    rowsData=(j.applications||[]).map(a=>({
+      company:a.company||"Unknown", position:a.position||"", location:"",
+      country:normCountry(a.country), status:normStatus(a.status), note:a.note||"",
+      date:a.date?Date.parse(a.date):null, rawDate:a.date||"" }));
     lastLoad=Date.now(); setConnected(true);
     $("setup").style.display="none"; $("main").style.display="block";
     if(flash) flashDot();
     render();
   }catch(e){
     setConnected(false);
-    if(!rowsData.length){ $("setup").style.display="block"; $("main").style.display="none";
-      $("setupErr").textContent="Couldn't load that sheet: "+e.message; }
+    showSetup({error:"server",message:"Can't reach the local app. Make sure notion_server.py is running, then refresh."});
   }
   updateSyncAgo();
+}
+function showSetup(j){
+  $("setup").style.display="block"; $("main").style.display="none";
+  const msgs={no_token:"No Notion token found yet — follow the steps below.",
+    auth:"Notion rejected the token. Re-copy your integration secret.",
+    not_shared:"The integration can't see the database yet — add it via the tracker's ••• → Connections.",
+    deps:j.message||"", server:j.message||"", fetch:j.message||""};
+  $("setupMsg").textContent = msgs[j.error]||"This dashboard reads your Notion tracker through a private token.";
+  $("setupErr").textContent = (j.error!=="no_token" && j.message)?j.message:"";
 }
 
 function visibleRows(){
@@ -299,7 +242,7 @@ function render(){
   $("targetsBox").innerHTML=`<h3>Targets by region</h3><div class="tgrid">`+Object.keys(TARGETS).map(k=>{
     const have=all.filter(a=>a.country===k).length, goal=TARGETS[k], pct=goal?Math.min(100,Math.round(100*have/goal)):0;
     return `<div class="tcell"><div class="tlabel"><span>${FLAGS[k]||""} ${k}</span><span class="muted">${have}/${goal}</span></div>
-      <div class="bar"><span style="width:${pct}%"></span></div></div>`; }).join("")+`</div>`;
+      <div class="bar"><span class="${have>=goal?'done':''}" style="width:${pct}%"></span></div></div>`; }).join("")+`</div>`;
 
   const defs=[["all","All",all.length],["Applied","Applied",c("Applied")],
     ["Interview Scheduled","Interview",c("Interview Scheduled")],["Offer Received","Offer",c("Offer Received")],
@@ -312,7 +255,7 @@ function render(){
   const r=visibleRows(), tb=$("tbody");
   if(!r.length){ tb.innerHTML=`<tr><td colspan="6" class="empty">No applications match your filters.</td></tr>`; return; }
   tb.innerHTML=r.map(a=>{
-    const meta=STATUS_META[a.status]||{cls:"Applied"}, key=rowKey(a);
+    const meta=STATUS_META[a.status]||{cls:"Other"}, key=rowKey(a);
     const fu=isFollowUp(a)?`<span class="followup">follow up · ${daysSince(a.date)}d</span>`:"";
     const ed=a.edited?`<span class="edited" title="manually edited">✎</span>`:"";
     let html=`<tr class="row">
@@ -339,7 +282,7 @@ function editorRow(key,a){
       <button data-cancel="1">Cancel</button>
       ${Object.keys(ov(a)).length?`<button data-reset="${esc(key)}">Reset</button>`:""}
     </div></div>
-    <div class="hist muted">Edits are saved in this browser and layer on top of the sheet.</div></td></tr>`;
+    <div class="hist muted">Edits are saved in this browser as a visual overlay; your Notion data is untouched.</div></td></tr>`;
 }
 function saveOverride(key,patch){
   const o=overrides[key]||{}; Object.assign(o,patch);
@@ -368,15 +311,9 @@ function exportCsv(){
   link.href=url; link.download="applications.csv"; link.click(); URL.revokeObjectURL(url);
 }
 
-// events
 $("intervalSel").addEventListener("change",e=>{ intervalSec=+e.target.value; resetTimer(); });
 $("refreshNow").addEventListener("click",()=>{ loadData(true); resetTimer(); });
 $("exportCsv").addEventListener("click",exportCsv);
-$("settingsBtn").addEventListener("click",()=>{ $("urlInput").value=sheetUrl;
-  $("setup").style.display="block"; $("main").style.display="none"; });
-$("urlSave").addEventListener("click",()=>{ const v=$("urlInput").value.trim();
-  if(!v){ $("setupErr").textContent="Paste a link first."; return; }
-  sheetUrl=v; localStorage.setItem("jd_sheet_url",v); $("setupErr").textContent=""; loadData(true); });
 $("showArchived").addEventListener("change",render);
 $("followDays").addEventListener("change",render);
 $("search").addEventListener("input",e=>{ searchTerm=e.target.value.toLowerCase().trim(); render(); });
