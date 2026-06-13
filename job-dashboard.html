@@ -65,6 +65,18 @@
   .cal-cell.today .d{color:#fff;font-weight:700}
   .daybanner{display:flex;gap:10px;align-items:center;margin-bottom:12px;color:var(--muted);font-size:13px}
   .daybanner b{color:var(--txt)}
+  .insights{margin-bottom:18px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:760px){.insights{grid-template-columns:1fr}}
+  .icard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px 16px}
+  .icard h3{margin:0 0 10px;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .imetrics{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:8px}
+  .imetric .n{font-size:23px;font-weight:700} .imetric .l{font-size:11px;color:var(--muted)}
+  .obs{margin:6px 0 0;padding-left:18px;color:var(--muted)} .obs li{margin:5px 0}
+  .obs b{color:var(--txt)}
+  .rank{list-style:none;margin:6px 0 0;padding:0}
+  .rank li{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .rank li:last-child{border-bottom:none} .rank .v{color:var(--muted)}
+  .pill2{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:2px 8px;margin:3px 4px 0 0;font-size:12px}
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
   .chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 13px;cursor:pointer;font-size:13px;color:var(--muted);transition:.15s}
   .chip:hover{color:#fff}
@@ -143,6 +155,7 @@
     <div class="targets" id="targetsBox"></div>
     <div class="cal" id="calBox"></div>
     <div class="daybanner" id="dayBanner" style="display:none"></div>
+    <div class="insights" id="insightsBox"></div>
     <div class="chips" id="chips"></div>
     <div class="controls" style="margin-bottom:12px;gap:12px">
       <input id="search" placeholder="Search company, role, note…"/>
@@ -217,7 +230,8 @@ async function loadData(flash){
     rowsData=(j.applications||[]).map(a=>({
       company:a.company||"Unknown", position:a.position||"", location:"",
       country:normCountry(a.country), status:normStatus(a.status), note:a.note||"",
-      date:a.date?Date.parse(a.date):null, rawDate:a.date||"" }));
+      date:a.date?Date.parse(a.date):null, rawDate:a.date||"",
+      updated:a.updated?Date.parse(a.updated):null }));
     lastLoad=Date.now(); setConnected(true);
     $("setup").style.display="none"; $("main").style.display="block";
     if(flash) flashDot();
@@ -279,10 +293,14 @@ function render(){
   all.forEach(a=>{ const k=(a.rawDate||"").slice(0,10); if(k) counts[k]=(counts[k]||0)+1; });
   renderCalendar(counts);
   if(selectedDay){
-    const n=all.filter(a=>(a.rawDate||"").slice(0,10)===selectedDay).length;
+    const dayApps=all.filter(a=>(a.rawDate||"").slice(0,10)===selectedDay);
+    const names=dayApps.slice(0,12).map(a=>esc(a.company)).join(", ");
     $("dayBanner").style.display="flex";
-    $("dayBanner").innerHTML=`📅 Showing <b>${n}</b> application${n!==1?"s":""} from <b>${selectedDay}</b> <button class="rowbtn" id="clearDay">Show all</button>`;
+    $("dayBanner").innerHTML=`📅 <b>${dayApps.length}</b> application${dayApps.length!==1?"s":""} on <b>${selectedDay}</b>`+
+      (names?` — <span class="muted">${names}${dayApps.length>12?"…":""}</span>`:"")+
+      ` <button class="rowbtn" id="clearDay">Show all</button>`;
   } else $("dayBanner").style.display="none";
+  renderInsights(all);
 
   const defs=[["all","All",all.length],["Applied","Applied",c("Applied")],
     ["Interview Scheduled","Interview",c("Interview Scheduled")],["Offer Received","Offer",c("Offer Received")],
@@ -309,6 +327,63 @@ function render(){
     if(editing===key) html+=editorRow(key,a);
     return html;
   }).join("");
+}
+
+const INS_STOP=new Set("engineer engineering entry level senior junior intern internship position manager graduate grad design specified".split(" "));
+function renderInsights(all){
+  const box=$("insightsBox");
+  if(all.length<2){ box.innerHTML=""; return; }
+  const d2u=a=>(a.date&&a.updated)?Math.max(0,Math.round((a.updated-a.date)/86400000)):null;
+  const isInt=a=>a.status==="Interview Scheduled"||a.status==="Offer Received";
+  const total=all.length;
+  const interviews=all.filter(isInt).length;
+  const offers=all.filter(a=>a.status==="Offer Received").length;
+  const rejects=all.filter(a=>a.status==="Rejected");
+  const intRate=Math.round(100*interviews/total);
+  const respRate=Math.round(100*all.filter(a=>a.status!=="Applied").length/total);
+  const rejDays=rejects.map(d2u).filter(x=>x!=null);
+  const avgRej=rejDays.length?Math.round(rejDays.reduce((a,b)=>a+b,0)/rejDays.length):null;
+  const quick=rejects.filter(a=>{const x=d2u(a);return x!=null&&x<=3;});
+
+  const kw={};
+  const toks=p=>[...new Set((p||"").toLowerCase().split(/[^a-z]+/).filter(w=>w.length>=4&&!INS_STOP.has(w)))];
+  all.forEach(a=>toks(a.position).forEach(w=>{ const o=kw[w]||(kw[w]={t:0,i:0,q:0}); o.t++;
+    if(isInt(a))o.i++; const x=d2u(a); if(a.status==="Rejected"&&x!=null&&x<=3)o.q++; }));
+  const byCountry={}; all.forEach(a=>{ const o=byCountry[a.country]||(byCountry[a.country]={t:0,i:0}); o.t++; if(isInt(a))o.i++; });
+  const bestKw=Object.entries(kw).filter(([,o])=>o.t>=2&&o.i>0).map(([w,o])=>[w,Math.round(100*o.i/o.t),o.t]).sort((a,b)=>b[1]-a[1]).slice(0,4);
+  const quickKw=Object.entries(kw).filter(([,o])=>o.q>0).map(([w,o])=>[w,o.q]).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  const obs=[];
+  obs.push(`Interview rate <b>${intRate}%</b> (${interviews}/${total})${offers?`, including <b>${offers}</b> offer${offers>1?"s":""}`:""}.`);
+  if(avgRej!=null) obs.push(`Rejections take about <b>${avgRej} day${avgRej!==1?"s":""}</b> on average; <b>${quick.length}</b> came within 3 days — usually automated screening, not a human review.`);
+  if(bestKw.length) obs.push(`Best traction: roles mentioning <b>${bestKw[0][0]}</b> (${bestKw[0][1]}% interview rate over ${bestKw[0][2]} apps).`);
+  if(quickKw.length) obs.push(`<b>${quickKw[0][0]}</b> roles get rejected fastest (${quickKw[0][1]} quick rejection${quickKw[0][1]>1?"s":""}) — consider tailoring those applications more.`);
+  const ats=["linkedin","workday","indeed","icims","greenhouse","lever","oracle","taleo"];
+  const atsHit={}; quick.forEach(a=>ats.forEach(t=>{ if((a.note||"").toLowerCase().includes(t)) atsHit[t]=(atsHit[t]||0)+1; }));
+  const topAts=Object.entries(atsHit).sort((a,b)=>b[1]-a[1])[0];
+  if(topAts) obs.push(`Several quick rejections came through <b>${topAts[0]}</b> applications (${topAts[1]}) — these portals often auto-filter on keywords.`);
+  const bestCountry=Object.entries(byCountry).filter(([,o])=>o.i>0).sort((a,b)=>b[1].i-a[1].i)[0];
+  if(bestCountry) obs.push(`Most interviews so far came from <b>${bestCountry[0]}</b> (${bestCountry[1].i}).`);
+
+  box.innerHTML=`
+   <div class="icard">
+     <h3>📈 Insights</h3>
+     <div class="imetrics">
+       <div class="imetric"><div class="n" style="color:var(--interview)">${intRate}%</div><div class="l">Interview rate</div></div>
+       <div class="imetric"><div class="n">${respRate}%</div><div class="l">Response rate</div></div>
+       <div class="imetric"><div class="n">${avgRej==null?"—":avgRej}</div><div class="l">Avg days to reject</div></div>
+       <div class="imetric"><div class="n" style="color:var(--rejected)">${quick.length}</div><div class="l">Quick rejections (≤3d)</div></div>
+     </div>
+     <ul class="obs">${obs.map(o=>`<li>${o}</li>`).join("")}</ul>
+   </div>
+   <div class="icard">
+     <h3>🎯 What's getting interviews</h3>
+     ${bestKw.length?`<ul class="rank">${bestKw.map(([w,r,t])=>`<li><span>${esc(w)}</span><span class="v">${r}% · ${t} app${t>1?"s":""}</span></li>`).join("")}</ul>`
+       :`<p class="muted">Not enough interview data yet — keep applying and this will fill in.</p>`}
+     <h3 style="margin-top:14px">⚡ Quick-rejection patterns</h3>
+     ${quickKw.length?`<div>${quickKw.map(([w,q])=>`<span class="pill2">${esc(w)} · ${q}</span>`).join("")}</div>`
+       :`<p class="muted">No fast auto-rejections detected. 👍</p>`}
+   </div>`;
 }
 
 const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
