@@ -99,6 +99,20 @@
   .tr-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
   .tr-bar{width:72%;background:linear-gradient(180deg,#60a5fa,#1d4ed8);border-radius:4px 4px 0 0;min-height:3px;transition:height .5s}
   .tr-n{font-size:11px;margin-top:3px} .tr-lbl{font-size:10px;color:var(--muted);margin-top:1px;white-space:nowrap}
+  .company-link{cursor:pointer;border-bottom:1px dotted transparent}
+  .company-link:hover{border-bottom-color:var(--accent);color:#fff}
+  .fwl{list-style:none;margin:6px 0 0;padding:0}
+  .fwl li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+  .fwl li:last-child{border-bottom:none}
+  .fwl .sub{color:var(--muted);font-size:12px}
+  .fwl .wait{color:var(--warn);font-size:12px;margin-right:8px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .modal[hidden]{display:none}
+  .modal-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:620px;width:100%;max-height:80vh;overflow:auto;padding:20px 22px}
+  .modal-card h2{margin:0 0 2px;font-size:18px}
+  .modal-row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .modal-row:last-child{border-bottom:none}
+  .modal-close{float:right;cursor:pointer;color:var(--muted);background:none;border:none;font-size:18px}
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
   .chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 13px;cursor:pointer;font-size:13px;color:var(--muted);transition:.15s}
   .chip:hover{color:#fff}
@@ -183,6 +197,7 @@
       <div class="stats" id="stats"></div>
       <div class="targets" id="targetsBox"></div>
       <div class="pacewrap" id="paceBox"></div>
+      <div class="pacewrap" id="followBox"></div>
       <div class="charts" id="chartsBox"></div>
       <div class="insights" id="insightsBox"></div>
     </div>
@@ -220,6 +235,7 @@
     </div>
   </div>
 </div>
+<div class="modal" id="modal" hidden><div class="modal-card" id="modalCard"></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -328,6 +344,7 @@ function render(){
       <div class="bar"><span class="${have>=goal?'done':''}" style="width:${pct}%"></span></div></div>`; }).join("")+`</div>`;
 
   renderPace(all);
+  renderFollowups(all);
   renderCharts(all);
 
   // activity calendar (counts per day, all-time browsable by month)
@@ -359,7 +376,7 @@ function render(){
     const fu=isFollowUp(a)?`<span class="followup">follow up · ${daysSince(a.date)}d</span>`:"";
     const ed=a.edited?`<span class="edited" title="manually edited">✎</span>`:"";
     let html=`<tr class="row">
-      <td><div class="company">${esc(a.company)}${a.archived?' <span class="muted">(archived)</span>':''}</div>
+      <td><div class="company company-link" data-company="${esc(a.company)}">${esc(a.company)}${a.archived?' <span class="muted">(archived)</span>':''}</div>
           <div class="position">${esc(a.position||"")}</div></td>
       <td><span class="country-pill">${FLAGS[a.country]||""} ${esc(a.country)}</span></td>
       <td>${fmtDate(a)}</td>
@@ -492,6 +509,35 @@ function switchTab(name){
   document.querySelectorAll(".pane").forEach(p=>{ p.hidden=p.dataset.pane!==name; });
 }
 
+function emailFor(a){
+  const d=a.rawDate?` on ${a.rawDate.slice(0,10)}`:"";
+  return `Subject: Following up — ${a.position||"my application"} at ${a.company}\n\n`+
+    `Hi,\n\nI recently applied for the ${a.position||"role"} position at ${a.company}${d}, and I wanted to reaffirm my strong interest. I'd welcome the chance to discuss how my background fits the role. Thank you for your time and consideration.\n\nBest regards,\nYoussef Kartah`;
+}
+function renderFollowups(all){
+  const thr=+(($("followDays")||{}).value||7);
+  const list=all.filter(a=>a.status==="Applied"&&a.date&&daysSince(a.date)>=thr).sort((a,b)=>a.date-b.date).slice(0,8);
+  const items=list.map(a=>`<li><div><div><b>${esc(a.company)}</b></div><div class="sub">${esc(a.position||"")}</div></div>
+    <div style="display:flex;align-items:center"><span class="wait">${daysSince(a.date)}d waiting</span>
+    <button class="rowbtn" data-mail="${encodeURIComponent(emailFor(a))}">Copy email</button></div></li>`).join("");
+  $("followBox").innerHTML=`<div class="icard"><h3>📮 Follow-up worklist · silent ${thr}+ days</h3>`+
+    (list.length?`<ul class="fwl">${items}</ul>`:`<p class="muted">Nothing to chase right now. 👍</p>`)+`</div>`;
+}
+function openCompany(name){
+  const isInt=a=>a.status==="Interview Scheduled"||a.status==="Offer Received";
+  const list=rowsData.map(eff).filter(a=>!a.archived&&a.company===name).sort((a,b)=>(b.date||0)-(a.date||0));
+  const ints=list.filter(isInt).length;
+  $("modalCard").innerHTML=`<button class="modal-close" id="modalClose">✕</button>
+    <h2>${esc(name)}</h2>
+    <div class="muted" style="margin-bottom:12px">${list.length} application${list.length!==1?"s":""} · ${ints} interview${ints!==1?"s":""}</div>`+
+    list.map(a=>{ const m=STATUS_META[a.status]||{cls:"Other"};
+      return `<div class="modal-row"><div><div><b>${esc(a.position||"—")}</b></div>
+        <div class="muted" style="font-size:12px">${esc(a.note||"")}</div></div>
+        <div style="text-align:right;white-space:nowrap"><span class="badge b-${m.cls}">${esc(a.status)}</span>
+        <div class="muted" style="font-size:12px;margin-top:5px">${fmtDate(a)} · ${esc(a.country)}</div></div></div>`; }).join("");
+  $("modal").hidden=false;
+}
+
 const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
 function renderCalendar(counts){
   const pad=n=>String(n).padStart(2,"0");
@@ -568,6 +614,7 @@ $("chips").addEventListener("click",e=>{ const c=e.target.closest(".chip"); if(!
 $("headRow").addEventListener("click",e=>{ const th=e.target.closest("th[data-k]"); if(!th) return;
   const k=th.dataset.k; if(k===sortKey) sortDir*=-1; else { sortKey=k; sortDir=1; } render(); });
 $("tbody").addEventListener("click",e=>{
+  const comp=e.target.closest("[data-company]"); if(comp){ openCompany(comp.dataset.company); return; }
   const edit=e.target.closest("[data-edit]"); if(edit){ editing=editing===edit.dataset.edit?null:edit.dataset.edit; render(); return; }
   if(e.target.dataset.cancel){ editing=null; render(); return; }
   const save=e.target.closest("[data-save]");
@@ -590,6 +637,12 @@ $("calBox").addEventListener("click",e=>{
     selectedDay=selectedDay===ds?null:ds; render(); if(selectedDay) switchTab("apps"); }
 });
 $("tabs").addEventListener("click",e=>{ const t=e.target.closest(".tab"); if(t) switchTab(t.dataset.tab); });
+$("followBox").addEventListener("click",e=>{ const b=e.target.closest("[data-mail]"); if(!b) return;
+  const txt=decodeURIComponent(b.dataset.mail);
+  if(navigator.clipboard) navigator.clipboard.writeText(txt).then(()=>toast("Follow-up email copied")).catch(()=>toast("Copy failed"));
+  else toast("Copy not supported"); });
+$("modal").addEventListener("click",e=>{ if(e.target.id==="modal"||e.target.id==="modalClose") $("modal").hidden=true; });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") $("modal").hidden=true; });
 $("dayBanner").addEventListener("click",e=>{ if(e.target.id==="clearDay"){ selectedDay=null; render(); } });
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) loadData(false); });
 
