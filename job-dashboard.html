@@ -77,6 +77,28 @@
   .rank li{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);font-size:13px}
   .rank li:last-child{border-bottom:none} .rank .v{color:var(--muted)}
   .pill2{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:2px 8px;margin:3px 4px 0 0;font-size:12px}
+  .tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--line)}
+  .tab{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);padding:9px 15px;cursor:pointer;font-size:14px}
+  .tab:hover{color:var(--txt)}
+  .tab.active{color:var(--txt);border-bottom-color:var(--accent)}
+  .pane[hidden]{display:none}
+  .pane{animation:fade .28s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  .pacewrap{margin-bottom:18px}
+  .pacebar{height:10px;background:var(--panel2);border-radius:6px;overflow:hidden;margin:4px 0}
+  .pacefill{height:100%;background:linear-gradient(90deg,#3b82f6,#22c55e);transition:width .5s}
+  .charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+  @media(max-width:760px){.charts{grid-template-columns:1fr}}
+  .fn-row{display:flex;align-items:center;gap:10px;margin:9px 0}
+  .fn-lbl{width:88px;font-size:13px;color:var(--muted)}
+  .fn-bar{flex:1;background:var(--panel2);border-radius:6px;position:relative;height:26px;overflow:hidden}
+  .fn-bar>span{display:block;height:100%;background:linear-gradient(90deg,#3b82f6,#a855f7);border-radius:6px;transition:width .5s}
+  .fn-bar>i{position:absolute;right:8px;top:5px;font-style:normal;font-size:12px;font-weight:700;color:#fff}
+  .fn-conv{width:44px;text-align:right;font-size:12px;color:var(--offer)}
+  .trend{display:flex;align-items:flex-end;gap:6px;height:150px}
+  .tr-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .tr-bar{width:72%;background:linear-gradient(180deg,#60a5fa,#1d4ed8);border-radius:4px 4px 0 0;min-height:3px;transition:height .5s}
+  .tr-n{font-size:11px;margin-top:3px} .tr-lbl{font-size:10px;color:var(--muted);margin-top:1px;white-space:nowrap}
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
   .chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 13px;cursor:pointer;font-size:13px;color:var(--muted);transition:.15s}
   .chip:hover{color:#fff}
@@ -151,34 +173,51 @@
   </div>
 
   <div id="main" style="display:none">
-    <div class="stats" id="stats"></div>
-    <div class="targets" id="targetsBox"></div>
-    <div class="cal" id="calBox"></div>
-    <div class="daybanner" id="dayBanner" style="display:none"></div>
-    <div class="insights" id="insightsBox"></div>
-    <div class="chips" id="chips"></div>
-    <div class="controls" style="margin-bottom:12px;gap:12px">
-      <input id="search" placeholder="Search company, role, note…"/>
-      <label class="muted" style="display:flex;align-items:center;gap:6px;font-size:13px">
-        <input type="checkbox" id="showArchived" style="width:auto"/> show archived
-      </label>
-      <label class="muted" style="display:flex;align-items:center;gap:6px;font-size:13px">
-        follow-up after
-        <select id="followDays"><option>5</option><option selected>7</option><option>10</option><option>14</option></select>
-        days
-      </label>
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="calendar">Calendar</button>
+      <button class="tab" data-tab="apps">Applications</button>
     </div>
-    <table>
-      <thead><tr id="headRow">
-        <th data-k="company">Company / Role <span class="arrow">↕</span></th>
-        <th data-k="country">Country <span class="arrow">↕</span></th>
-        <th data-k="date">Date <span class="arrow">↕</span></th>
-        <th data-k="status">Status <span class="arrow">↕</span></th>
-        <th data-k="note">Note <span class="arrow">↕</span></th>
-        <th></th>
-      </tr></thead>
-      <tbody id="tbody"></tbody>
-    </table>
+
+    <div class="pane" data-pane="overview">
+      <div class="stats" id="stats"></div>
+      <div class="targets" id="targetsBox"></div>
+      <div class="pacewrap" id="paceBox"></div>
+      <div class="charts" id="chartsBox"></div>
+      <div class="insights" id="insightsBox"></div>
+    </div>
+
+    <div class="pane" data-pane="calendar" hidden>
+      <div class="cal" id="calBox"></div>
+      <p class="muted" style="margin-top:6px">Tip: click any day to open those applications in the Applications tab.</p>
+    </div>
+
+    <div class="pane" data-pane="apps" hidden>
+      <div class="daybanner" id="dayBanner" style="display:none"></div>
+      <div class="chips" id="chips"></div>
+      <div class="controls" style="margin-bottom:12px;gap:12px">
+        <input id="search" placeholder="Search company, role, note…"/>
+        <label class="muted" style="display:flex;align-items:center;gap:6px;font-size:13px">
+          <input type="checkbox" id="showArchived" style="width:auto"/> show archived
+        </label>
+        <label class="muted" style="display:flex;align-items:center;gap:6px;font-size:13px">
+          follow-up after
+          <select id="followDays"><option>5</option><option selected>7</option><option>10</option><option>14</option></select>
+          days
+        </label>
+      </div>
+      <table>
+        <thead><tr id="headRow">
+          <th data-k="company">Company / Role <span class="arrow">↕</span></th>
+          <th data-k="country">Country <span class="arrow">↕</span></th>
+          <th data-k="date">Date <span class="arrow">↕</span></th>
+          <th data-k="status">Status <span class="arrow">↕</span></th>
+          <th data-k="note">Note <span class="arrow">↕</span></th>
+          <th></th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -288,6 +327,9 @@ function render(){
     return `<div class="tcell"><div class="tlabel"><span>${FLAGS[k]||""} ${k}</span><span class="muted">${have}/${goal}</span></div>
       <div class="bar"><span class="${have>=goal?'done':''}" style="width:${pct}%"></span></div></div>`; }).join("")+`</div>`;
 
+  renderPace(all);
+  renderCharts(all);
+
   // activity calendar (counts per day, all-time browsable by month)
   const counts={};
   all.forEach(a=>{ const k=(a.rawDate||"").slice(0,10); if(k) counts[k]=(counts[k]||0)+1; });
@@ -386,6 +428,70 @@ function renderInsights(all){
    </div>`;
 }
 
+function renderPace(all){
+  const todays=all.filter(isToday);
+  const dailyGoal=Object.values(TARGETS).reduce((a,b)=>a+b,0);
+  const got=todays.length, remaining=Math.max(0,dailyGoal-got);
+  const behind=Object.keys(TARGETS).map(k=>({k,left:Math.max(0,TARGETS[k]-todays.filter(a=>a.country===k).length)}))
+    .filter(r=>r.left>0).sort((a,b)=>b.left-a.left);
+  const now=Date.now(), wk=7*86400000;
+  const thisWeek=all.filter(a=>a.date&&now-a.date<wk).length;
+  const lastWeek=all.filter(a=>a.date&&now-a.date>=wk&&now-a.date<2*wk).length;
+  const wow=lastWeek?Math.round(100*(thisWeek-lastWeek)/lastWeek):null;
+  const isInt=a=>a.status==="Interview Scheduled"||a.status==="Offer Received";
+  const d2u=a=>(a.date&&a.updated)?Math.max(0,Math.round((a.updated-a.date)/86400000)):null;
+  const toks=p=>[...new Set((p||"").toLowerCase().split(/[^a-z]+/).filter(w=>w.length>=4&&!INS_STOP.has(w)))];
+  const kw={}; all.forEach(a=>toks(a.position).forEach(w=>{const o=kw[w]||(kw[w]={t:0,i:0,q:0});o.t++;
+    if(isInt(a))o.i++; const x=d2u(a); if(a.status==="Rejected"&&x!=null&&x<=3)o.q++;}));
+  const best=Object.entries(kw).filter(([,o])=>o.t>=2&&o.i>0).sort((a,b)=>(b[1].i/b[1].t)-(a[1].i/a[1].t))[0];
+  const worst=Object.entries(kw).filter(([,o])=>o.q>0).sort((a,b)=>b[1].q-a[1].q)[0];
+  const silent=all.filter(a=>a.status==="Applied"&&a.date&&daysSince(a.date)>=7).length;
+  const recs=[];
+  recs.push(remaining>0?`Apply to <b>${remaining}</b> more today to hit your goal (${got}/${dailyGoal}).`
+    :`Daily goal reached — <b>${got}/${dailyGoal}</b> today. 🎉`);
+  if(behind.length) recs.push(`Most needed today: ${behind.slice(0,3).map(r=>`<b>${r.k}</b> (${r.left})`).join(", ")}.`);
+  if(best) recs.push(`Lean into <b>${esc(best[0])}</b> roles — your strongest interview rate.`);
+  if(worst) recs.push(`Tailor or skip <b>${esc(worst[0])}</b> roles — they auto-reject fastest.`);
+  if(silent) recs.push(`<b>${silent}</b> application${silent>1?"s have":" has"} been silent 7+ days — time to follow up.`);
+  const pct=Math.min(100,Math.round(100*got/dailyGoal));
+  $("paceBox").innerHTML=`<div class="icard">
+    <h3>⚡ Today's pace &amp; recommendations</h3>
+    <div class="pacebar"><div class="pacefill" style="width:${pct}%"></div></div>
+    <div class="muted" style="margin:6px 0 10px">${got}/${dailyGoal} today · ${thisWeek} this week${wow!=null?` (${wow>=0?"+":""}${wow}% vs last week)`:""}</div>
+    <ul class="obs">${recs.map(r=>`<li>${r}</li>`).join("")}</ul></div>`;
+}
+
+function renderCharts(all){
+  const applied=all.length;
+  const interviewed=all.filter(a=>a.status==="Interview Scheduled"||a.status==="Offer Received").length;
+  const offered=all.filter(a=>a.status==="Offer Received").length;
+  const rejected=all.filter(a=>a.status==="Rejected").length;
+  const pending=all.filter(a=>a.status==="Applied").length;
+  const stages=[["Applied",applied],["Interviewed",interviewed],["Offers",offered]];
+  const maxV=applied||1;
+  const funnel=stages.map((s,i)=>{ const w=Math.round(100*s[1]/maxV); const prev=i?stages[i-1][1]:null;
+    const conv=prev!=null?(prev?Math.round(100*s[1]/prev):0):null;
+    return `<div class="fn-row"><div class="fn-lbl">${s[0]}</div><div class="fn-bar"><span style="width:${w}%"></span><i>${s[1]}</i></div><div class="fn-conv">${conv!=null?conv+"%":""}</div></div>`;
+  }).join("");
+  const weeks={};
+  all.forEach(a=>{ if(!a.date) return; const d=new Date(a.date); const off=(d.getDay()+6)%7;
+    const k=new Date(d.getFullYear(),d.getMonth(),d.getDate()-off).getTime(); weeks[k]=(weeks[k]||0)+1; });
+  const wkArr=Object.entries(weeks).map(([k,n])=>({k:+k,n})).sort((a,b)=>a.k-b.k).slice(-10);
+  const maxN=Math.max(1,...wkArr.map(w=>w.n));
+  const trend=wkArr.length?wkArr.map(w=>{ const h=Math.round(100*w.n/maxN); const d=new Date(w.k);
+    return `<div class="tr-col"><div class="tr-bar" style="height:${h}%" title="${w.n}"></div><div class="tr-n">${w.n}</div><div class="tr-lbl">${MONTHS[d.getMonth()].slice(0,3)} ${d.getDate()}</div></div>`; }).join("")
+    :`<p class="muted">No dated applications yet.</p>`;
+  $("chartsBox").innerHTML=`
+   <div class="icard"><h3>Pipeline funnel</h3>${funnel}
+     <div class="muted" style="margin-top:10px">${pending} awaiting reply · ${rejected} rejected</div></div>
+   <div class="icard"><h3>Applications per week</h3><div class="trend">${trend}</div></div>`;
+}
+
+function switchTab(name){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.tab===name));
+  document.querySelectorAll(".pane").forEach(p=>{ p.hidden=p.dataset.pane!==name; });
+}
+
 const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
 function renderCalendar(counts){
   const pad=n=>String(n).padStart(2,"0");
@@ -481,8 +587,9 @@ $("calBox").addEventListener("click",e=>{
     render(); return; }
   const cell=e.target.closest("[data-day]");
   if(cell && !cell.classList.contains("empty")){ const ds=cell.dataset.day;
-    selectedDay=selectedDay===ds?null:ds; render(); }
+    selectedDay=selectedDay===ds?null:ds; render(); if(selectedDay) switchTab("apps"); }
 });
+$("tabs").addEventListener("click",e=>{ const t=e.target.closest(".tab"); if(t) switchTab(t.dataset.tab); });
 $("dayBanner").addEventListener("click",e=>{ if(e.target.id==="clearDay"){ selectedDay=null; render(); } });
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) loadData(false); });
 
