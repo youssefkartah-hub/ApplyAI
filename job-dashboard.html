@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Job Search Dashboard</title>
+<title>Sarah — your personal OS</title>
 <style>
   :root{
     --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --line:#262d3a;
@@ -215,8 +215,8 @@
 <div class="wrap">
   <header>
     <div>
-      <h1>⚡ Job Search Dashboard</h1>
-      <div class="sub">Live from your Notion tracker · <span id="totalSub">0 applications</span></div>
+      <h1>✨ Sarah</h1>
+      <div class="sub">Your personal OS · <span id="totalSub">0 applications</span> tracked live from Notion</div>
     </div>
     <div class="controls">
       <span class="live"><span id="livedot"></span><span id="connText">Live</span></span>
@@ -500,7 +500,7 @@ async function loadData(flash){
       date:a.date?Date.parse(a.date):null, rawDate:a.date||"",
       updated:a.updated?Date.parse(a.updated):null }));
     lastLoad=Date.now(); setConnected(true);
-    $("setup").style.display="none"; $("main").style.display="block";
+    $("setup").style.display="none"; $("main").style.display="grid";
     if(flash) flashDot();
     render();
   }catch(e){
@@ -1348,13 +1348,13 @@ $("focusStart").addEventListener("click",()=>{
   $("focusStart").disabled=true; $("focusStop").disabled=false;
   clearInterval(fTimer);
   fTimer=setInterval(()=>{ fLeft--; $("timerDisp").textContent=fmtT(Math.max(0,fLeft));
-    document.title=fLeft>0?`${fmtT(fLeft)} · focus`:"Job Search Dashboard";
+    document.title=fLeft>0?`${fmtT(fLeft)} · focus`:"Sarah";
     if(fLeft<=0){ clearInterval(fTimer); $("focusStart").disabled=false; $("focusStop").disabled=true; focusDone(fTotal); } },1000);
 });
 $("focusStop").addEventListener("click",()=>{
   clearInterval(fTimer); const mins=Math.round((fTotal*60-fLeft)/60);
   $("focusStart").disabled=false; $("focusStop").disabled=true;
-  $("timerDisp").textContent=fmtT(+$("focusLen").value*60); document.title="Job Search Dashboard";
+  $("timerDisp").textContent=fmtT(+$("focusLen").value*60); document.title="Sarah";
   if(mins>=5) focusDone(mins); else toast("Session under 5 min — not logged");
 });
 $("themeBtn").addEventListener("click",()=>{
