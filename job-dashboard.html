@@ -353,12 +353,11 @@
     </div>
 
     <div class="pane" data-pane="goals" hidden>
-      <div class="icard"><h3>🎯 Long-term goals</h3>
-        <div class="frm"><input id="gTitle" class="grow" placeholder="Goal (e.g. Land aerospace full-time role)"/>
-          <input id="gTarget" type="number" min="1" value="10" style="width:80px" title="Target count"/>
-          <input id="gDue" type="date"/><button class="primary" id="gAdd">Add goal</button></div>
-        <div id="gList"></div>
-        <div class="muted" style="font-size:12px;margin-top:8px">Hit + each time you complete a step toward a goal — progress bars fill toward the target.</div></div>
+      <div class="icard" style="margin-bottom:14px"><h3>🎯 New goal — plain English</h3>
+        <div class="frm"><input id="gTitle" class="grow" placeholder='e.g. "Get a Boeing internship", "Improve GPA to 3.6", "3 interviews per week"'/>
+          <button class="primary" id="gAdd">Generate plan</button></div>
+        <div class="muted" style="font-size:12px">The engine decomposes it into phases → micro-actions → daily tasks, feeds the next steps into Today, and adapts as you complete or skip them.</div></div>
+      <div id="gList"></div>
     </div>
 
     <div class="pane" data-pane="fin" hidden>
@@ -845,7 +844,7 @@ const AREAS=["Career","University","Projects","Productivity","Health","Finance",
 const AREA_ICON={Career:"💼",University:"🎓",Projects:"🛠",Productivity:"⚡",Health:"💪",Finance:"💰",Goals:"🎯",Knowledge:"📚"};
 let OS={tasks:[],habits:[],sessions:[],inbox:[],goals:[],courses:[],uniItems:[],
   contacts:[],interviews:[],resumes:[],projects:[],finance:[],notes:[],settings:{}};
-const OS_LISTS=["tasks","habits","sessions","inbox","goals","courses","uniItems",
+const OS_LISTS=["tasks","habits","sessions","inbox","goals","goalTrees","courses","uniItems",
   "contacts","interviews","resumes","projects","finance","notes"];
 let osSaveT=null;
 
@@ -925,9 +924,16 @@ function renderToday(){
   if(new Date().getDay()===0) brief.push(`🗓 It's Sunday — <b>weekly review</b>: ${weeklyReview()}`);
   $("briefBox").innerHTML=`<h3>☀️ Daily briefing</h3><div class="brief">${brief.map(b=>`<p>${b}</p>`).join("")}</div>`;
 
-  const top=tasks.slice(0,6);
-  $("topActions").innerHTML=`<h3>🥇 Do these next</h3>`+(top.length?top.map(t=>taskRow(t,true)).join("")
-    :`<p class="muted">No open tasks — capture something in the Inbox (<kbd>C</kbd>).</p>`);
+  const ga=goalActions().map(x=>({kind:"goal",x,score:x.score}));
+  const tt=tasks.map(t=>({kind:"task",t,score:t.score}));
+  const top=[...ga,...tt].sort((a,b)=>b.score-a.score).slice(0,7);
+  $("topActions").innerHTML=`<h3>🥇 Do these next</h3>`+(top.length?top.map(it=>{
+    if(it.kind==="task") return taskRow(it.t,true);
+    const {g,ph,t}=it.x;
+    return `<div class="trow"><input type="checkbox" data-gt="${g.id}|${ph.id}|${t.id}"/>
+      <div class="tt">${esc(t.title)}<div class="sub">🎯 ${esc(g.title)}${t.daily?" · 🔁 daily":""}${it.x.stuck?' · <span style="color:var(--warn)">stuck — break it down?</span>':""} · ${t.dur}m</div></div>
+      <span class="pscore ${it.score>=70?"hot":""}">${it.score}</span></div>`;
+  }).join(""):`<p class="muted">No open tasks — capture something in the Inbox (<kbd>C</kbd>) or create a goal.</p>`);
 
   const side=[];
   if(interviews.length) side.push(`<div class="areahead">Interviews to prep</div>`+interviews.slice(0,4).map(a=>
@@ -937,8 +943,9 @@ function renderToday(){
   const uniDue=OS.uniItems.filter(u=>!u.done&&u.due).sort((a,b)=>a.due<b.due?-1:1).slice(0,3);
   if(uniDue.length) side.push(`<div class="areahead">University deadlines</div>`+uniDue.map(u=>
     `<div class="trow"><div class="tt">${esc(u.title)}<div class="sub">${esc(u.course)} · due ${u.due}</div></div></div>`).join(""));
-  const topGoal=OS.goals.filter(g=>(g.progress||0)<(g.target||1))[0];
-  if(topGoal) side.push(`<div class="areahead">Active goal</div><div class="trow"><div class="tt">${esc(topGoal.title)}<div class="sub">${topGoal.progress||0}/${topGoal.target}</div></div></div>`);
+  const actG=(OS.goalTrees||[]).filter(g=>g.status==="active"&&goalProgress(g)<100);
+  if(actG.length) side.push(`<div class="areahead">Active goals</div>`+actG.slice(0,3).map(g=>
+    `<div class="trow"><div class="tt">${esc(g.title)}<div class="sub">${goalProgress(g)}% complete</div></div></div>`).join(""));
   side.push(`<div class="areahead">Habits today</div>`+(OS.habits.length?OS.habits.map(h=>{
     const on=(h.days||{})[todayKey()];
     return `<div class="trow"><input type="checkbox" data-habit-today="${h.id}" ${on?"checked":""}/><div class="tt ${on?"done":""}">${esc(h.name)}<div class="sub">🔥 ${habitStreak(h)}-day streak</div></div></div>`;
@@ -1103,15 +1110,87 @@ function renderProjects(){
     :`<p class="muted">Add your engineering projects — each gets an auto-generated resume bullet.</p>`;
 }
 
-/* ---- Goals ---- */
+/* ---- Goal Intelligence System ---- */
+function gDoneToday(t){ return t.daily ? !!(t.days||{})[todayKey()] : !!t.done; }
+function goalProgress(g){
+  // Meaningful completion: phases weighted equally; daily tasks measured by
+  // 14-day adherence rather than a one-time checkbox.
+  const per=g.phases.map(ph=>{
+    const oneOff=ph.tasks.filter(t=>!t.daily), daily=ph.tasks.filter(t=>t.daily);
+    let s=0,w=0;
+    if(oneOff.length){ s+=oneOff.filter(t=>t.done).length/oneOff.length; w++; }
+    if(daily.length){ const adh=daily.reduce((a,t)=>a+Math.min(1,Object.keys(t.days||{}).length/14),0)/daily.length; s+=adh; w++; }
+    return w?s/w:0;
+  });
+  return Math.round(100*per.reduce((a,b)=>a+b,0)/(per.length||1));
+}
+function goalFrontier(g){
+  // Next actions = all pending daily tasks + first 2 unfinished one-offs of the
+  // earliest incomplete phase.
+  const out=[];
+  g.phases.forEach((ph,pi)=>ph.tasks.forEach(t=>{ if(t.daily&&!gDoneToday(t)) out.push({g,ph,t,pi}); }));
+  for(let pi=0;pi<g.phases.length;pi++){
+    const open=g.phases[pi].tasks.filter(t=>!t.daily&&!t.done);
+    if(open.length){ open.slice(0,2).forEach(t=>out.push({g,ph:g.phases[pi],t,pi})); break; }
+  }
+  return out;
+}
+function goalActionScore(x){
+  let s=30+(+x.t.imp||2)*14;
+  if(x.t.daily) s+=20;               // keep streak-critical dailies on top
+  s-=x.pi*4;                          // earlier phases matter more
+  if((+x.t.dur||30)<=20) s+=5;
+  const ignored=x.t.suggested?Math.floor((Date.now()-x.t.suggested)/86400000):0;
+  if(!x.t.daily&&ignored>=3) s-=12;   // adapt: stop nagging about stuck tasks
+  x.stuck=!x.t.daily&&ignored>=3;
+  return Math.min(100,Math.max(5,Math.round(s)));
+}
+function goalActions(){
+  const out=[];
+  (OS.goalTrees||[]).filter(g=>g.status==="active").forEach(g=>goalFrontier(g).forEach(x=>{
+    if(!x.t.suggested){ x.t.suggested=Date.now(); }
+    out.push({...x,score:goalActionScore(x)});
+  }));
+  return out.sort((a,b)=>b.score-a.score);
+}
+async function createGoal(){
+  const v=$("gTitle").value.trim(); if(!v) return;
+  $("gAdd").disabled=true; $("gAdd").textContent="Planning…";
+  let plan;
+  try{ const r=await fetch("/api/goal-plan",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({goal:v})}); plan=await r.json(); }
+  catch(e){ plan=null; }
+  $("gAdd").disabled=false; $("gAdd").textContent="Generate plan";
+  if(!plan||!plan.phases){ toast("Couldn't build a plan — is the app server running?"); return; }
+  OS.goalTrees.push({id:uid(),title:v,created:Date.now(),status:"active",open:true,source:plan.source,
+    phases:plan.phases.map(p=>({id:uid(),name:p.name,tasks:(p.tasks||[]).map(t=>({
+      id:uid(),title:t.title,daily:!!t.daily,dur:t.minutes||30,imp:t.importance||2,done:false,days:{}}))}))});
+  $("gTitle").value=""; osSave(); renderOS();
+  toast(plan.source==="ai"?"Goal decomposed by AI 🎯":"Goal plan generated 🎯");
+}
 function renderGoals(){
-  $("gList").innerHTML=OS.goals.length?OS.goals.map(g=>{
-    const pct=Math.min(100,Math.round(100*(g.progress||0)/(g.target||1)));
-    return `<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;gap:8px">
-      <b>${esc(g.title)}</b><span class="muted">${g.progress||0}/${g.target}${g.due?` · by ${g.due}`:""}
-      <button class="rowbtn" data-g-inc="${g.id}">+1</button> <span class="x" data-g-del="${g.id}" style="cursor:pointer">✕</span></span></div>
-      <div class="gbar"><span style="width:${pct}%"></span></div>${pct>=100?`<div style="color:var(--offer);font-size:12px;margin-top:3px">🏆 Goal achieved!</div>`:""}</div>`;
-  }).join(""):`<p class="muted">Define a long-term goal — every +1 is a step toward it.</p>`;
+  const gs=OS.goalTrees||[];
+  $("gList").innerHTML=gs.length?gs.map(g=>{
+    const pct=goalProgress(g), paused=g.status==="paused", done=pct>=100;
+    const body=!g.open?"":g.phases.map((ph,pi)=>{
+      const phDone=ph.tasks.every(t=>t.daily?Object.keys(t.days||{}).length>=14:t.done);
+      return `<div class="areahead">${phDone?"✅":`Phase ${pi+1}`} · ${esc(ph.name)}</div>`+
+        ph.tasks.map(t=>`<div class="trow ${gDoneToday(t)?"done":""}">
+          <input type="checkbox" data-gt="${g.id}|${ph.id}|${t.id}" ${gDoneToday(t)?"checked":""}/>
+          <div class="tt">${esc(t.title)}<div class="sub">${t.daily?"🔁 daily":""} ${t.dur}m · imp ${t.imp}</div></div></div>`).join("");
+    }).join("");
+    return `<div class="icard" style="margin-bottom:14px;${paused?"opacity:.55":""}">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <b style="cursor:pointer" data-g-open="${g.id}">${g.open?"▾":"▸"} ${esc(g.title)}</b>
+        <span>
+          <span class="pill2">${g.source==="ai"?"🤖 AI plan":"📋 strategy plan"}</span>
+          <button class="rowbtn" data-g-pause="${g.id}">${paused?"▶ Resume":"⏸ Pause"}</button>
+          <span class="x" data-g-del2="${g.id}" style="cursor:pointer;color:var(--muted)">✕</span>
+        </span></div>
+      <div class="gbar"><span style="width:${pct}%"></span></div>
+      <div class="muted" style="font-size:12px;margin:4px 0 6px">${pct}% ${done?"· 🏆 achieved!":paused?"· paused":""}</div>
+      ${body}</div>`;
+  }).join(""):`<p class="muted">No goals yet — type one above and hit Generate plan.</p>`;
 }
 
 /* ---- Finance ---- */
@@ -1241,9 +1320,8 @@ bindAdd("cAdd",()=>{ const n=$("cName").value.trim(); if(!n) return;
 bindAdd("pAdd",()=>{ const n=$("pName").value.trim(); if(!n) return;
   OS.projects.push({id:uid(),name:n,skills:$("pSkills").value,link:$("pLink").value.trim(),outcome:$("pOutcome").value.trim()});
   ["pName","pSkills","pLink","pOutcome"].forEach(i=>$(i).value=""); });
-bindAdd("gAdd",()=>{ const t=$("gTitle").value.trim(); if(!t) return;
-  OS.goals.push({id:uid(),title:t,target:+$("gTarget").value||10,progress:0,due:$("gDue").value||null});
-  $("gTitle").value=""; });
+$("gAdd").addEventListener("click",createGoal);
+$("gTitle").addEventListener("keydown",e=>{ if(e.key==="Enter") createGoal(); });
 bindAdd("fAdd",()=>{ const a=parseFloat($("fAmt").value); if(!a) return;
   OS.finance.push({id:uid(),date:todayKey(),cat:$("fCat").value,amount:a,note:$("fNote").value.trim()});
   $("fAmt").value=$("fNote").value=""; });
@@ -1257,15 +1335,24 @@ document.addEventListener("click",e=>{
     OS[list]=OS[list].filter(x=>x.id!==id); osSave(); renderOS(); return true; } return false; };
   if(del("[data-iv-del]","interviews")||del("[data-ct-del]","contacts")||del("[data-rv-del]","resumes")||
      del("[data-uni-del]","uniItems")||del("[data-c-del]","courses")||del("[data-p-del]","projects")||
-     del("[data-g-del]","goals")||del("[data-f-del]","finance")||del("[data-k-del]","notes")) return;
+     del("[data-g-del2]","goalTrees")||del("[data-f-del]","finance")||del("[data-k-del]","notes")) return;
+  const go=e.target.closest("[data-g-open]"); if(go){ const g=OS.goalTrees.find(x=>x.id===go.dataset.gOpen);
+    if(g){ g.open=!g.open; osSave(); renderOS(); } return; }
+  const gp=e.target.closest("[data-g-pause]"); if(gp){ const g=OS.goalTrees.find(x=>x.id===gp.dataset.gPause);
+    if(g){ g.status=g.status==="paused"?"active":"paused"; osSave(); renderOS(); } return; }
+  const gt=e.target.closest("[data-gt]"); if(gt){ const [gid,pid,tid]=gt.dataset.gt.split("|");
+    const g=OS.goalTrees.find(x=>x.id===gid); const ph=g&&g.phases.find(p=>p.id===pid);
+    const t=ph&&ph.tasks.find(x=>x.id===tid);
+    if(t){ if(t.daily){ t.days=t.days||{}; if(gt.checked) t.days[todayKey()]=true; else delete t.days[todayKey()]; }
+      else { t.done=gt.checked; t.doneAt=t.done?Date.now():null; }
+      if(gt.checked){ const pct=goalProgress(g); toast(pct>=100?"🏆 Goal achieved!":`🎯 ${esc(g.title)}: ${pct}%`); }
+      osSave(); renderOS(); } return; }
   const chk=e.target.closest("[data-iv-chk]"); if(chk){ const iv=OS.interviews.find(x=>x.id===chk.dataset.ivChk);
     if(iv){ iv.checks=iv.checks||{}; if(chk.checked) iv.checks[chk.dataset.c]=true; else delete iv.checks[chk.dataset.c]; osSave(); renderOS(); } return; }
   const rv=e.target.closest("[data-rv]"); if(rv){ const r=OS.resumes.find(x=>x.id===rv.dataset.rv);
     if(r){ r[rv.dataset.f]=(r[rv.dataset.f]||0)+1; osSave(); renderOS(); } return; }
   const ud=e.target.closest("[data-uni-done]"); if(ud){ const u=OS.uniItems.find(x=>x.id===ud.dataset.uniDone);
     if(u){ u.done=true; osSave(); renderOS(); toast("Done ✅"); } return; }
-  const gi=e.target.closest("[data-g-inc]"); if(gi){ const g=OS.goals.find(x=>x.id===gi.dataset.gInc);
-    if(g){ g.progress=(g.progress||0)+1; if(g.progress>=g.target) toast("🏆 Goal achieved!"); osSave(); renderOS(); } return; }
   const pc=e.target.closest("[data-p-copy]"); if(pc){ const p=OS.projects.find(x=>x.id===pc.dataset.pCopy);
     if(p&&navigator.clipboard){ navigator.clipboard.writeText(bullet(p)); toast("Resume bullet copied"); } return; }
 });

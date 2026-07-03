@@ -161,6 +161,113 @@ def fetch_applications():
     return {"applications": apps}
 
 
+# --------------------------------------------------------------------------
+# Goal Intelligence: decompose a natural-language goal into phases + tasks.
+# Uses Claude when ANTHROPIC_API_KEY is set; falls back to strategy templates.
+# --------------------------------------------------------------------------
+GOAL_SCHEMA = {
+    "type": "object", "additionalProperties": False,
+    "properties": {"phases": {"type": "array", "items": {
+        "type": "object", "additionalProperties": False,
+        "properties": {
+            "name": {"type": "string"},
+            "tasks": {"type": "array", "items": {
+                "type": "object", "additionalProperties": False,
+                "properties": {"title": {"type": "string"}, "daily": {"type": "boolean"},
+                               "minutes": {"type": "integer"}, "importance": {"type": "integer"}},
+                "required": ["title", "daily", "minutes", "importance"]}}},
+        "required": ["name", "tasks"]}}},
+    "required": ["phases"],
+}
+GOAL_PROMPT = (
+    "You are a ruthless execution planner. Decompose the user's goal into 3-5 "
+    "strategic phases in order, each with 2-5 small executable tasks. Mark a task "
+    "daily:true only if it should repeat every day (habits like 'apply to 2 roles' "
+    "or '20 min practice'); phases should progress from setup to completion. "
+    "minutes = realistic duration (15-120). importance = 1-3. Be concrete and "
+    "specific to the goal; no filler."
+)
+
+
+def _tmpl(name, tasks):
+    return {"name": name, "tasks": [
+        {"title": t[0], "daily": t[1], "minutes": t[2], "importance": t[3]} for t in tasks]}
+
+
+def goal_plan_fallback(goal):
+    g = goal.lower()
+    if any(w in g for w in ("intern", "job", "offer", "hired", "position", "role at", "work at")):
+        phases = [
+            _tmpl("Research & targeting", [("List 15 target companies/teams for this goal", False, 45, 3),
+                                           ("Find 3 people to network with per target", False, 30, 2)]),
+            _tmpl("Sharpen materials", [("Tailor resume to the target role", False, 60, 3),
+                                        ("Write a reusable cover letter template", False, 45, 2)]),
+            _tmpl("Apply & network daily", [("Apply to 2 relevant openings", True, 40, 3),
+                                            ("Send 1 networking message or follow-up", True, 15, 2)]),
+            _tmpl("Interview readiness", [("Prepare 5 STAR stories", False, 60, 3),
+                                          ("Do 1 mock/technical practice session", True, 30, 2)]),
+            _tmpl("Close it out", [("Follow up on every silent application weekly", False, 20, 2),
+                                   ("Debrief after each interview and refine", False, 20, 2)]),
+        ]
+    elif "gpa" in g or "grade" in g:
+        phases = [
+            _tmpl("Assess the gap", [("Compute current GPA and required grades per course", False, 30, 3),
+                                     ("Identify the 2 highest-leverage courses", False, 20, 3)]),
+            _tmpl("Build the system", [("Create a weekly study schedule", False, 30, 2),
+                                       ("Collect past exams / problem sets", False, 30, 2)]),
+            _tmpl("Execute daily", [("2 focused study blocks (50 min)", True, 100, 3),
+                                    ("Review lecture notes same day", True, 20, 2)]),
+            _tmpl("Exam mastery", [("Full practice exam 1 week before each test", False, 120, 3),
+                                   ("Office hours for weak topics", False, 45, 2)]),
+        ]
+    elif any(w in g for w in ("language", "french", "spanish", "german", "fluent", "arabic", "japanese")):
+        phases = [
+            _tmpl("Foundation", [("Pick one course/app and finish unit 1", False, 60, 3)]),
+            _tmpl("Daily practice", [("20 min structured lesson", True, 20, 3),
+                                     ("10 min speaking/shadowing", True, 10, 2)]),
+            _tmpl("Immersion", [("Switch phone/media to the language", False, 15, 1),
+                                ("1 conversation exchange per week", False, 45, 2)]),
+            _tmpl("Prove it", [("Book a level test (A2/B1)", False, 20, 2)]),
+        ]
+    elif "interview" in g:
+        phases = [
+            _tmpl("Raise volume", [("Apply to 2 quality-matched roles", True, 40, 3)]),
+            _tmpl("Raise quality", [("Tailor resume keywords per application", True, 15, 2),
+                                    ("A/B test resume versions in the CRM tab", False, 20, 2)]),
+            _tmpl("Multiply channels", [("1 recruiter/referral outreach", True, 15, 3),
+                                        ("Weekly follow-up sweep on silent apps", False, 20, 2)]),
+        ]
+    else:
+        phases = [
+            _tmpl("Define success", [("Write the measurable outcome and deadline", False, 15, 3),
+                                     ("Break it into 3 milestones", False, 20, 3)]),
+            _tmpl("Plan the system", [("Design the smallest daily action", False, 15, 2)]),
+            _tmpl("Execute daily", [("Do the daily action", True, 30, 3)]),
+            _tmpl("Review & adapt", [("Weekly review: what worked, what to change", False, 20, 2)]),
+        ]
+    return {"phases": phases, "source": "template"}
+
+
+def goal_plan(goal):
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        return goal_plan_fallback(goal)
+    try:
+        import anthropic
+        client = anthropic.Anthropic()
+        resp = client.messages.create(
+            model="claude-opus-4-8", max_tokens=2000,
+            system=GOAL_PROMPT,
+            messages=[{"role": "user", "content": f"Goal: {goal}"}],
+            output_config={"format": {"type": "json_schema", "schema": GOAL_SCHEMA}},
+        )
+        text = next(b.text for b in resp.content if getattr(b, "type", "") == "text")
+        data = json.loads(text)
+        data["source"] = "ai"
+        return data
+    except Exception:
+        return goal_plan_fallback(goal)
+
+
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=DIRECTORY, **kwargs)
@@ -192,8 +299,24 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_POST(self):
+        path = self.path.split("?", 1)[0]
+        if path == "/api/goal-plan":
+            length = int(self.headers.get("Content-Length", 0))
+            if length <= 0 or length > 10000:
+                self.send_error(413, "Bad size")
+                return
+            try:
+                body = json.loads(self.rfile.read(length).decode("utf-8"))
+                goal = str(body.get("goal", "")).strip()
+                if not goal:
+                    raise ValueError("empty goal")
+            except Exception as e:
+                self.send_error(400, f"Bad request: {e}")
+                return
+            self._send_json(goal_plan(goal))
+            return
         # Persist the Personal OS data (tasks, habits, sessions, inbox, settings).
-        if self.path.split("?", 1)[0] != "/api/store":
+        if path != "/api/store":
             self.send_error(404, "Not found")
             return
         length = int(self.headers.get("Content-Length", 0))
