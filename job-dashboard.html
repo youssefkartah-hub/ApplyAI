@@ -77,7 +77,24 @@
   .rank li{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);font-size:13px}
   .rank li:last-child{border-bottom:none} .rank .v{color:var(--muted)}
   .pill2{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:2px 8px;margin:3px 4px 0 0;font-size:12px}
-  .tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  #main{display:grid;grid-template-columns:200px 1fr;gap:22px;align-items:start}
+  .tabs{display:flex;flex-direction:column;gap:2px;grid-column:1;grid-row:1/span 99;position:sticky;top:16px;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px}
+  .pane{grid-column:2}
+  .cmdwrap{grid-column:2;margin-bottom:14px}
+  .cmdbar{width:100%;padding:12px 16px;font-size:15px;border-radius:12px;background:var(--panel);
+    border:1px solid var(--line);transition:.15s}
+  .cmdbar:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+  .navlbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin:10px 6px 3px}
+  .tab{text-align:left;border-radius:8px;border-bottom:none;padding:8px 11px}
+  .tab.active{background:rgba(59,130,246,.15);border-bottom:none}
+  .hero{background:linear-gradient(135deg,rgba(59,130,246,.16),rgba(168,85,247,.12));border:1px solid rgba(59,130,246,.35);
+    border-radius:16px;padding:18px 20px;margin-bottom:14px}
+  .hero .hl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+  .hero .ht{font-size:20px;font-weight:700;margin:6px 0 4px}
+  .hero .hs{color:var(--muted);font-size:13px;margin-bottom:12px}
+  @media(max-width:820px){#main{grid-template-columns:1fr}.tabs{flex-direction:row;flex-wrap:wrap;position:static;grid-row:auto}
+    .pane,.cmdwrap{grid-column:1}.navlbl{display:none}}
   .frm{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
   .frm input,.frm select{min-width:0}
   .frm .grow{flex:1;min-width:160px}
@@ -229,23 +246,29 @@
 
   <div id="main" style="display:none">
     <div class="tabs" id="tabs">
+      <div class="navlbl">Assistant</div>
       <button class="tab" data-tab="today">⚡ Today</button>
-      <button class="tab" data-tab="planner">Planner</button>
-      <button class="tab" data-tab="inbox">Inbox</button>
-      <button class="tab" data-tab="habits">Habits</button>
-      <button class="tab" data-tab="focus">Focus</button>
-      <button class="tab active" data-tab="overview">Job Insights</button>
-      <button class="tab" data-tab="calendar">Calendar</button>
-      <button class="tab" data-tab="apps">Applications</button>
-      <button class="tab" data-tab="crm">Interviews·CRM</button>
-      <button class="tab" data-tab="uni">University</button>
-      <button class="tab" data-tab="proj">Projects</button>
-      <button class="tab" data-tab="goals">Goals</button>
-      <button class="tab" data-tab="fin">Finance</button>
-      <button class="tab" data-tab="know">Knowledge</button>
+      <button class="tab" data-tab="goals">🎯 Goals</button>
+      <button class="tab" data-tab="planner">📆 Planner</button>
+      <button class="tab" data-tab="inbox">📥 Inbox</button>
+      <div class="navlbl">Career</div>
+      <button class="tab active" data-tab="overview">📊 Job Insights</button>
+      <button class="tab" data-tab="apps">📋 Applications</button>
+      <button class="tab" data-tab="calendar">🗓 Calendar</button>
+      <button class="tab" data-tab="crm">🎤 Interviews·CRM</button>
+      <div class="navlbl">Life</div>
+      <button class="tab" data-tab="uni">🎓 University</button>
+      <button class="tab" data-tab="proj">🛠 Projects</button>
+      <button class="tab" data-tab="habits">🔥 Habits</button>
+      <button class="tab" data-tab="focus">⏱ Focus</button>
+      <button class="tab" data-tab="fin">💰 Finance</button>
+      <button class="tab" data-tab="know">📚 Knowledge</button>
     </div>
+    <div class="cmdwrap"><input id="cmdbar" class="cmdbar"
+      placeholder='Ask or add anything…  ("apply to SpaceX tomorrow", "goal: get a Boeing internship", "find airbus")'/></div>
 
     <div class="pane" data-pane="today" hidden>
+      <div class="hero" id="nowCard"></div>
       <div class="icard" id="briefBox" style="margin-bottom:14px"></div>
       <div class="charts">
         <div class="icard" id="topActions"></div>
@@ -915,7 +938,7 @@ function renderToday(){
   const focusToday=OS.sessions.filter(s=>s.date===todayKey()).reduce((a,b)=>a+b.mins,0);
   const dayName=new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
   const brief=[];
-  brief.push(`Good ${new Date().getHours()<12?"morning":new Date().getHours()<18?"afternoon":"evening"} — ${dayName}.`);
+  brief.push(`Good ${new Date().getHours()<12?"morning":new Date().getHours()<18?"afternoon":"evening"}, Youssef — ${dayName}.`);
   brief.push(`Applications: <b>${appsToday}/${goal}</b> today${silent.length?` · <b>${silent.length}</b> need follow-up`:""}${interviews.length?` · <b>${interviews.length}</b> interview${interviews.length>1?"s":""} in play — prep!`:""}.`);
   if(overdue.length) brief.push(`⚠️ <b>${overdue.length}</b> overdue task${overdue.length>1?"s":""} — clear ${esc(overdue[0].title)} first.`);
   if(tasks[0]) brief.push(`Highest-value action right now: <b>${esc(tasks[0].title)}</b> (${tasks[0].score}).`);
@@ -927,6 +950,15 @@ function renderToday(){
   const ga=goalActions().map(x=>({kind:"goal",x,score:x.score}));
   const tt=tasks.map(t=>({kind:"task",t,score:t.score}));
   const top=[...ga,...tt].sort((a,b)=>b.score-a.score).slice(0,7);
+  heroItem=top[0]||null;
+  $("nowCard").innerHTML=heroItem?(()=>{ const isG=heroItem.kind==="goal";
+    const title=isG?heroItem.x.t.title:heroItem.t.title;
+    const sub=isG?`🎯 ${esc(heroItem.x.g.title)}${heroItem.x.t.daily?" · 🔁 daily":""}`:`${AREA_ICON[heroItem.t.area]||""} ${heroItem.t.area}${heroItem.t.due?" · "+fmtDue(heroItem.t):""}`;
+    return `<div class="hl">Do this now · score ${heroItem.score}</div><div class="ht">${esc(title)}</div>
+      <div class="hs">${sub} · ~${(isG?heroItem.x.t.dur:heroItem.t.dur)||30} min</div>
+      <button class="primary" data-hero="done">✅ Done</button> <button data-hero="focus">⏱ Focus on it</button>`;})()
+    :`<div class="hl">All clear</div><div class="ht">Nothing urgent right now 🎉</div>
+      <div class="hs">Capture what's on your mind or set a goal below.</div>`;
   $("topActions").innerHTML=`<h3>🥇 Do these next</h3>`+(top.length?top.map(it=>{
     if(it.kind==="task") return taskRow(it.t,true);
     const {g,ph,t}=it.x;
@@ -1229,9 +1261,45 @@ function renderKnow(){
     :`<p class="muted">No notes${q?" match":""} yet.</p>`;
 }
 
-/* ---- master render + events ---- */
-function renderOS(){ try{ renderToday(); renderAreas(); renderInbox(); renderPlanner(); renderHabits(); renderFocusStats();
-  renderCRM(); renderUni(); renderProjects(); renderGoals(); renderFinance(); renderKnow(); }catch(e){ console.error(e); } }
+/* ---- master render + events (targeted: only visible panes redraw) ---- */
+let heroItem=null, currentTab="today";
+const PANE_R={today:[renderToday],inbox:[renderAreas,renderInbox],planner:[renderPlanner],
+  habits:[renderHabits],focus:[renderFocusStats],crm:[renderCRM],uni:[renderUni],
+  proj:[renderProjects],goals:[renderGoals],fin:[renderFinance],know:[renderKnow]};
+function renderOS(){ try{
+  renderToday();
+  (PANE_R[currentTab]||[]).forEach(f=>{ if(f!==renderToday) f(); });
+}catch(e){ console.error(e); } }
+const _switchTab=switchTab;
+switchTab=function(name){ currentTab=name; _switchTab(name); renderOS(); };
+
+/* ---- command bar: one smart input for everything ---- */
+function runCmd(v){
+  const l=v.toLowerCase();
+  const pref=(p)=>l.startsWith(p)?v.slice(p.length).trim():null;
+  let m;
+  if((m=pref("goal:"))||(m=pref("goal "))){ $("gTitle").value=m; switchTab("goals"); createGoal(); return; }
+  if((m=pref("find "))||(m=pref("search "))||(m=pref("?"))){
+    switchTab("apps"); $("search").value=m; searchTerm=m.toLowerCase(); render(); toast(`Searching "${m}"`); return; }
+  if((m=pref("note:"))){ OS.notes.push({id:uid(),title:m.slice(0,60),tags:"",body:m,updatedAt:Date.now()});
+    osSave(); renderOS(); toast("Saved to Knowledge 📚"); return; }
+  if((m=pref("habit:"))){ OS.habits.push({id:uid(),name:m,days:{}}); osSave(); renderOS(); toast("Habit added 🔥"); return; }
+  if((m=pref("focus"))!==null&&m===""){ switchTab("focus"); return; }
+  // default: smart task/capture — detect due words, then categorize
+  let due=null; const t=new Date();
+  if(/\btoday\b/.test(l)) due=todayKey();
+  else if(/\btomorrow\b/.test(l)){ t.setDate(t.getDate()+1); due=t.toISOString().slice(0,10); }
+  const c=categorize(v);
+  if(c.type==="task"||/\b(apply|finish|submit|email|call|do|prep|study|write|fix)\b/.test(l)){
+    OS.tasks.push({id:uid(),title:v,area:c.area,due,imp:2,dur:30,createdAt:Date.now(),done:false});
+    osSave(); renderOS(); toast(`Task added → ${c.area}${due?" · due "+due:""} ✅`);
+  } else {
+    OS.inbox.push({id:uid(),text:v,area:c.area,type:c.type,createdAt:Date.now()});
+    osSave(); renderOS(); toast(`Captured → ${c.area} 📥`);
+  }
+}
+$("cmdbar").addEventListener("keydown",e=>{ if(e.key==="Enter"&&$("cmdbar").value.trim()){
+  runCmd($("cmdbar").value.trim()); $("cmdbar").value=""; } });
 const _origRender=render; render=function(){ _origRender(); renderOS(); };
 
 document.addEventListener("click",e=>{
@@ -1295,6 +1363,7 @@ $("themeBtn").addEventListener("click",()=>{
   OS.settings.theme=light?"dark":"light"; osSave();
 });
 document.addEventListener("keydown",e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key==="k"){ e.preventDefault(); $("cmdbar").focus(); return; }
   if(e.target.tagName==="INPUT"||e.target.tagName==="SELECT"||e.target.tagName==="TEXTAREA") return;
   const map={"1":"today","2":"planner","3":"inbox","4":"habits","5":"focus","6":"overview","7":"calendar","8":"apps"};
   if(map[e.key]){ switchTab(map[e.key]); return; }
@@ -1353,6 +1422,11 @@ document.addEventListener("click",e=>{
     if(r){ r[rv.dataset.f]=(r[rv.dataset.f]||0)+1; osSave(); renderOS(); } return; }
   const ud=e.target.closest("[data-uni-done]"); if(ud){ const u=OS.uniItems.find(x=>x.id===ud.dataset.uniDone);
     if(u){ u.done=true; osSave(); renderOS(); toast("Done ✅"); } return; }
+  const hb=e.target.closest("[data-hero]"); if(hb&&heroItem){
+    if(hb.dataset.hero==="focus"){ switchTab("focus"); return; }
+    if(heroItem.kind==="task"){ const t=OS.tasks.find(x=>x.id===heroItem.t.id); if(t){ t.done=true; t.doneAt=Date.now(); } }
+    else { const t=heroItem.x.t; if(t.daily){ t.days=t.days||{}; t.days[todayKey()]=true; } else { t.done=true; t.doneAt=Date.now(); } }
+    osSave(); renderOS(); toast("Next action queued up ⚡"); return; }
   const pc=e.target.closest("[data-p-copy]"); if(pc){ const p=OS.projects.find(x=>x.id===pc.dataset.pCopy);
     if(p&&navigator.clipboard){ navigator.clipboard.writeText(bullet(p)); toast("Resume bullet copied"); } return; }
 });
