@@ -77,7 +77,16 @@
   .rank li{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);font-size:13px}
   .rank li:last-child{border-bottom:none} .rank .v{color:var(--muted)}
   .pill2{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:2px 8px;margin:3px 4px 0 0;font-size:12px}
-  .tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--line)}
+  .tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .frm{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+  .frm input,.frm select{min-width:0}
+  .frm .grow{flex:1;min-width:160px}
+  .gbar{height:8px;background:var(--panel2);border-radius:5px;overflow:hidden;margin-top:6px}
+  .gbar>span{display:block;height:100%;background:linear-gradient(90deg,#a855f7,#3b82f6);border-radius:5px;transition:width .4s}
+  .chk{display:flex;align-items:center;gap:8px;font-size:13px;margin:4px 0;color:var(--muted)}
+  .chk input{width:15px;height:15px;accent-color:var(--offer)}
+  .chk.on{color:var(--txt)}
+  textarea{font:inherit;color:var(--txt);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-height:70px;resize:vertical}
   .tab{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);padding:9px 15px;cursor:pointer;font-size:14px}
   .tab:hover{color:var(--txt)}
   .tab.active{color:var(--txt);border-bottom-color:var(--accent)}
@@ -228,6 +237,12 @@
       <button class="tab active" data-tab="overview">Job Insights</button>
       <button class="tab" data-tab="calendar">Calendar</button>
       <button class="tab" data-tab="apps">Applications</button>
+      <button class="tab" data-tab="crm">Interviews·CRM</button>
+      <button class="tab" data-tab="uni">University</button>
+      <button class="tab" data-tab="proj">Projects</button>
+      <button class="tab" data-tab="goals">Goals</button>
+      <button class="tab" data-tab="fin">Finance</button>
+      <button class="tab" data-tab="know">Knowledge</button>
     </div>
 
     <div class="pane" data-pane="today" hidden>
@@ -293,6 +308,79 @@
         </div>
         <div class="icard"><h3>📊 Focus history</h3><div id="focusStats"></div></div>
       </div>
+    </div>
+
+    <div class="pane" data-pane="crm" hidden>
+      <div class="charts">
+        <div class="icard"><h3>🎤 Interview Center</h3>
+          <div class="frm"><input id="ivCompany" class="grow" placeholder="Company"/><input id="ivRole" class="grow" placeholder="Role"/>
+            <input id="ivDate" type="date"/><button class="primary" id="ivAdd">Add interview</button></div>
+          <div id="ivList"></div></div>
+        <div>
+          <div class="icard" style="margin-bottom:14px"><h3>👤 Recruiter contacts</h3>
+            <div class="frm"><input id="ctName" class="grow" placeholder="Name"/><input id="ctCompany" class="grow" placeholder="Company"/>
+              <input id="ctEmail" class="grow" placeholder="Email / LinkedIn"/><button class="primary" id="ctAdd">Add</button></div>
+            <div id="ctList"></div></div>
+          <div class="icard"><h3>📄 Resume version performance</h3>
+            <div class="frm"><input id="rvName" class="grow" placeholder="Version name (e.g. YK_resume 27 — aero focus)"/><button class="primary" id="rvAdd">Add version</button></div>
+            <div id="rvList"></div>
+            <div class="muted" style="font-size:12px;margin-top:6px">Log apps sent / interviews per version with + — the app ranks which resume converts best.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pane" data-pane="uni" hidden>
+      <div class="charts">
+        <div class="icard"><h3>📚 Assignments & exams</h3>
+          <div class="frm"><input id="uCourse" placeholder="Course"/><input id="uTitle" class="grow" placeholder="Assignment / exam title"/>
+            <select id="uType"><option>Assignment</option><option>Exam</option><option>Project</option><option>Quiz</option></select>
+            <input id="uDue" type="date"/><button class="primary" id="uAdd">Add</button></div>
+          <div id="uList"></div></div>
+        <div class="icard"><h3>🎓 GPA & courses</h3>
+          <div class="frm"><input id="cName" class="grow" placeholder="Course name"/><input id="cCred" type="number" min="1" max="6" value="3" style="width:64px" title="Credits"/>
+            <select id="cGrade"><option value="">In progress</option><option>A</option><option>A-</option><option>B+</option><option>B</option><option>B-</option><option>C+</option><option>C</option><option>C-</option><option>D</option><option>F</option></select>
+            <button class="primary" id="cAdd">Add</button></div>
+          <div id="gpaBox"></div><div id="cList"></div></div>
+      </div>
+    </div>
+
+    <div class="pane" data-pane="proj" hidden>
+      <div class="icard"><h3>🛠 Project portfolio</h3>
+        <div class="frm"><input id="pName" class="grow" placeholder="Project name"/><input id="pSkills" class="grow" placeholder="Skills (comma-separated: CAD, MATLAB…)"/>
+          <input id="pLink" class="grow" placeholder="Link (GitHub / drive)"/><input id="pOutcome" class="grow" placeholder="Outcome / result (e.g. reduced drag 12%)"/>
+          <button class="primary" id="pAdd">Add project</button></div>
+        <div id="pList"></div></div>
+    </div>
+
+    <div class="pane" data-pane="goals" hidden>
+      <div class="icard"><h3>🎯 Long-term goals</h3>
+        <div class="frm"><input id="gTitle" class="grow" placeholder="Goal (e.g. Land aerospace full-time role)"/>
+          <input id="gTarget" type="number" min="1" value="10" style="width:80px" title="Target count"/>
+          <input id="gDue" type="date"/><button class="primary" id="gAdd">Add goal</button></div>
+        <div id="gList"></div>
+        <div class="muted" style="font-size:12px;margin-top:8px">Hit + each time you complete a step toward a goal — progress bars fill toward the target.</div></div>
+    </div>
+
+    <div class="pane" data-pane="fin" hidden>
+      <div class="charts">
+        <div class="icard"><h3>💰 Add expense / income</h3>
+          <div class="frm"><input id="fNote" class="grow" placeholder="Description"/>
+            <select id="fCat"><option>Tuition</option><option>Rent</option><option>Food</option><option>Career</option><option>Transport</option><option>Savings</option><option>Income</option><option>Other</option></select>
+            <input id="fAmt" type="number" step="0.01" placeholder="Amount" style="width:110px"/>
+            <button class="primary" id="fAdd">Add</button></div>
+          <div id="fSummary"></div></div>
+        <div class="icard"><h3>🧾 This month</h3><div id="fList"></div></div>
+      </div>
+    </div>
+
+    <div class="pane" data-pane="know" hidden>
+      <div class="icard"><h3>📚 Knowledge vault</h3>
+        <div class="frm"><input id="kTitle" class="grow" placeholder="Note title (e.g. STAR story — composites project)"/>
+          <input id="kTags" class="grow" placeholder="Tags (interview, formulas, contacts…)"/>
+          <button class="primary" id="kAdd">Add note</button></div>
+        <textarea id="kBody" placeholder="Note content…"></textarea>
+        <div class="frm" style="margin-top:10px"><input id="kSearch" class="grow" placeholder="Search notes…"/></div>
+        <div id="kList"></div></div>
     </div>
 
     <div class="pane" data-pane="overview">
@@ -755,14 +843,17 @@ loadData(false).then(startTicking);
 /* ================= Personal OS layer ================= */
 const AREAS=["Career","University","Projects","Productivity","Health","Finance","Goals","Knowledge"];
 const AREA_ICON={Career:"💼",University:"🎓",Projects:"🛠",Productivity:"⚡",Health:"💪",Finance:"💰",Goals:"🎯",Knowledge:"📚"};
-let OS={tasks:[],habits:[],sessions:[],inbox:[],settings:{}};
+let OS={tasks:[],habits:[],sessions:[],inbox:[],goals:[],courses:[],uniItems:[],
+  contacts:[],interviews:[],resumes:[],projects:[],finance:[],notes:[],settings:{}};
+const OS_LISTS=["tasks","habits","sessions","inbox","goals","courses","uniItems",
+  "contacts","interviews","resumes","projects","finance","notes"];
 let osSaveT=null;
 
 async function osLoad(){
   try{ const r=await fetch("/api/store",{cache:"no-store"}); const j=await r.json();
     if(j&&typeof j==="object") OS={...OS,...j}; }
   catch(e){ try{ OS={...OS,...JSON.parse(localStorage.getItem("jd_os")||"{}")}; }catch(_){} }
-  ["tasks","habits","sessions","inbox"].forEach(k=>{ if(!Array.isArray(OS[k])) OS[k]=[]; });
+  OS_LISTS.forEach(k=>{ if(!Array.isArray(OS[k])) OS[k]=[]; });
   OS.settings=OS.settings||{};
   if(OS.settings.theme==="light") document.documentElement.dataset.theme="light";
   renderOS();
@@ -843,6 +934,11 @@ function renderToday(){
     `<div class="trow"><div class="tt">${esc(a.company)}<div class="sub">${esc(a.position||"")}</div></div></div>`).join(""));
   if(silent.length) side.push(`<div class="areahead">Follow-ups waiting</div>`+silent.slice(0,4).map(a=>
     `<div class="trow"><div class="tt">${esc(a.company)}<div class="sub">${daysSince(a.date)}d silent</div></div></div>`).join(""));
+  const uniDue=OS.uniItems.filter(u=>!u.done&&u.due).sort((a,b)=>a.due<b.due?-1:1).slice(0,3);
+  if(uniDue.length) side.push(`<div class="areahead">University deadlines</div>`+uniDue.map(u=>
+    `<div class="trow"><div class="tt">${esc(u.title)}<div class="sub">${esc(u.course)} · due ${u.due}</div></div></div>`).join(""));
+  const topGoal=OS.goals.filter(g=>(g.progress||0)<(g.target||1))[0];
+  if(topGoal) side.push(`<div class="areahead">Active goal</div><div class="trow"><div class="tt">${esc(topGoal.title)}<div class="sub">${topGoal.progress||0}/${topGoal.target}</div></div></div>`);
   side.push(`<div class="areahead">Habits today</div>`+(OS.habits.length?OS.habits.map(h=>{
     const on=(h.days||{})[todayKey()];
     return `<div class="trow"><input type="checkbox" data-habit-today="${h.id}" ${on?"checked":""}/><div class="tt ${on?"done":""}">${esc(h.name)}<div class="sub">🔥 ${habitStreak(h)}-day streak</div></div></div>`;
@@ -945,8 +1041,118 @@ function renderFocusStats(){
 function focusDone(mins){ OS.sessions.push({date:todayKey(),mins}); osSave(); renderOS();
   toast(`Focus session logged — ${mins} min 🎉`); }
 
+/* ---- Interview Center + CRM + resume performance ---- */
+const IV_CHECKS=["Research company","Review job description","Prepare STAR stories","Questions to ask","Technical review","Logistics confirmed"];
+function renderCRM(){
+  $("ivList").innerHTML=OS.interviews.length?OS.interviews.slice().sort((a,b)=>(a.date||"")<(b.date||"")?-1:1).map(iv=>{
+    const done=IV_CHECKS.filter(c=>(iv.checks||{})[c]).length;
+    return `<div style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0">
+      <div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(iv.company)}</b>
+        <span class="muted">${esc(iv.date||"date TBD")} <span class="x" data-iv-del="${iv.id}" style="cursor:pointer">✕</span></span></div>
+      <div class="muted" style="font-size:12px">${esc(iv.role||"")} · prep ${done}/${IV_CHECKS.length}</div>
+      <div class="gbar"><span style="width:${Math.round(100*done/IV_CHECKS.length)}%"></span></div>
+      ${IV_CHECKS.map(c=>`<label class="chk ${(iv.checks||{})[c]?"on":""}"><input type="checkbox" data-iv-chk="${iv.id}" data-c="${esc(c)}" ${(iv.checks||{})[c]?"checked":""}/>${c}</label>`).join("")}
+      <textarea data-iv-notes="${iv.id}" placeholder="STAR stories, technical notes, post-interview review…">${esc(iv.notes||"")}</textarea></div>`;
+  }).join(""):`<p class="muted">No interviews logged yet — add one when you get the invite.</p>`;
+  $("ctList").innerHTML=OS.contacts.length?OS.contacts.map(c=>
+    `<div class="trow"><div class="tt">${esc(c.name)} <span class="muted">· ${esc(c.company||"")}</span>
+      <div class="sub">${esc(c.email||"")}</div></div><span class="x" data-ct-del="${c.id}" style="cursor:pointer;color:var(--muted)">✕</span></div>`).join("")
+    :`<p class="muted">No contacts yet.</p>`;
+  const ranked=OS.resumes.slice().sort((a,b)=>((b.ints/(b.apps||1))-(a.ints/(a.apps||1))));
+  $("rvList").innerHTML=ranked.length?ranked.map(r=>{
+    const rate=r.apps?Math.round(100*r.ints/r.apps):0;
+    return `<div class="trow"><div class="tt">${esc(r.name)}<div class="sub">${r.apps} apps · ${r.ints} interviews · <b>${rate}%</b></div></div>
+      <button class="rowbtn" data-rv="${r.id}" data-f="apps">+app</button>
+      <button class="rowbtn" data-rv="${r.id}" data-f="ints">+interview</button>
+      <span class="x" data-rv-del="${r.id}" style="cursor:pointer;color:var(--muted)">✕</span></div>`;
+  }).join(""):`<p class="muted">Add each resume version you send out.</p>`;
+}
+
+/* ---- University ---- */
+const GRADEPTS={"A":4,"A-":3.7,"B+":3.3,"B":3,"B-":2.7,"C+":2.3,"C":2,"C-":1.7,"D":1,"F":0};
+function renderUni(){
+  const items=OS.uniItems.filter(u=>!u.done).sort((a,b)=>(a.due||"9999")<(b.due||"9999")?-1:1);
+  $("uList").innerHTML=items.length?items.map(u=>{
+    const d=u.due?Math.ceil((Date.parse(u.due)-Date.now())/86400000):null;
+    const urg=d!=null&&d<=2;
+    return `<div class="trow"><input type="checkbox" data-uni-done="${u.id}"/>
+      <div class="tt">${esc(u.title)}<div class="sub">${esc(u.course)} · ${u.type}${d!=null?` · <span style="color:${urg?"var(--rejected)":"var(--muted)"}">${d<0?"overdue":d===0?"due today":`in ${d}d`}</span>`:""}</div></div>
+      <span class="x" data-uni-del="${u.id}" style="cursor:pointer;color:var(--muted)">✕</span></div>`;
+  }).join(""):`<p class="muted">Nothing due. 🎉</p>`;
+  const graded=OS.courses.filter(c=>GRADEPTS[c.grade]!=null);
+  const pts=graded.reduce((a,c)=>a+GRADEPTS[c.grade]*c.credits,0), cr=graded.reduce((a,c)=>a+c.credits,0);
+  $("gpaBox").innerHTML=`<div class="imetrics"><div class="imetric"><div class="n">${cr?(pts/cr).toFixed(2):"—"}</div><div class="l">GPA</div></div>
+    <div class="imetric"><div class="n">${OS.courses.reduce((a,c)=>a+ +c.credits,0)}</div><div class="l">credits tracked</div></div></div>`;
+  $("cList").innerHTML=OS.courses.map(c=>`<div class="trow"><div class="tt">${esc(c.name)}<div class="sub">${c.credits} cr · ${c.grade||"in progress"}</div></div>
+    <span class="x" data-c-del="${c.id}" style="cursor:pointer;color:var(--muted)">✕</span></div>`).join("");
+}
+
+/* ---- Projects ---- */
+function bullet(p){
+  const sk=(p.skills||"").split(",").map(s=>s.trim()).filter(Boolean);
+  return `Engineered ${p.name}${sk.length?` using ${sk.slice(0,3).join(", ")}`:""}${p.outcome?`, ${p.outcome}`:""}.`;
+}
+function renderProjects(){
+  $("pList").innerHTML=OS.projects.length?OS.projects.map(p=>
+    `<div style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0">
+      <div style="display:flex;justify-content:space-between"><b>${esc(p.name)}</b><span class="x" data-p-del="${p.id}" style="cursor:pointer;color:var(--muted)">✕</span></div>
+      <div style="margin:4px 0">${(p.skills||"").split(",").filter(s=>s.trim()).map(s=>`<span class="pill2">${esc(s.trim())}</span>`).join("")}</div>
+      ${p.link?`<div class="muted" style="font-size:12px"><a href="${esc(p.link)}" target="_blank">${esc(p.link)}</a></div>`:""}
+      <div class="muted" style="font-size:13px;margin-top:6px">📝 <i>${esc(bullet(p))}</i>
+        <button class="rowbtn" data-p-copy="${p.id}">Copy bullet</button></div></div>`).join("")
+    :`<p class="muted">Add your engineering projects — each gets an auto-generated resume bullet.</p>`;
+}
+
+/* ---- Goals ---- */
+function renderGoals(){
+  $("gList").innerHTML=OS.goals.length?OS.goals.map(g=>{
+    const pct=Math.min(100,Math.round(100*(g.progress||0)/(g.target||1)));
+    return `<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;gap:8px">
+      <b>${esc(g.title)}</b><span class="muted">${g.progress||0}/${g.target}${g.due?` · by ${g.due}`:""}
+      <button class="rowbtn" data-g-inc="${g.id}">+1</button> <span class="x" data-g-del="${g.id}" style="cursor:pointer">✕</span></span></div>
+      <div class="gbar"><span style="width:${pct}%"></span></div>${pct>=100?`<div style="color:var(--offer);font-size:12px;margin-top:3px">🏆 Goal achieved!</div>`:""}</div>`;
+  }).join(""):`<p class="muted">Define a long-term goal — every +1 is a step toward it.</p>`;
+}
+
+/* ---- Finance ---- */
+function renderFinance(){
+  const mon=todayKey().slice(0,7);
+  const rows=OS.finance.filter(f=>(f.date||"").startsWith(mon));
+  const spent=rows.filter(f=>f.cat!=="Income"&&f.cat!=="Savings").reduce((a,b)=>a+ +b.amount,0);
+  const income=rows.filter(f=>f.cat==="Income").reduce((a,b)=>a+ +b.amount,0);
+  const saved=rows.filter(f=>f.cat==="Savings").reduce((a,b)=>a+ +b.amount,0);
+  const byCat={}; rows.forEach(f=>{ if(f.cat!=="Income") byCat[f.cat]=(byCat[f.cat]||0)+ +f.amount; });
+  const maxC=Math.max(1,...Object.values(byCat));
+  $("fSummary").innerHTML=`<div class="imetrics">
+    <div class="imetric"><div class="n" style="color:var(--rejected)">$${spent.toFixed(0)}</div><div class="l">spent this month</div></div>
+    <div class="imetric"><div class="n" style="color:var(--offer)">$${income.toFixed(0)}</div><div class="l">income</div></div>
+    <div class="imetric"><div class="n">$${saved.toFixed(0)}</div><div class="l">saved</div></div></div>`+
+    Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([c,v])=>
+      `<div style="margin:6px 0"><div style="display:flex;justify-content:space-between;font-size:12px"><span>${c}</span><span class="muted">$${v.toFixed(0)}</span></div>
+       <div class="gbar"><span style="width:${Math.round(100*v/maxC)}%"></span></div></div>`).join("");
+  $("fList").innerHTML=rows.length?rows.slice().reverse().map(f=>
+    `<div class="trow"><div class="tt">${esc(f.note||f.cat)}<div class="sub">${f.date} · ${f.cat}</div></div>
+     <b style="color:${f.cat==="Income"?"var(--offer)":"var(--txt)"}">$${(+f.amount).toFixed(2)}</b>
+     <span class="x" data-f-del="${f.id}" style="cursor:pointer;color:var(--muted)">✕</span></div>`).join("")
+    :`<p class="muted">No entries this month.</p>`;
+}
+
+/* ---- Knowledge vault ---- */
+function renderKnow(){
+  const q=($("kSearch").value||"").toLowerCase();
+  const notes=OS.notes.filter(n=>!q||[n.title,n.body,n.tags].join(" ").toLowerCase().includes(q))
+    .sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  $("kList").innerHTML=notes.length?notes.map(n=>
+    `<div style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0">
+      <div style="display:flex;justify-content:space-between"><b>${esc(n.title)}</b><span class="x" data-k-del="${n.id}" style="cursor:pointer;color:var(--muted)">✕</span></div>
+      <div>${(n.tags||"").split(",").filter(t=>t.trim()).map(t=>`<span class="pill2">${esc(t.trim())}</span>`).join("")}</div>
+      <div class="muted" style="font-size:13px;white-space:pre-wrap;margin-top:6px">${esc(n.body||"")}</div></div>`).join("")
+    :`<p class="muted">No notes${q?" match":""} yet.</p>`;
+}
+
 /* ---- master render + events ---- */
-function renderOS(){ try{ renderToday(); renderAreas(); renderInbox(); renderPlanner(); renderHabits(); renderFocusStats(); }catch(e){ console.error(e); } }
+function renderOS(){ try{ renderToday(); renderAreas(); renderInbox(); renderPlanner(); renderHabits(); renderFocusStats();
+  renderCRM(); renderUni(); renderProjects(); renderGoals(); renderFinance(); renderKnow(); }catch(e){ console.error(e); } }
 const _origRender=render; render=function(){ _origRender(); renderOS(); };
 
 document.addEventListener("click",e=>{
@@ -1017,6 +1223,57 @@ document.addEventListener("keydown",e=>{
   if(e.key==="n"||e.key==="N"){ switchTab("inbox"); setTimeout(()=>$("newTask").focus(),50); }
   if(e.key==="f"||e.key==="F"){ switchTab("focus"); }
 });
+/* ---- module events ---- */
+function bindAdd(btn,fn){ $(btn).addEventListener("click",()=>{ fn(); osSave(); renderOS(); }); }
+bindAdd("ivAdd",()=>{ const c=$("ivCompany").value.trim(); if(!c) return;
+  OS.interviews.push({id:uid(),company:c,role:$("ivRole").value.trim(),date:$("ivDate").value||"",checks:{},notes:""});
+  $("ivCompany").value=$("ivRole").value=""; });
+bindAdd("ctAdd",()=>{ const n=$("ctName").value.trim(); if(!n) return;
+  OS.contacts.push({id:uid(),name:n,company:$("ctCompany").value.trim(),email:$("ctEmail").value.trim()});
+  $("ctName").value=$("ctCompany").value=$("ctEmail").value=""; });
+bindAdd("rvAdd",()=>{ const n=$("rvName").value.trim(); if(!n) return;
+  OS.resumes.push({id:uid(),name:n,apps:0,ints:0}); $("rvName").value=""; });
+bindAdd("uAdd",()=>{ const t=$("uTitle").value.trim(); if(!t) return;
+  OS.uniItems.push({id:uid(),course:$("uCourse").value.trim(),title:t,type:$("uType").value,due:$("uDue").value||null,done:false});
+  $("uTitle").value=""; });
+bindAdd("cAdd",()=>{ const n=$("cName").value.trim(); if(!n) return;
+  OS.courses.push({id:uid(),name:n,credits:+$("cCred").value||3,grade:$("cGrade").value}); $("cName").value=""; });
+bindAdd("pAdd",()=>{ const n=$("pName").value.trim(); if(!n) return;
+  OS.projects.push({id:uid(),name:n,skills:$("pSkills").value,link:$("pLink").value.trim(),outcome:$("pOutcome").value.trim()});
+  ["pName","pSkills","pLink","pOutcome"].forEach(i=>$(i).value=""); });
+bindAdd("gAdd",()=>{ const t=$("gTitle").value.trim(); if(!t) return;
+  OS.goals.push({id:uid(),title:t,target:+$("gTarget").value||10,progress:0,due:$("gDue").value||null});
+  $("gTitle").value=""; });
+bindAdd("fAdd",()=>{ const a=parseFloat($("fAmt").value); if(!a) return;
+  OS.finance.push({id:uid(),date:todayKey(),cat:$("fCat").value,amount:a,note:$("fNote").value.trim()});
+  $("fAmt").value=$("fNote").value=""; });
+bindAdd("kAdd",()=>{ const t=$("kTitle").value.trim(); if(!t) return;
+  OS.notes.push({id:uid(),title:t,tags:$("kTags").value,body:$("kBody").value,updatedAt:Date.now()});
+  $("kTitle").value=$("kTags").value=""; $("kBody").value=""; });
+$("kSearch").addEventListener("input",renderKnow);
+
+document.addEventListener("click",e=>{
+  const del=(sel,list)=>{ const b=e.target.closest(sel); if(b){ const id=b.dataset[Object.keys(b.dataset)[0]];
+    OS[list]=OS[list].filter(x=>x.id!==id); osSave(); renderOS(); return true; } return false; };
+  if(del("[data-iv-del]","interviews")||del("[data-ct-del]","contacts")||del("[data-rv-del]","resumes")||
+     del("[data-uni-del]","uniItems")||del("[data-c-del]","courses")||del("[data-p-del]","projects")||
+     del("[data-g-del]","goals")||del("[data-f-del]","finance")||del("[data-k-del]","notes")) return;
+  const chk=e.target.closest("[data-iv-chk]"); if(chk){ const iv=OS.interviews.find(x=>x.id===chk.dataset.ivChk);
+    if(iv){ iv.checks=iv.checks||{}; if(chk.checked) iv.checks[chk.dataset.c]=true; else delete iv.checks[chk.dataset.c]; osSave(); renderOS(); } return; }
+  const rv=e.target.closest("[data-rv]"); if(rv){ const r=OS.resumes.find(x=>x.id===rv.dataset.rv);
+    if(r){ r[rv.dataset.f]=(r[rv.dataset.f]||0)+1; osSave(); renderOS(); } return; }
+  const ud=e.target.closest("[data-uni-done]"); if(ud){ const u=OS.uniItems.find(x=>x.id===ud.dataset.uniDone);
+    if(u){ u.done=true; osSave(); renderOS(); toast("Done ✅"); } return; }
+  const gi=e.target.closest("[data-g-inc]"); if(gi){ const g=OS.goals.find(x=>x.id===gi.dataset.gInc);
+    if(g){ g.progress=(g.progress||0)+1; if(g.progress>=g.target) toast("🏆 Goal achieved!"); osSave(); renderOS(); } return; }
+  const pc=e.target.closest("[data-p-copy]"); if(pc){ const p=OS.projects.find(x=>x.id===pc.dataset.pCopy);
+    if(p&&navigator.clipboard){ navigator.clipboard.writeText(bullet(p)); toast("Resume bullet copied"); } return; }
+});
+document.addEventListener("focusout",e=>{
+  const ta=e.target.closest&&e.target.closest("[data-iv-notes]");
+  if(ta){ const iv=OS.interviews.find(x=>x.id===ta.dataset.ivNotes); if(iv&&iv.notes!==ta.value){ iv.notes=ta.value; osSave(); toast("Notes saved"); } }
+});
+
 osLoad().then(()=>switchTab("today"));
 </script>
 </body>
