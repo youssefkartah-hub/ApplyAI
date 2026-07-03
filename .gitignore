@@ -154,6 +154,7 @@ notion_config.json
 .sync_state.json
 data.json
 overrides.json
+personal_data.json
 
 # Python
 __pycache__/

@@ -36,7 +36,9 @@ NOTION_VERSION = "2022-06-28"
 CACHE_TTL = 20  # seconds; avoid hammering the Notion API on every poll
 
 BLOCKED = {"notion_token.txt", "notion_config.json", "credentials.json",
-           "token.json", ".sync_state.json"}
+           "token.json", ".sync_state.json", "personal_data.json"}
+STORE_FILE = os.path.join(DIRECTORY, "personal_data.json")
+MAX_STORE = 5_000_000  # 5 MB cap
 
 _cache = {"at": 0, "data": None}
 
@@ -177,10 +179,39 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if path == "/api/applications":
             self._send_json(fetch_applications())
             return
+        if path == "/api/store":
+            try:
+                with open(STORE_FILE) as f:
+                    self._send_json(json.load(f))
+            except Exception:
+                self._send_json({})
+            return
         if os.path.basename(path).lower() in BLOCKED:
             self.send_error(404, "Not found")
             return
         super().do_GET()
+
+    def do_POST(self):
+        # Persist the Personal OS data (tasks, habits, sessions, inbox, settings).
+        if self.path.split("?", 1)[0] != "/api/store":
+            self.send_error(404, "Not found")
+            return
+        length = int(self.headers.get("Content-Length", 0))
+        if length <= 0 or length > MAX_STORE:
+            self.send_error(413, "Bad size")
+            return
+        try:
+            payload = json.loads(self.rfile.read(length).decode("utf-8"))
+            if not isinstance(payload, dict):
+                raise ValueError("expected object")
+            tmp = STORE_FILE + ".tmp"
+            with open(tmp, "w") as f:
+                json.dump(payload, f, ensure_ascii=False)
+            os.replace(tmp, STORE_FILE)
+        except Exception as e:
+            self.send_error(400, f"Bad request: {e}")
+            return
+        self._send_json({"ok": True})
 
     def end_headers(self):
         self.send_header("Cache-Control", "no-store, max-age=0")
