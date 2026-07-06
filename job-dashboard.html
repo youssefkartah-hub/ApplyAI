@@ -220,6 +220,7 @@
     </div>
     <div class="controls">
       <span class="live"><span id="livedot"></span><span id="connText">Live</span></span>
+      <span class="live">day <b id="dayPct" style="color:var(--offer)">0%</b></span>
       <span class="live">updated <span id="syncAgo">—</span></span>
       <select id="intervalSel" title="Auto-refresh interval">
         <option value="30">30s</option><option value="60" selected>60s</option>
@@ -257,18 +258,16 @@
       <button class="tab" data-tab="calendar">🗓 Calendar</button>
       <button class="tab" data-tab="crm">🎤 Interviews·CRM</button>
       <div class="navlbl">Life</div>
-      <button class="tab" data-tab="uni">🎓 University</button>
       <button class="tab" data-tab="proj">🛠 Projects</button>
       <button class="tab" data-tab="habits">🔥 Habits</button>
       <button class="tab" data-tab="focus">⏱ Focus</button>
-      <button class="tab" data-tab="fin">💰 Finance</button>
-      <button class="tab" data-tab="know">📚 Knowledge</button>
     </div>
     <div class="cmdwrap"><input id="cmdbar" class="cmdbar"
       placeholder='Ask or add anything…  ("apply to SpaceX tomorrow", "goal: get a Boeing internship", "find airbus")'/></div>
 
     <div class="pane" data-pane="today" hidden>
       <div class="hero" id="nowCard"></div>
+      <div class="icard" id="dailyBox" style="margin-bottom:14px"></div>
       <div class="icard" id="briefBox" style="margin-bottom:14px"></div>
       <div class="charts">
         <div class="icard" id="topActions"></div>
@@ -352,26 +351,10 @@
       </div>
     </div>
 
-    <div class="pane" data-pane="uni" hidden>
-      <div class="charts">
-        <div class="icard"><h3>📚 Assignments & exams</h3>
-          <div class="frm"><input id="uCourse" placeholder="Course"/><input id="uTitle" class="grow" placeholder="Assignment / exam title"/>
-            <select id="uType"><option>Assignment</option><option>Exam</option><option>Project</option><option>Quiz</option></select>
-            <input id="uDue" type="date"/><button class="primary" id="uAdd">Add</button></div>
-          <div id="uList"></div></div>
-        <div class="icard"><h3>🎓 GPA & courses</h3>
-          <div class="frm"><input id="cName" class="grow" placeholder="Course name"/><input id="cCred" type="number" min="1" max="6" value="3" style="width:64px" title="Credits"/>
-            <select id="cGrade"><option value="">In progress</option><option>A</option><option>A-</option><option>B+</option><option>B</option><option>B-</option><option>C+</option><option>C</option><option>C-</option><option>D</option><option>F</option></select>
-            <button class="primary" id="cAdd">Add</button></div>
-          <div id="gpaBox"></div><div id="cList"></div></div>
-      </div>
-    </div>
 
     <div class="pane" data-pane="proj" hidden>
-      <div class="icard"><h3>🛠 Project portfolio</h3>
-        <div class="frm"><input id="pName" class="grow" placeholder="Project name"/><input id="pSkills" class="grow" placeholder="Skills (comma-separated: CAD, MATLAB…)"/>
-          <input id="pLink" class="grow" placeholder="Link (GitHub / drive)"/><input id="pOutcome" class="grow" placeholder="Outcome / result (e.g. reduced drag 12%)"/>
-          <button class="primary" id="pAdd">Add project</button></div>
+      <div class="icard"><h3>🛠 Projects — time tracked</h3>
+        <div class="frm"><input id="pName" class="grow" placeholder="Project name…"/><button class="primary" id="pAdd">Add project</button></div>
         <div id="pList"></div></div>
     </div>
 
@@ -383,27 +366,7 @@
       <div id="gList"></div>
     </div>
 
-    <div class="pane" data-pane="fin" hidden>
-      <div class="charts">
-        <div class="icard"><h3>💰 Add expense / income</h3>
-          <div class="frm"><input id="fNote" class="grow" placeholder="Description"/>
-            <select id="fCat"><option>Tuition</option><option>Rent</option><option>Food</option><option>Career</option><option>Transport</option><option>Savings</option><option>Income</option><option>Other</option></select>
-            <input id="fAmt" type="number" step="0.01" placeholder="Amount" style="width:110px"/>
-            <button class="primary" id="fAdd">Add</button></div>
-          <div id="fSummary"></div></div>
-        <div class="icard"><h3>🧾 This month</h3><div id="fList"></div></div>
-      </div>
-    </div>
 
-    <div class="pane" data-pane="know" hidden>
-      <div class="icard"><h3>📚 Knowledge vault</h3>
-        <div class="frm"><input id="kTitle" class="grow" placeholder="Note title (e.g. STAR story — composites project)"/>
-          <input id="kTags" class="grow" placeholder="Tags (interview, formulas, contacts…)"/>
-          <button class="primary" id="kAdd">Add note</button></div>
-        <textarea id="kBody" placeholder="Note content…"></textarea>
-        <div class="frm" style="margin-top:10px"><input id="kSearch" class="grow" placeholder="Search notes…"/></div>
-        <div id="kList"></div></div>
-    </div>
 
     <div class="pane" data-pane="overview">
       <div class="stats" id="stats"></div>
@@ -929,6 +892,7 @@ function habitStreak(h){ let s=0; const d=new Date();
   return s;
 }
 function renderToday(){
+  renderDaily();
   const all=jobRows(), tasks=openTasks();
   const appsToday=all.filter(isToday).length, goal=Object.values(TARGETS).reduce((a,b)=>a+b,0);
   const interviews=all.filter(a=>a.status==="Interview Scheduled");
@@ -972,9 +936,6 @@ function renderToday(){
     `<div class="trow"><div class="tt">${esc(a.company)}<div class="sub">${esc(a.position||"")}</div></div></div>`).join(""));
   if(silent.length) side.push(`<div class="areahead">Follow-ups waiting</div>`+silent.slice(0,4).map(a=>
     `<div class="trow"><div class="tt">${esc(a.company)}<div class="sub">${daysSince(a.date)}d silent</div></div></div>`).join(""));
-  const uniDue=OS.uniItems.filter(u=>!u.done&&u.due).sort((a,b)=>a.due<b.due?-1:1).slice(0,3);
-  if(uniDue.length) side.push(`<div class="areahead">University deadlines</div>`+uniDue.map(u=>
-    `<div class="trow"><div class="tt">${esc(u.title)}<div class="sub">${esc(u.course)} · due ${u.due}</div></div></div>`).join(""));
   const actG=(OS.goalTrees||[]).filter(g=>g.status==="active"&&goalProgress(g)<100);
   if(actG.length) side.push(`<div class="areahead">Active goals</div>`+actG.slice(0,3).map(g=>
     `<div class="trow"><div class="tt">${esc(g.title)}<div class="sub">${goalProgress(g)}% complete</div></div></div>`).join(""));
@@ -1107,39 +1068,45 @@ function renderCRM(){
   }).join(""):`<p class="muted">Add each resume version you send out.</p>`;
 }
 
-/* ---- University ---- */
-const GRADEPTS={"A":4,"A-":3.7,"B+":3.3,"B":3,"B-":2.7,"C+":2.3,"C":2,"C-":1.7,"D":1,"F":0};
-function renderUni(){
-  const items=OS.uniItems.filter(u=>!u.done).sort((a,b)=>(a.due||"9999")<(b.due||"9999")?-1:1);
-  $("uList").innerHTML=items.length?items.map(u=>{
-    const d=u.due?Math.ceil((Date.parse(u.due)-Date.now())/86400000):null;
-    const urg=d!=null&&d<=2;
-    return `<div class="trow"><input type="checkbox" data-uni-done="${u.id}"/>
-      <div class="tt">${esc(u.title)}<div class="sub">${esc(u.course)} · ${u.type}${d!=null?` · <span style="color:${urg?"var(--rejected)":"var(--muted)"}">${d<0?"overdue":d===0?"due today":`in ${d}d`}</span>`:""}</div></div>
-      <span class="x" data-uni-del="${u.id}" style="cursor:pointer;color:var(--muted)">✕</span></div>`;
-  }).join(""):`<p class="muted">Nothing due. 🎉</p>`;
-  const graded=OS.courses.filter(c=>GRADEPTS[c.grade]!=null);
-  const pts=graded.reduce((a,c)=>a+GRADEPTS[c.grade]*c.credits,0), cr=graded.reduce((a,c)=>a+c.credits,0);
-  $("gpaBox").innerHTML=`<div class="imetrics"><div class="imetric"><div class="n">${cr?(pts/cr).toFixed(2):"—"}</div><div class="l">GPA</div></div>
-    <div class="imetric"><div class="n">${OS.courses.reduce((a,c)=>a+ +c.credits,0)}</div><div class="l">credits tracked</div></div></div>`;
-  $("cList").innerHTML=OS.courses.map(c=>`<div class="trow"><div class="tt">${esc(c.name)}<div class="sub">${c.credits} cr · ${c.grade||"in progress"}</div></div>
-    <span class="x" data-c-del="${c.id}" style="cursor:pointer;color:var(--muted)">✕</span></div>`).join("");
-}
-
-/* ---- Projects ---- */
-function bullet(p){
-  const sk=(p.skills||"").split(",").map(s=>s.trim()).filter(Boolean);
-  return `Engineered ${p.name}${sk.length?` using ${sk.slice(0,3).join(", ")}`:""}${p.outcome?`, ${p.outcome}`:""}.`;
-}
+/* ---- Projects: name -> timer -> work log ---- */
+function prjElapsed(pr){ return (pr.seconds||0)+(pr.startedAt?Math.floor((Date.now()-pr.startedAt)/1000):0); }
+function prjFmt(sec){ const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60); return h?`${h}h ${m}m`:`${m}m`; }
 function renderProjects(){
-  $("pList").innerHTML=OS.projects.length?OS.projects.map(p=>
-    `<div style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0">
-      <div style="display:flex;justify-content:space-between"><b>${esc(p.name)}</b><span class="x" data-p-del="${p.id}" style="cursor:pointer;color:var(--muted)">✕</span></div>
-      <div style="margin:4px 0">${(p.skills||"").split(",").filter(s=>s.trim()).map(s=>`<span class="pill2">${esc(s.trim())}</span>`).join("")}</div>
-      ${p.link?`<div class="muted" style="font-size:12px"><a href="${esc(p.link)}" target="_blank">${esc(p.link)}</a></div>`:""}
-      <div class="muted" style="font-size:13px;margin-top:6px">📝 <i>${esc(bullet(p))}</i>
-        <button class="rowbtn" data-p-copy="${p.id}">Copy bullet</button></div></div>`).join("")
-    :`<p class="muted">Add your engineering projects — each gets an auto-generated resume bullet.</p>`;
+  $("pList").innerHTML=OS.projects.length?OS.projects.map(pr=>{
+    const run=!!pr.startedAt;
+    return `<div style="border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:10px 0${run?";border-color:var(--offer)":""}">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <b>${esc(pr.name)}</b>
+        <span><b data-prj-elapsed="${pr.id}" style="font-variant-numeric:tabular-nums">${prjFmt(prjElapsed(pr))}</b>
+        <button class="rowbtn ${run?"":"primary"}" data-prj-tgl="${pr.id}" style="margin-left:8px">${run?"⏹ Stop":"▶ Start"}</button>
+        <span class="x" data-prj-del="${pr.id}" style="cursor:pointer;color:var(--muted);margin-left:6px">✕</span></span></div>
+      ${run?`<div class="muted" style="font-size:12px;margin-top:4px">⏱ timer running…</div>`:""}
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input class="grow" style="flex:1" placeholder="What did you do?" data-prj-note-in="${pr.id}"/>
+        <button class="rowbtn" data-prj-note="${pr.id}">Log</button></div>
+      ${(pr.log||[]).slice(-5).reverse().map(l=>`<div class="trow"><div class="tt">${esc(l.text)}<div class="sub">${l.date}${l.mins?` · ${l.mins} min`:""}</div></div></div>`).join("")}
+    </div>`;
+  }).join(""):`<p class="muted">Name a project above — then Start the timer whenever you work on it and log what you did.</p>`;
+}
+setInterval(()=>{ OS.projects.forEach(pr=>{ if(pr.startedAt){
+  const e=document.querySelector(`[data-prj-elapsed="${pr.id}"]`); if(e) e.textContent=prjFmt(prjElapsed(pr)); } }); },1000);
+
+/* ---- Daily performance tracker ---- */
+const DAILY_ITEMS=[["fajr","🕌 Fajr"],["dhuhr","🕌 Dhuhr"],["asr","🕌 Asr"],["maghrib","🕌 Maghrib"],["isha","🕌 Isha"],
+  ["lesson","🗣 Language lesson"],["narcos","📺 1 Narcos episode"],["money","💵 Make $100"]];
+function dayChecks(){ if(!OS.daily||Array.isArray(OS.daily)) OS.daily={}; return OS.daily[todayKey()]=OS.daily[todayKey()]||{}; }
+function renderDaily(){
+  const d=dayChecks();
+  const done=DAILY_ITEMS.filter(([k])=>d[k]).length, pct=Math.round(100*done/DAILY_ITEMS.length);
+  const missing=DAILY_ITEMS.filter(([k])=>!d[k]).map(([,n])=>n.split(" ").slice(1).join(" "));
+  $("dayPct").textContent=pct+"%";
+  $("dayPct").style.color=pct>=100?"var(--offer)":pct>=50?"var(--warn)":"var(--rejected)";
+  $("dailyBox").innerHTML=`<h3>📿 Daily performance · <span style="color:${pct>=100?"var(--offer)":"var(--txt)"}">${pct}%</span></h3>
+    <div class="pacebar"><div class="pacefill" style="width:${pct}%"></div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">${DAILY_ITEMS.map(([k,n])=>
+      `<label class="chk ${d[k]?"on":""}" style="background:var(--panel2);border:1px solid ${d[k]?"var(--offer)":"var(--line)"};border-radius:8px;padding:6px 10px;margin:0;cursor:pointer">
+        <input type="checkbox" data-daily="${k}" ${d[k]?"checked":""}/>${n}</label>`).join("")}</div>
+    <div class="muted" style="font-size:12px;margin-top:8px">${pct>=100?"💯 Perfect day — everything done!":"Missing: "+missing.join(", ")}</div>`;
 }
 
 /* ---- Goal Intelligence System ---- */
@@ -1225,47 +1192,11 @@ function renderGoals(){
   }).join(""):`<p class="muted">No goals yet — type one above and hit Generate plan.</p>`;
 }
 
-/* ---- Finance ---- */
-function renderFinance(){
-  const mon=todayKey().slice(0,7);
-  const rows=OS.finance.filter(f=>(f.date||"").startsWith(mon));
-  const spent=rows.filter(f=>f.cat!=="Income"&&f.cat!=="Savings").reduce((a,b)=>a+ +b.amount,0);
-  const income=rows.filter(f=>f.cat==="Income").reduce((a,b)=>a+ +b.amount,0);
-  const saved=rows.filter(f=>f.cat==="Savings").reduce((a,b)=>a+ +b.amount,0);
-  const byCat={}; rows.forEach(f=>{ if(f.cat!=="Income") byCat[f.cat]=(byCat[f.cat]||0)+ +f.amount; });
-  const maxC=Math.max(1,...Object.values(byCat));
-  $("fSummary").innerHTML=`<div class="imetrics">
-    <div class="imetric"><div class="n" style="color:var(--rejected)">$${spent.toFixed(0)}</div><div class="l">spent this month</div></div>
-    <div class="imetric"><div class="n" style="color:var(--offer)">$${income.toFixed(0)}</div><div class="l">income</div></div>
-    <div class="imetric"><div class="n">$${saved.toFixed(0)}</div><div class="l">saved</div></div></div>`+
-    Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([c,v])=>
-      `<div style="margin:6px 0"><div style="display:flex;justify-content:space-between;font-size:12px"><span>${c}</span><span class="muted">$${v.toFixed(0)}</span></div>
-       <div class="gbar"><span style="width:${Math.round(100*v/maxC)}%"></span></div></div>`).join("");
-  $("fList").innerHTML=rows.length?rows.slice().reverse().map(f=>
-    `<div class="trow"><div class="tt">${esc(f.note||f.cat)}<div class="sub">${f.date} · ${f.cat}</div></div>
-     <b style="color:${f.cat==="Income"?"var(--offer)":"var(--txt)"}">$${(+f.amount).toFixed(2)}</b>
-     <span class="x" data-f-del="${f.id}" style="cursor:pointer;color:var(--muted)">✕</span></div>`).join("")
-    :`<p class="muted">No entries this month.</p>`;
-}
-
-/* ---- Knowledge vault ---- */
-function renderKnow(){
-  const q=($("kSearch").value||"").toLowerCase();
-  const notes=OS.notes.filter(n=>!q||[n.title,n.body,n.tags].join(" ").toLowerCase().includes(q))
-    .sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
-  $("kList").innerHTML=notes.length?notes.map(n=>
-    `<div style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0">
-      <div style="display:flex;justify-content:space-between"><b>${esc(n.title)}</b><span class="x" data-k-del="${n.id}" style="cursor:pointer;color:var(--muted)">✕</span></div>
-      <div>${(n.tags||"").split(",").filter(t=>t.trim()).map(t=>`<span class="pill2">${esc(t.trim())}</span>`).join("")}</div>
-      <div class="muted" style="font-size:13px;white-space:pre-wrap;margin-top:6px">${esc(n.body||"")}</div></div>`).join("")
-    :`<p class="muted">No notes${q?" match":""} yet.</p>`;
-}
-
 /* ---- master render + events (targeted: only visible panes redraw) ---- */
 let heroItem=null, currentTab="today";
 const PANE_R={today:[renderToday],inbox:[renderAreas,renderInbox],planner:[renderPlanner],
-  habits:[renderHabits],focus:[renderFocusStats],crm:[renderCRM],uni:[renderUni],
-  proj:[renderProjects],goals:[renderGoals],fin:[renderFinance],know:[renderKnow]};
+  habits:[renderHabits],focus:[renderFocusStats],crm:[renderCRM],
+  proj:[renderProjects],goals:[renderGoals]};
 function renderOS(){ try{
   renderToday();
   (PANE_R[currentTab]||[]).forEach(f=>{ if(f!==renderToday) f(); });
@@ -1281,8 +1212,6 @@ function runCmd(v){
   if((m=pref("goal:"))||(m=pref("goal "))){ $("gTitle").value=m; switchTab("goals"); createGoal(); return; }
   if((m=pref("find "))||(m=pref("search "))||(m=pref("?"))){
     switchTab("apps"); $("search").value=m; searchTerm=m.toLowerCase(); render(); toast(`Searching "${m}"`); return; }
-  if((m=pref("note:"))){ OS.notes.push({id:uid(),title:m.slice(0,60),tags:"",body:m,updatedAt:Date.now()});
-    osSave(); renderOS(); toast("Saved to Knowledge 📚"); return; }
   if((m=pref("habit:"))){ OS.habits.push({id:uid(),name:m,days:{}}); osSave(); renderOS(); toast("Habit added 🔥"); return; }
   if((m=pref("focus"))!==null&&m===""){ switchTab("focus"); return; }
   // default: smart task/capture — detect due words, then categorize
@@ -1381,30 +1310,17 @@ bindAdd("ctAdd",()=>{ const n=$("ctName").value.trim(); if(!n) return;
   $("ctName").value=$("ctCompany").value=$("ctEmail").value=""; });
 bindAdd("rvAdd",()=>{ const n=$("rvName").value.trim(); if(!n) return;
   OS.resumes.push({id:uid(),name:n,apps:0,ints:0}); $("rvName").value=""; });
-bindAdd("uAdd",()=>{ const t=$("uTitle").value.trim(); if(!t) return;
-  OS.uniItems.push({id:uid(),course:$("uCourse").value.trim(),title:t,type:$("uType").value,due:$("uDue").value||null,done:false});
-  $("uTitle").value=""; });
-bindAdd("cAdd",()=>{ const n=$("cName").value.trim(); if(!n) return;
-  OS.courses.push({id:uid(),name:n,credits:+$("cCred").value||3,grade:$("cGrade").value}); $("cName").value=""; });
 bindAdd("pAdd",()=>{ const n=$("pName").value.trim(); if(!n) return;
-  OS.projects.push({id:uid(),name:n,skills:$("pSkills").value,link:$("pLink").value.trim(),outcome:$("pOutcome").value.trim()});
-  ["pName","pSkills","pLink","pOutcome"].forEach(i=>$(i).value=""); });
+  OS.projects.push({id:uid(),name:n,seconds:0,log:[]}); $("pName").value=""; });
 $("gAdd").addEventListener("click",createGoal);
 $("gTitle").addEventListener("keydown",e=>{ if(e.key==="Enter") createGoal(); });
-bindAdd("fAdd",()=>{ const a=parseFloat($("fAmt").value); if(!a) return;
-  OS.finance.push({id:uid(),date:todayKey(),cat:$("fCat").value,amount:a,note:$("fNote").value.trim()});
-  $("fAmt").value=$("fNote").value=""; });
-bindAdd("kAdd",()=>{ const t=$("kTitle").value.trim(); if(!t) return;
-  OS.notes.push({id:uid(),title:t,tags:$("kTags").value,body:$("kBody").value,updatedAt:Date.now()});
-  $("kTitle").value=$("kTags").value=""; $("kBody").value=""; });
-$("kSearch").addEventListener("input",renderKnow);
 
 document.addEventListener("click",e=>{
   const del=(sel,list)=>{ const b=e.target.closest(sel); if(b){ const id=b.dataset[Object.keys(b.dataset)[0]];
     OS[list]=OS[list].filter(x=>x.id!==id); osSave(); renderOS(); return true; } return false; };
   if(del("[data-iv-del]","interviews")||del("[data-ct-del]","contacts")||del("[data-rv-del]","resumes")||
-     del("[data-uni-del]","uniItems")||del("[data-c-del]","courses")||del("[data-p-del]","projects")||
-     del("[data-g-del2]","goalTrees")||del("[data-f-del]","finance")||del("[data-k-del]","notes")) return;
+     del("[data-p-del]","projects")||
+     del("[data-g-del2]","goalTrees")||del("[data-prj-del]","projects")) return;
   const go=e.target.closest("[data-g-open]"); if(go){ const g=OS.goalTrees.find(x=>x.id===go.dataset.gOpen);
     if(g){ g.open=!g.open; osSave(); renderOS(); } return; }
   const gp=e.target.closest("[data-g-pause]"); if(gp){ const g=OS.goalTrees.find(x=>x.id===gp.dataset.gPause);
@@ -1420,15 +1336,24 @@ document.addEventListener("click",e=>{
     if(iv){ iv.checks=iv.checks||{}; if(chk.checked) iv.checks[chk.dataset.c]=true; else delete iv.checks[chk.dataset.c]; osSave(); renderOS(); } return; }
   const rv=e.target.closest("[data-rv]"); if(rv){ const r=OS.resumes.find(x=>x.id===rv.dataset.rv);
     if(r){ r[rv.dataset.f]=(r[rv.dataset.f]||0)+1; osSave(); renderOS(); } return; }
-  const ud=e.target.closest("[data-uni-done]"); if(ud){ const u=OS.uniItems.find(x=>x.id===ud.dataset.uniDone);
-    if(u){ u.done=true; osSave(); renderOS(); toast("Done ✅"); } return; }
+  const dc=e.target.closest("[data-daily]"); if(dc){ const d=dayChecks();
+    if(dc.checked) d[dc.dataset.daily]=true; else delete d[dc.dataset.daily];
+    osSave(); renderOS(); return; }
+  const pt=e.target.closest("[data-prj-tgl]"); if(pt){ const pr=OS.projects.find(x=>x.id===pt.dataset.prjTgl);
+    if(pr){ if(pr.startedAt){ const mins=Math.round((Date.now()-pr.startedAt)/60000);
+        pr.seconds=(pr.seconds||0)+Math.floor((Date.now()-pr.startedAt)/1000); pr.startedAt=null;
+        (pr.log=pr.log||[]).push({date:todayKey(),text:"Work session",mins}); toast(`Logged ${mins} min`); }
+      else { pr.startedAt=Date.now(); toast("Timer started ▶"); }
+      osSave(); renderOS(); } return; }
+  const pn=e.target.closest("[data-prj-note]"); if(pn){ const pr=OS.projects.find(x=>x.id===pn.dataset.prjNote);
+    const inp=document.querySelector(`[data-prj-note-in="${pn.dataset.prjNote}"]`);
+    if(pr&&inp&&inp.value.trim()){ (pr.log=pr.log||[]).push({date:todayKey(),text:inp.value.trim()});
+      inp.value=""; osSave(); renderOS(); toast("Logged 📝"); } return; }
   const hb=e.target.closest("[data-hero]"); if(hb&&heroItem){
     if(hb.dataset.hero==="focus"){ switchTab("focus"); return; }
     if(heroItem.kind==="task"){ const t=OS.tasks.find(x=>x.id===heroItem.t.id); if(t){ t.done=true; t.doneAt=Date.now(); } }
     else { const t=heroItem.x.t; if(t.daily){ t.days=t.days||{}; t.days[todayKey()]=true; } else { t.done=true; t.doneAt=Date.now(); } }
     osSave(); renderOS(); toast("Next action queued up ⚡"); return; }
-  const pc=e.target.closest("[data-p-copy]"); if(pc){ const p=OS.projects.find(x=>x.id===pc.dataset.pCopy);
-    if(p&&navigator.clipboard){ navigator.clipboard.writeText(bullet(p)); toast("Resume bullet copied"); } return; }
 });
 document.addEventListener("focusout",e=>{
   const ta=e.target.closest&&e.target.closest("[data-iv-notes]");
