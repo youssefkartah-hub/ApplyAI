@@ -36,7 +36,7 @@ NOTION_VERSION = "2022-06-28"
 CACHE_TTL = 20  # seconds; avoid hammering the Notion API on every poll
 
 BLOCKED = {"notion_token.txt", "notion_config.json", "credentials.json",
-           "token.json", ".sync_state.json", "personal_data.json"}
+           "token.json", ".sync_state.json", "personal_data.json", "token_calendar.json"}
 STORE_FILE = os.path.join(DIRECTORY, "personal_data.json")
 MAX_STORE = 5_000_000  # 5 MB cap
 
@@ -268,6 +268,50 @@ def goal_plan(goal):
         return goal_plan_fallback(goal)
 
 
+CAL_TOKEN = os.path.join(DIRECTORY, "token_calendar.json")
+CAL_SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
+
+
+def fetch_calendar():
+    """Read today's + tomorrow's events from the user's primary Google Calendar."""
+    try:
+        from google.auth.transport.requests import Request
+        from google.oauth2.credentials import Credentials
+        from google_auth_oauthlib.flow import InstalledAppFlow
+        from googleapiclient.discovery import build
+        import datetime as dt
+        creds = None
+        if os.path.exists(CAL_TOKEN):
+            creds = Credentials.from_authorized_user_file(CAL_TOKEN, CAL_SCOPES)
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                if not os.path.exists(os.path.join(DIRECTORY, "credentials.json")):
+                    return {"error": "no_creds"}
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    os.path.join(DIRECTORY, "credentials.json"), CAL_SCOPES)
+                creds = flow.run_local_server(port=0)  # opens browser once
+            with open(CAL_TOKEN, "w") as f:
+                f.write(creds.to_json())
+        svc = build("calendar", "v3", credentials=creds, cache_discovery=False)
+        now = dt.datetime.now(dt.timezone.utc)
+        start = now - dt.timedelta(hours=2)
+        end = now + dt.timedelta(days=2)
+        r = svc.events().list(calendarId="primary", timeMin=start.isoformat(),
+                              timeMax=end.isoformat(), singleEvents=True,
+                              orderBy="startTime", maxResults=20).execute()
+        out = []
+        for e in r.get("items", []):
+            st = e.get("start", {})
+            out.append({"title": e.get("summary", "(no title)"),
+                        "start": st.get("dateTime") or st.get("date", ""),
+                        "allday": "date" in st})
+        return {"events": out}
+    except Exception as e:
+        return {"error": "cal", "message": str(e)[:150]}
+
+
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=DIRECTORY, **kwargs)
@@ -285,6 +329,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         path = self.path.split("?", 1)[0]
         if path == "/api/applications":
             self._send_json(fetch_applications())
+            return
+        if path == "/api/calendar":
+            self._send_json(fetch_calendar())
             return
         if path == "/api/store":
             try:

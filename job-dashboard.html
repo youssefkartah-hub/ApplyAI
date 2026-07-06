@@ -280,7 +280,7 @@
       <div class="charts">
         <div class="icard"><h3>🗂 Unscheduled (drag onto a slot)</h3><div id="unsched"></div>
           <div style="margin-top:10px"><button class="primary" id="autoPlan">✨ Auto-plan my day</button></div></div>
-        <div class="icard"><h3>📆 Today's plan</h3><div id="slots"></div></div>
+        <div><div class="icard" style="margin-bottom:14px" id="calBoxP"></div><div class="icard"><h3>📆 Today's plan</h3><div id="slots"></div></div></div>
       </div>
     </div>
 
@@ -834,6 +834,12 @@ const OS_LISTS=["tasks","habits","sessions","inbox","goals","goalTrees","courses
   "contacts","interviews","resumes","projects","finance","notes"];
 let osSaveT=null;
 
+let calEvents=null;
+async function loadCal(){
+  try{ const j=await fetch("/api/calendar",{cache:"no-store"}).then(r=>r.json());
+    calEvents=j.events||null; }catch(e){ calEvents=null; }
+  renderOS();
+}
 async function osLoad(){
   try{ const r=await fetch("/api/store",{cache:"no-store"}); const j=await r.json();
     if(j&&typeof j==="object") OS={...OS,...j}; }
@@ -939,6 +945,9 @@ function renderToday(){
   const actG=(OS.goalTrees||[]).filter(g=>g.status==="active"&&goalProgress(g)<100);
   if(actG.length) side.push(`<div class="areahead">Active goals</div>`+actG.slice(0,3).map(g=>
     `<div class="trow"><div class="tt">${esc(g.title)}<div class="sub">${goalProgress(g)}% complete</div></div></div>`).join(""));
+  if(calEvents&&calEvents.length) side.push(`<div class="areahead">Calendar</div>`+calEvents.slice(0,3).map(ev=>{
+    const when=ev.allday?"all day":new Date(ev.start).toLocaleString(undefined,{weekday:"short",hour:"numeric",minute:"2-digit"});
+    return `<div class="trow"><div class="tt">📅 ${esc(ev.title)}<div class="sub">${when}</div></div></div>`;}).join(""));
   side.push(`<div class="areahead">Habits today</div>`+(OS.habits.length?OS.habits.map(h=>{
     const on=(h.days||{})[todayKey()];
     return `<div class="trow"><input type="checkbox" data-habit-today="${h.id}" ${on?"checked":""}/><div class="tt ${on?"done":""}">${esc(h.name)}<div class="sub">🔥 ${habitStreak(h)}-day streak</div></div></div>`;
@@ -991,7 +1000,15 @@ function renderInbox(){
 
 /* ---- planner ---- */
 const SLOTS=["09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00"];
+function calList(){
+  if(calEvents===null) return `<p class="muted" style="font-size:12px">📅 Calendar not connected — restart the app and approve Google Calendar access in the browser popup.</p>`;
+  if(!calEvents.length) return `<p class="muted" style="font-size:12px">📅 No calendar events in the next 2 days.</p>`;
+  return calEvents.map(ev=>{ const d=ev.allday?null:new Date(ev.start);
+    const when=ev.allday?ev.start+" · all day":d.toLocaleString(undefined,{weekday:"short",hour:"numeric",minute:"2-digit"});
+    return `<div class="trow"><div class="tt">📅 ${esc(ev.title)}<div class="sub">${when}</div></div></div>`; }).join("");
+}
 function renderPlanner(){
+  $("calBoxP").innerHTML=`<h3 style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:0 0 6px">📅 From Google Calendar</h3>`+calList();
   const t=openTasks();
   $("unsched").innerHTML=t.filter(x=>!x.slot).map(x=>
     `<div class="task-chip" draggable="true" data-drag="${x.id}"><span>${esc(x.title)} <span class="muted">· ${x.dur||30}m</span></span><span class="pscore">${x.score}</span></div>`).join("")
@@ -1360,7 +1377,7 @@ document.addEventListener("focusout",e=>{
   if(ta){ const iv=OS.interviews.find(x=>x.id===ta.dataset.ivNotes); if(iv&&iv.notes!==ta.value){ iv.notes=ta.value; osSave(); toast("Notes saved"); } }
 });
 
-osLoad().then(()=>switchTab("today"));
+osLoad().then(()=>switchTab("today")); loadCal(); setInterval(loadCal,5*60*1000);
 </script>
 </body>
 </html>
