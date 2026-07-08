@@ -299,8 +299,9 @@
   #micBtn.listening{border-color:var(--rejected);animation:micpulse 1.3s ease infinite}
   @keyframes micpulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.45)}50%{box-shadow:0 0 0 9px rgba(239,68,68,0)}}
   #voiceBubble{position:fixed;right:18px;bottom:18px;z-index:70;background:var(--panel);
-    border:1px solid rgba(34,211,238,.35);border-radius:14px;padding:13px 16px;max-width:360px;
-    box-shadow:0 14px 44px rgba(0,0,0,.55),0 0 22px rgba(34,211,238,.08);font-size:13px}
+    border:1px solid rgba(34,211,238,.35);border-radius:14px;padding:13px 16px;max-width:380px;
+    max-height:45vh;overflow-y:auto;
+    box-shadow:0 14px 44px rgba(0,0,0,.55),0 0 22px rgba(34,211,238,.08);font-size:13px;line-height:1.55}
   #voiceBubble .vb-you{color:var(--muted);margin-bottom:6px;font-style:italic}
   #voiceBubble .vb-you:empty,#voiceBubble .vb-sarah:empty{display:none}
   #voiceBubble .vb-sarah{color:var(--txt)}
@@ -1751,7 +1752,7 @@ function browserSpeak(txt){
 function cleanSpeech(txt){
   return txt.replace(/<[^>]+>/g,"").replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu,"").trim();
 }
-async function speakText(raw){
+async function speakText(raw,onEnd){
   const txt=cleanSpeech(raw);
   stopAudio();
   try{
@@ -1761,12 +1762,18 @@ async function speakText(raw){
     if(r.ok&&type.includes("audio")){
       const blob=await r.blob();
       briefAudio=new Audio(URL.createObjectURL(blob));
+      if(onEnd) briefAudio.onended=onEnd;
       briefAudio.play(); return true;
     }
     const j=await r.json().catch(()=>({}));
     if(j.error==="no_key") toast("Add an ElevenLabs key for the natural voice. Using the built in one for now.");
   }catch(err){}
-  browserSpeak(txt); return false;
+  if("speechSynthesis" in window&&onEnd){
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(txt); u.rate=1.02; u.onend=onEnd;
+    speechSynthesis.speak(u);
+  } else browserSpeak(txt);
+  return false;
 }
 document.addEventListener("click",async e=>{
   const btn=e.target.closest("[data-speak]"); if(!btn) return;
@@ -1830,13 +1837,18 @@ function localIntent(t){
   return `Got it: ${acted.join(", and ")}. `+(bits.length?`Still open: ${bits.slice(0,3).join(", ")}.`:`And that's everything for today. Perfect day.`);
 }
 function voiceState(){
-  const dd=dayChecks();
+  const dd=dayChecks(), all=jobRows();
   return { prayersLeft:PRAYERS.filter(([k])=>!dd[k]).map(([,n])=>n),
     trainingLeft:trainingToday().filter(([k])=>!dd[k]).map(([,n])=>n),
     mindLeft:[["lesson","language lesson"],["narcos","Narcos episode"]].filter(([k])=>!dd[k]).map(([,n])=>n),
     incomeToday:incomeToday(), incomeGoal:INCOME_GOAL, incomeAllTime:incomeTotal(),
-    appsToday:jobRows().filter(isToday).length, appsGoal:Object.values(TARGETS).reduce((a,b)=>a+b,0),
-    topTasks:openTasks().slice(0,5).map(t=>t.title) };
+    appsToday:all.filter(isToday).length, appsGoal:Object.values(TARGETS).reduce((a,b)=>a+b,0),
+    interviewsInPlay:all.filter(a=>a.status==="Interview Scheduled").map(a=>a.company).slice(0,5),
+    silentApplications:all.filter(a=>a.status==="Applied"&&a.date&&daysSince(a.date)>=7).length,
+    focusMinutesToday:OS.sessions.filter(s=>s.date===todayKey()).reduce((a,b)=>a+b.mins,0),
+    habitsLeft:OS.habits.filter(h=>!(h.days||{})[todayKey()]).map(h=>h.name).slice(0,6),
+    calendarToday:todayCalEvents().map(ev=>ev.title).slice(0,8),
+    topTasks:openTasks().slice(0,6).map(t=>t.title) };
 }
 const AI_ACTIONS={
   check_prayer:a=>{ if(PRAYERS.some(([k])=>k===a.key)) checkDaily(a.key); },
@@ -1844,12 +1856,17 @@ const AI_ACTIONS={
   check_mind:a=>{ if(["lesson","narcos"].includes(a.key)) checkDaily(a.key); },
   log_income:a=>{ const v=+a.amount; if(v>0) OS.incomeLog.push({id:uid(),date:todayKey(),amount:Math.round(v*100)/100}); },
   add_task:a=>{ if(a.title) OS.tasks.push({id:uid(),title:a.title,area:categorize(a.title).area,imp:2,dur:30,createdAt:Date.now(),done:false}); },
+  complete_task:a=>{ if(!a.title) return; const l=a.title.toLowerCase();
+    const t=OS.tasks.find(x=>!x.done&&x.title.toLowerCase().includes(l))
+      ||OS.tasks.find(x=>!x.done&&l.includes(x.title.toLowerCase()));
+    if(t){ t.done=true; t.doneAt=Date.now(); } },
   none:()=>{},
 };
+let voiceHist=[];
 async function aiAssist(text){
   try{
     const r=await fetch("/api/assistant",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({text,state:voiceState()})});
+      body:JSON.stringify({text,state:voiceState(),history:voiceHist})});
     const j=await r.json();
     if(j.error) return null;
     (j.actions||[]).forEach(a=>{ (AI_ACTIONS[a.type]||AI_ACTIONS.none)(a); });
@@ -1859,26 +1876,40 @@ async function aiAssist(text){
 }
 async function voiceExchange(heard){
   showBubble(`"${heard}"`,"…");
-  let reply=localIntent(heard);
-  if(reply==null) reply=await aiAssist(heard);
-  if(reply==null) reply="I can log prayers, training, income and tasks, or tell you what's left. Try saying: I prayed fajr, or, I made 40 dollars.";
+  let reply=await aiAssist(heard);          // full conversation when Claude is connected
+  if(reply==null) reply=localIntent(heard); // offline pattern matching otherwise
+  if(reply==null) reply="I heard you, but my full brain isn't connected yet, so I can only handle simple updates. Add an Anthropic API key to the app folder and we can actually talk. For now try: I prayed fajr, I made 40 dollars, or, what's left today.";
+  voiceHist.push({role:"user",content:heard},{role:"assistant",content:cleanSpeech(reply)});
+  if(voiceHist.length>16) voiceHist=voiceHist.slice(-16);
   showBubble(`"${heard}"`,reply);
-  speakText(reply);
+  setMicUI("speaking");
+  speakText(reply,()=>{ if(convoMode) setTimeout(startListening,350); else setMicUI("idle"); });
 }
-$("micBtn").addEventListener("click",()=>{
+let convoMode=false;
+function setMicUI(state){
+  const b=$("micBtn");
+  b.classList.toggle("listening",state==="listening");
+  b.textContent=state==="listening"?"🎤 Listening…":state==="speaking"?"🔴 Stop":convoMode?"🔴 Stop":"🎤 Talk";
+}
+function startListening(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){ toast("Voice input needs Chrome"); return; }
-  if(vListening){ try{ vRec.stop(); }catch(e){} return; }
+  if(!SR){ toast("Voice input needs Chrome"); convoMode=false; return; }
   if(!vRec){ vRec=new SR(); vRec.lang="en-US"; vRec.interimResults=false; vRec.maxAlternatives=1;
     vRec.onresult=e=>{ const t=e.results[0][0].transcript; voiceExchange(t); };
-    vRec.onend=()=>{ vListening=false; $("micBtn").classList.remove("listening"); $("micBtn").textContent="🎤 Talk"; };
-    vRec.onerror=ev=>{ vListening=false; $("micBtn").classList.remove("listening"); $("micBtn").textContent="🎤 Talk";
-      toast(ev.error==="not-allowed"?"Allow microphone access in the browser to talk to Sarah":"I couldn't hear that. Try again."); };
+    vRec.onend=()=>{ vListening=false; if(!convoMode) setMicUI("idle"); };
+    vRec.onerror=ev=>{ vListening=false;
+      if(ev.error==="not-allowed"){ convoMode=false; setMicUI("idle"); toast("Allow microphone access in the browser to talk to Sarah"); }
+      else if(ev.error==="no-speech"){ convoMode=false; setMicUI("idle"); showBubble("","I'll be here when you need me."); }
+      else { convoMode=false; setMicUI("idle"); } };
   }
   stopAudio();
-  vListening=true; $("micBtn").classList.add("listening"); $("micBtn").textContent="🎤 Listening…";
+  vListening=true; setMicUI("listening");
   showBubble("Listening…","");
   try{ vRec.start(); }catch(e){}
+}
+$("micBtn").addEventListener("click",()=>{
+  if(convoMode){ convoMode=false; try{ vRec&&vRec.stop(); }catch(e){} stopAudio(); setMicUI("idle"); return; }
+  convoMode=true; startListening();
 });
 
 (function bootSeq(){

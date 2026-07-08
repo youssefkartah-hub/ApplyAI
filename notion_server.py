@@ -37,7 +37,15 @@ CACHE_TTL = 20  # seconds; avoid hammering the Notion API on every poll
 
 BLOCKED = {"notion_token.txt", "notion_config.json", "credentials.json",
            "token.json", ".sync_state.json", "personal_data.json", "token_calendar.json",
-           "elevenlabs_key.txt"}
+           "elevenlabs_key.txt", "anthropic_key.txt"}
+ANTHROPIC_KEY_FILE = os.path.join(DIRECTORY, "anthropic_key.txt")
+
+
+def anthropic_key():
+    k = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    if not k and os.path.exists(ANTHROPIC_KEY_FILE):
+        k = open(ANTHROPIC_KEY_FILE).read().strip()
+    return k
 STORE_FILE = os.path.join(DIRECTORY, "personal_data.json")
 MAX_STORE = 5_000_000  # 5 MB cap
 
@@ -250,11 +258,12 @@ def goal_plan_fallback(goal):
 
 
 def goal_plan(goal):
-    if not os.environ.get("ANTHROPIC_API_KEY"):
+    key = anthropic_key()
+    if not key:
         return goal_plan_fallback(goal)
     try:
         import anthropic
-        client = anthropic.Anthropic()
+        client = anthropic.Anthropic(api_key=key)
         resp = client.messages.create(
             model="claude-opus-4-8", max_tokens=2000,
             system=GOAL_PROMPT,
@@ -330,7 +339,7 @@ ASSIST_SCHEMA = {
             "properties": {
                 "type": {"type": "string",
                          "enum": ["check_prayer", "check_training", "check_mind",
-                                  "log_income", "add_task", "none"]},
+                                  "log_income", "add_task", "complete_task", "none"]},
                 "key": {"type": "string"},
                 "amount": {"type": "number"},
                 "title": {"type": "string"}},
@@ -338,29 +347,44 @@ ASSIST_SCHEMA = {
     "required": ["reply", "actions"],
 }
 ASSIST_PROMPT = (
-    "You are Sarah, Youssef's personal assistant in his life dashboard. He talks "
-    "to you by voice; your reply is read aloud, so keep it warm, casual and short, "
-    "one to three sentences, no lists or markdown. You get a STATE snapshot of his "
-    "day. When he reports something done, acknowledge it and emit matching actions: "
-    "check_prayer with key fajr/dhuhr/asr/maghrib/isha, check_training with key "
-    "bjj/muaythai, check_mind with key lesson/narcos, log_income with amount, "
-    "add_task with title. When he asks what's left or how he's doing, answer from "
-    "STATE. Never invent progress he didn't mention."
+    "You are Sarah, Youssef's personal AI assistant, living in his personal "
+    "command center app. He is an aerospace engineering student grinding through "
+    "a job search, university, BJJ and Muay Thai training, prayer, language "
+    "learning, and building income. You are warm, sharp, direct and genuinely "
+    "helpful, like a trusted friend who keeps him on track. This is an ongoing "
+    "spoken conversation: he talks, you talk back. Your reply is read aloud by "
+    "text to speech, so write natural speech with no lists, markdown, emojis or "
+    "headings. Usually two to five sentences; go longer only when he asks for "
+    "depth, advice or planning help. You can discuss anything: interview prep, "
+    "career strategy, motivation, ideas, general questions.\n\n"
+    "Each turn you receive a STATE snapshot of his day (prayers, training, mind, "
+    "income, applications, tasks). Use it to ground answers about what's left or "
+    "how he's doing. When he reports something done, acknowledge it and emit "
+    "matching actions: check_prayer with key fajr/dhuhr/asr/maghrib/isha, "
+    "check_training with key bjj/muaythai, check_mind with key lesson/narcos, "
+    "log_income with amount, add_task with title, complete_task with the task's "
+    "title. Never invent progress he didn't mention, and never fake numbers not "
+    "in STATE."
 )
 
 
 def assistant_reply(payload):
-    if not os.environ.get("ANTHROPIC_API_KEY"):
+    key = anthropic_key()
+    if not key:
         return {"error": "no_ai"}
     try:
         import anthropic
-        client = anthropic.Anthropic()
+        client = anthropic.Anthropic(api_key=key)
+        msgs = []
+        for h in (payload.get("history") or [])[-12:]:
+            if h.get("role") in ("user", "assistant") and h.get("content"):
+                msgs.append({"role": h["role"], "content": str(h["content"])[:2000]})
+        msgs.append({"role": "user", "content":
+                     f"STATE: {json.dumps(payload.get('state', {}))}\n"
+                     f"Youssef said: {payload.get('text', '')}"})
         resp = client.messages.create(
-            model="claude-sonnet-5", max_tokens=600,
-            system=ASSIST_PROMPT,
-            messages=[{"role": "user", "content":
-                       f"STATE: {json.dumps(payload.get('state', {}))}\n"
-                       f"Youssef said: {payload.get('text', '')}"}],
+            model="claude-sonnet-5", max_tokens=900,
+            system=ASSIST_PROMPT, messages=msgs,
             output_config={"format": {"type": "json_schema", "schema": ASSIST_SCHEMA}},
         )
         text = next(b.text for b in resp.content if getattr(b, "type", "") == "text")
@@ -651,6 +675,11 @@ def main():
         else:
             print("ElevenLabs voice: no key found — falling back to the browser voice.")
             print("Put your key in elevenlabs_key.txt to enable it.")
+        if anthropic_key():
+            print("Assistant brain: Claude connected. Sarah can hold a full conversation.")
+        else:
+            print("Assistant brain: pattern matching only. Put an Anthropic API key in")
+            print("anthropic_key.txt to let Sarah hold real conversations.")
         print("\nKeep this window open while you use the dashboard. Ctrl+C to stop.")
         threading.Timer(0.8, lambda: webbrowser.open(url)).start()
         try:
