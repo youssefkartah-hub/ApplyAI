@@ -295,6 +295,16 @@
   .mcell .mc{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
   .mcell .mc.up{color:var(--offer)} .mcell .mc.down{color:var(--rejected)}
   .mcell svg{width:100%;height:46px;margin-top:8px;display:block}
+  /* ===== Voice assistant ===== */
+  #micBtn.listening{border-color:var(--rejected);animation:micpulse 1.3s ease infinite}
+  @keyframes micpulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.45)}50%{box-shadow:0 0 0 9px rgba(239,68,68,0)}}
+  #voiceBubble{position:fixed;right:18px;bottom:18px;z-index:70;background:var(--panel);
+    border:1px solid rgba(34,211,238,.35);border-radius:14px;padding:13px 16px;max-width:360px;
+    box-shadow:0 14px 44px rgba(0,0,0,.55),0 0 22px rgba(34,211,238,.08);font-size:13px}
+  #voiceBubble .vb-you{color:var(--muted);margin-bottom:6px;font-style:italic}
+  #voiceBubble .vb-you:empty,#voiceBubble .vb-sarah:empty{display:none}
+  #voiceBubble .vb-sarah{color:var(--txt)}
+  #voiceBubble .vb-sarah::before{content:"Sarah · ";color:#67e8f9;font-weight:600}
 </style>
 </head>
 <body>
@@ -320,10 +330,15 @@
       <span class="live">next <span id="countdown">60s</span></span>
       <button id="refreshNow">Refresh</button>
       <button id="exportCsv">Export CSV</button>
+      <button id="micBtn" title="Talk to Sarah">🎤 Talk</button>
       <button id="themeBtn" title="Toggle light/dark">🌓</button>
     </div>
     </div>
   </header>
+  <div id="voiceBubble" hidden>
+    <div class="vb-you" id="vbYou"></div>
+    <div class="vb-sarah" id="vbSarah"></div>
+  </div>
 
   <div id="setup" class="setup" style="display:none">
     <h2>Connect your Notion tracker</h2>
@@ -1108,13 +1123,7 @@ function renderToday(){
   brief.push(appLine.join(" "));
   if(overdue.length) brief.push(`<b>${overdue.length}</b> task${overdue.length>1?"s":""} slipped past the deadline. Knock out <b>${esc(overdue[0].title)}</b> first and the rest gets easier.`);
   if(tasks[0]) brief.push(`Best use of your time right now: <b>${esc(tasks[0].title)}</b>.`);
-  const dd=dayChecks(), leftBits=[];
-  const pl=PRAYERS.filter(([k])=>!dd[k]).map(([,n])=>n);
-  if(pl.length) leftBits.push(pl.length===5?"all five prayers":`${pl.length} prayer${pl.length>1?"s":""} (${pl.join(", ")})`);
-  trainingToday().filter(([k])=>!dd[k]).forEach(([,n])=>leftBits.push(n));
-  [["lesson","your language lesson"],["narcos","an episode of Narcos"]].forEach(([k,n])=>{ if(!dd[k]) leftBits.push(n); });
-  const incLeft=Math.max(0,INCOME_GOAL-incomeToday());
-  if(incLeft>0) leftBits.push(`<b>$${incLeft.toLocaleString()}</b> more to hit your income goal`);
+  const leftBits=dailyLeftBits();
   brief.push(leftBits.length?`Still on the board today: ${leftBits.join(", ")}.`
     :`Every daily category is done. That's a perfect day. 💯`);
   if(habitsLeft.length) brief.push(`Habits you haven't checked yet: ${habitsLeft.slice(0,4).map(h=>esc(h.name)).join(", ")}.`);
@@ -1355,6 +1364,16 @@ function prayerRing(done){
 function lifeChk(k,label,on){
   return `<label class="lchk ${on?"on":""}"><input type="checkbox" data-daily="${k}" ${on?"checked":""}/>
     <span class="lbl">${esc(label)}</span></label>`;
+}
+function dailyLeftBits(){
+  const dd=dayChecks(), bits=[];
+  const pl=PRAYERS.filter(([k])=>!dd[k]).map(([,n])=>n);
+  if(pl.length) bits.push(pl.length===5?"all five prayers":`${pl.length} prayer${pl.length>1?"s":""} (${pl.join(", ")})`);
+  trainingToday().filter(([k])=>!dd[k]).forEach(([,n])=>bits.push(n));
+  [["lesson","your language lesson"],["narcos","an episode of Narcos"]].forEach(([k,n])=>{ if(!dd[k]) bits.push(n); });
+  const incLeft=Math.max(0,INCOME_GOAL-incomeToday());
+  if(incLeft>0) bits.push(`$${incLeft.toLocaleString()} more to hit your income goal`);
+  return bits;
 }
 function renderDaily(){
   const prevInc=document.querySelector("[data-inc-in]");
@@ -1716,6 +1735,10 @@ function tickClock(){ const el=$("hudClock"); if(!el) return;
 setInterval(tickClock,1000); tickClock();
 
 let briefAudio=null;
+function stopAudio(){
+  if(briefAudio){ briefAudio.pause(); briefAudio=null; }
+  if("speechSynthesis" in window) speechSynthesis.cancel();
+}
 function browserSpeak(txt){
   if(!("speechSynthesis" in window)){ toast("Voice not supported in this browser"); return; }
   speechSynthesis.cancel();
@@ -1725,13 +1748,12 @@ function browserSpeak(txt){
   if(v) u.voice=v;
   speechSynthesis.speak(u);
 }
-document.addEventListener("click",async e=>{
-  const btn=e.target.closest("[data-speak]"); if(!btn) return;
-  if(briefAudio){ briefAudio.pause(); briefAudio=null; }
-  if("speechSynthesis" in window) speechSynthesis.cancel();
-  const txt=$("briefBox").innerText.replace(/🔊 Read it to me|☀️ Your daily rundown/g,"")
-    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu,"").trim();
-  btn.disabled=true; btn.textContent="🔊 One sec…";
+function cleanSpeech(txt){
+  return txt.replace(/<[^>]+>/g,"").replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu,"").trim();
+}
+async function speakText(raw){
+  const txt=cleanSpeech(raw);
+  stopAudio();
   try{
     const r=await fetch("/api/speak",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({text:txt})});
@@ -1739,15 +1761,124 @@ document.addEventListener("click",async e=>{
     if(r.ok&&type.includes("audio")){
       const blob=await r.blob();
       briefAudio=new Audio(URL.createObjectURL(blob));
-      briefAudio.play(); toast("🔊 Reading your rundown");
-      btn.disabled=false; btn.textContent="🔊 Read it to me"; return;
+      briefAudio.play(); return true;
     }
     const j=await r.json().catch(()=>({}));
     if(j.error==="no_key") toast("Add an ElevenLabs key for the natural voice. Using the built in one for now.");
-    else if(j.error) toast("The natural voice is unavailable right now, using the built in one.");
   }catch(err){}
+  browserSpeak(txt); return false;
+}
+document.addEventListener("click",async e=>{
+  const btn=e.target.closest("[data-speak]"); if(!btn) return;
+  const txt=$("briefBox").innerText.replace(/🔊 Read it to me|☀️ Your daily rundown/g,"");
+  btn.disabled=true; btn.textContent="🔊 One sec…";
+  await speakText(txt);
   btn.disabled=false; btn.textContent="🔊 Read it to me";
-  browserSpeak(txt);
+});
+
+/* ---- Talk to Sarah: speech in, actions applied, spoken answer out ---- */
+let vRec=null, vListening=false, vbTimer=null;
+function showBubble(you,sarah){
+  $("vbYou").textContent=you||""; $("vbSarah").textContent=sarah||"";
+  $("voiceBubble").hidden=false;
+  clearTimeout(vbTimer); vbTimer=setTimeout(()=>{ $("voiceBubble").hidden=true; },15000);
+}
+function checkDaily(k){ const d=dayChecks(); d[k]=true; }
+function markTrainingTask(key){
+  const det=TRAINING_DETECT.find(([k])=>k===key);
+  if(det) OS.tasks.forEach(t=>{ if(t.fromCal&&t.due===todayKey()&&det[1].test(t.title||"")){ t.done=true; t.doneAt=Date.now(); } });
+}
+function leftSummarySpeech(){
+  const bits=dailyLeftBits();
+  if(!bits.length) return "Nothing. You've cleared every category today. Genuinely impressive.";
+  return `Here's what's left: ${bits.join(", ")}. You've got this.`;
+}
+const PRAYER_HEARD={fajr:/fajr|fajer|fudger|fazr/,dhuhr:/dhuhr|duhr|zuhr|dohr|thugger/,
+  asr:/\basr\b|asser|us(e)?r/,maghrib:/maghrib|magrib|mug rib/,isha:/isha|aisha|e sha/};
+function localIntent(t){
+  const l=" "+t.toLowerCase().trim()+" ";
+  const isQuestion=/^\s*(what|when|how|do i|did i|is there|are there|any(thing)?\b)/.test(t.toLowerCase())||t.trim().endsWith("?");
+  if(isQuestion){
+    if(/(left|remaining|still (need|have|got) to|to ?do)/.test(l)) return leftSummarySpeech();
+    if(/how much.*(made|earned|make)/.test(l)){
+      const e=incomeToday(), left=Math.max(0,INCOME_GOAL-e);
+      return `You've made $${e.toLocaleString()} today${left?`, so $${left.toLocaleString()} to go`:", goal hit"}. All time you're at $${incomeTotal().toLocaleString()}.`;
+    }
+    if(/(rundown|brief|my day)/.test(l)) return cleanSpeech($("briefBox").innerText.replace(/🔊 Read it to me|☀️ Your daily rundown/g,""));
+    return null;
+  }
+  const acted=[];
+  // money first so "made 40" doesn't get eaten by other rules
+  const m=l.match(/(?:made|earned|got paid|log(?:ged)?)\D{0,12}?(\d+(?:\.\d+)?)/);
+  if(m){ const v=Math.round(parseFloat(m[1])*100)/100;
+    OS.incomeLog.push({id:uid(),date:todayKey(),amount:v});
+    const left=Math.max(0,INCOME_GOAL-incomeToday());
+    acted.push(`$${v.toLocaleString()} logged${left?` with $${left.toLocaleString()} to go`:" which hits your goal"}`); }
+  if(/all (five |5 )?(of my |my )?prayers/.test(l)){ PRAYERS.forEach(([k])=>checkDaily(k)); acted.push("all five prayers"); }
+  else PRAYERS.forEach(([k,n])=>{ if(PRAYER_HEARD[k].test(l)){ checkDaily(k); acted.push(n); } });
+  if(/(bjj|jiu.?jitsu|jujitsu)/.test(l)){ checkDaily("bjj"); markTrainingTask("bjj"); acted.push("BJJ"); }
+  if(/(muay ?thai|my tie|moy tai)/.test(l)){ checkDaily("muaythai"); markTrainingTask("muaythai"); acted.push("Muay Thai"); }
+  if(/(language lesson|my lesson|duolingo)/.test(l)){ checkDaily("lesson"); acted.push("your lesson"); }
+  if(/narcos|episode/.test(l)&&/watch|did|done|finish/.test(l)){ checkDaily("narcos"); acted.push("Narcos"); }
+  const task=t.match(/(?:remind me to|add (?:a )?task(?: to)?|i need to remember to)\s+(.+)/i);
+  if(task){ const title=task[1].trim();
+    OS.tasks.push({id:uid(),title,area:categorize(title).area,imp:2,dur:30,createdAt:Date.now(),done:false});
+    acted.push(`a task for ${title}`); }
+  if(!acted.length) return null;
+  osSave(); renderOS();
+  const bits=dailyLeftBits();
+  return `Got it: ${acted.join(", and ")}. `+(bits.length?`Still open: ${bits.slice(0,3).join(", ")}.`:`And that's everything for today. Perfect day.`);
+}
+function voiceState(){
+  const dd=dayChecks();
+  return { prayersLeft:PRAYERS.filter(([k])=>!dd[k]).map(([,n])=>n),
+    trainingLeft:trainingToday().filter(([k])=>!dd[k]).map(([,n])=>n),
+    mindLeft:[["lesson","language lesson"],["narcos","Narcos episode"]].filter(([k])=>!dd[k]).map(([,n])=>n),
+    incomeToday:incomeToday(), incomeGoal:INCOME_GOAL, incomeAllTime:incomeTotal(),
+    appsToday:jobRows().filter(isToday).length, appsGoal:Object.values(TARGETS).reduce((a,b)=>a+b,0),
+    topTasks:openTasks().slice(0,5).map(t=>t.title) };
+}
+const AI_ACTIONS={
+  check_prayer:a=>{ if(PRAYERS.some(([k])=>k===a.key)) checkDaily(a.key); },
+  check_training:a=>{ if(["bjj","muaythai"].includes(a.key)){ checkDaily(a.key); markTrainingTask(a.key); } },
+  check_mind:a=>{ if(["lesson","narcos"].includes(a.key)) checkDaily(a.key); },
+  log_income:a=>{ const v=+a.amount; if(v>0) OS.incomeLog.push({id:uid(),date:todayKey(),amount:Math.round(v*100)/100}); },
+  add_task:a=>{ if(a.title) OS.tasks.push({id:uid(),title:a.title,area:categorize(a.title).area,imp:2,dur:30,createdAt:Date.now(),done:false}); },
+  none:()=>{},
+};
+async function aiAssist(text){
+  try{
+    const r=await fetch("/api/assistant",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({text,state:voiceState()})});
+    const j=await r.json();
+    if(j.error) return null;
+    (j.actions||[]).forEach(a=>{ (AI_ACTIONS[a.type]||AI_ACTIONS.none)(a); });
+    if((j.actions||[]).some(a=>a.type!=="none")){ osSave(); renderOS(); }
+    return j.reply||null;
+  }catch(e){ return null; }
+}
+async function voiceExchange(heard){
+  showBubble(`"${heard}"`,"…");
+  let reply=localIntent(heard);
+  if(reply==null) reply=await aiAssist(heard);
+  if(reply==null) reply="I can log prayers, training, income and tasks, or tell you what's left. Try saying: I prayed fajr, or, I made 40 dollars.";
+  showBubble(`"${heard}"`,reply);
+  speakText(reply);
+}
+$("micBtn").addEventListener("click",()=>{
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ toast("Voice input needs Chrome"); return; }
+  if(vListening){ try{ vRec.stop(); }catch(e){} return; }
+  if(!vRec){ vRec=new SR(); vRec.lang="en-US"; vRec.interimResults=false; vRec.maxAlternatives=1;
+    vRec.onresult=e=>{ const t=e.results[0][0].transcript; voiceExchange(t); };
+    vRec.onend=()=>{ vListening=false; $("micBtn").classList.remove("listening"); $("micBtn").textContent="🎤 Talk"; };
+    vRec.onerror=ev=>{ vListening=false; $("micBtn").classList.remove("listening"); $("micBtn").textContent="🎤 Talk";
+      toast(ev.error==="not-allowed"?"Allow microphone access in the browser to talk to Sarah":"I couldn't hear that. Try again."); };
+  }
+  stopAudio();
+  vListening=true; $("micBtn").classList.add("listening"); $("micBtn").textContent="🎤 Listening…";
+  showBubble("Listening…","");
+  try{ vRec.start(); }catch(e){}
 });
 
 (function bootSeq(){

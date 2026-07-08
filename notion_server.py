@@ -318,10 +318,63 @@ def fetch_calendar():
         return {"error": "cal", "message": str(e)[:150]}
 
 
+# Voice assistant brain: understands spoken updates and questions.
+# Uses Claude when ANTHROPIC_API_KEY is set; the frontend handles simple
+# phrases locally either way.
+ASSIST_SCHEMA = {
+    "type": "object", "additionalProperties": False,
+    "properties": {
+        "reply": {"type": "string"},
+        "actions": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {
+                "type": {"type": "string",
+                         "enum": ["check_prayer", "check_training", "check_mind",
+                                  "log_income", "add_task", "none"]},
+                "key": {"type": "string"},
+                "amount": {"type": "number"},
+                "title": {"type": "string"}},
+            "required": ["type"]}}},
+    "required": ["reply", "actions"],
+}
+ASSIST_PROMPT = (
+    "You are Sarah, Youssef's personal assistant in his life dashboard. He talks "
+    "to you by voice; your reply is read aloud, so keep it warm, casual and short, "
+    "one to three sentences, no lists or markdown. You get a STATE snapshot of his "
+    "day. When he reports something done, acknowledge it and emit matching actions: "
+    "check_prayer with key fajr/dhuhr/asr/maghrib/isha, check_training with key "
+    "bjj/muaythai, check_mind with key lesson/narcos, log_income with amount, "
+    "add_task with title. When he asks what's left or how he's doing, answer from "
+    "STATE. Never invent progress he didn't mention."
+)
+
+
+def assistant_reply(payload):
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        return {"error": "no_ai"}
+    try:
+        import anthropic
+        client = anthropic.Anthropic()
+        resp = client.messages.create(
+            model="claude-sonnet-5", max_tokens=600,
+            system=ASSIST_PROMPT,
+            messages=[{"role": "user", "content":
+                       f"STATE: {json.dumps(payload.get('state', {}))}\n"
+                       f"Youssef said: {payload.get('text', '')}"}],
+            output_config={"format": {"type": "json_schema", "schema": ASSIST_SCHEMA}},
+        )
+        text = next(b.text for b in resp.content if getattr(b, "type", "") == "text")
+        return json.loads(text)
+    except Exception as e:
+        return {"error": "ai", "message": str(e)[:150]}
+
+
 # ElevenLabs text to speech: natural voice for the daily rundown.
 # Key comes from ELEVENLABS_API_KEY or a gitignored elevenlabs_key.txt.
 ELEVEN_KEY_FILE = os.path.join(DIRECTORY, "elevenlabs_key.txt")
-ELEVEN_VOICE = "EXAVITQu4vr4xnSDxMaL"  # "Sarah", soft and natural
+ELEVEN_VOICE_NAME = os.environ.get("ELEVEN_VOICE_NAME", "Elise")
+ELEVEN_FALLBACK_VOICE = "EXAVITQu4vr4xnSDxMaL"  # premade "Sarah" if Elise can't be found
+_voice_cache = {"id": None, "at": 0}
 
 
 def eleven_key():
@@ -331,6 +384,41 @@ def eleven_key():
     return k
 
 
+def resolve_voice_id(s, key):
+    """Find the configured voice by name in the account; if missing, pull it
+    in from the ElevenLabs shared voice library automatically."""
+    now = time.time()
+    if _voice_cache["id"] and now - _voice_cache["at"] < 3600:
+        return _voice_cache["id"]
+    want = ELEVEN_VOICE_NAME.lower()
+    try:
+        r = s.get("https://api.elevenlabs.io/v1/voices",
+                  headers={"xi-api-key": key}, timeout=15)
+        for v in r.json().get("voices", []):
+            if want in v.get("name", "").lower():
+                _voice_cache.update(id=v["voice_id"], at=now)
+                return v["voice_id"]
+    except Exception:
+        pass
+    try:
+        r = s.get("https://api.elevenlabs.io/v1/shared-voices",
+                  params={"search": ELEVEN_VOICE_NAME, "page_size": 10},
+                  headers={"xi-api-key": key}, timeout=15)
+        vs = [v for v in r.json().get("voices", [])
+              if v.get("name", "").lower().startswith(want)]
+        vs.sort(key=lambda v: v.get("cloned_by_count", 0) or 0, reverse=True)
+        if vs:
+            v = vs[0]
+            s.post(f"https://api.elevenlabs.io/v1/voices/add/{v['public_owner_id']}/{v['voice_id']}",
+                   headers={"xi-api-key": key, "Content-Type": "application/json"},
+                   json={"new_name": v.get("name", ELEVEN_VOICE_NAME)}, timeout=15)
+            _voice_cache.update(id=v["voice_id"], at=now)
+            return v["voice_id"]
+    except Exception:
+        pass
+    return ELEVEN_FALLBACK_VOICE
+
+
 def speak_text(text):
     """Returns (mp3_bytes, None) on success or (None, error_dict)."""
     key = eleven_key()
@@ -338,7 +426,8 @@ def speak_text(text):
         return None, {"error": "no_key"}
     try:
         s = _session()
-        r = s.post(f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVEN_VOICE}",
+        voice = resolve_voice_id(s, key)
+        r = s.post(f"https://api.elevenlabs.io/v1/text-to-speech/{voice}",
                    headers={"xi-api-key": key, "Content-Type": "application/json"},
                    json={"text": text[:2500], "model_id": "eleven_multilingual_v2",
                          "voice_settings": {"stability": 0.45, "similarity_boost": 0.8,
@@ -451,6 +540,18 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def do_POST(self):
         path = self.path.split("?", 1)[0]
+        if path == "/api/assistant":
+            length = int(self.headers.get("Content-Length", 0))
+            if length <= 0 or length > 30000:
+                self.send_error(413, "Bad size")
+                return
+            try:
+                payload = json.loads(self.rfile.read(length).decode("utf-8"))
+            except Exception as e:
+                self.send_error(400, f"Bad request: {e}")
+                return
+            self._send_json(assistant_reply(payload))
+            return
         if path == "/api/speak":
             length = int(self.headers.get("Content-Length", 0))
             if length <= 0 or length > 20000:
@@ -536,7 +637,7 @@ def main():
             print("Notion token: NOT set yet — the dashboard will show setup steps.")
             print("Add notion_token.txt (or export NOTION_TOKEN) and refresh.")
         if eleven_key():
-            print("ElevenLabs voice: ready (Sarah). 'Read it to me' will sound human.")
+            print(f"ElevenLabs voice: ready ({ELEVEN_VOICE_NAME}). 'Read it to me' will sound human.")
         else:
             print("ElevenLabs voice: no key found — falling back to the browser voice.")
             print("Put your key in elevenlabs_key.txt to enable it.")
