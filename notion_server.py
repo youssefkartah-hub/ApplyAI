@@ -36,7 +36,8 @@ NOTION_VERSION = "2022-06-28"
 CACHE_TTL = 20  # seconds; avoid hammering the Notion API on every poll
 
 BLOCKED = {"notion_token.txt", "notion_config.json", "credentials.json",
-           "token.json", ".sync_state.json", "personal_data.json", "token_calendar.json"}
+           "token.json", ".sync_state.json", "personal_data.json", "token_calendar.json",
+           "elevenlabs_key.txt"}
 STORE_FILE = os.path.join(DIRECTORY, "personal_data.json")
 MAX_STORE = 5_000_000  # 5 MB cap
 
@@ -317,6 +318,40 @@ def fetch_calendar():
         return {"error": "cal", "message": str(e)[:150]}
 
 
+# ElevenLabs text to speech: natural voice for the daily rundown.
+# Key comes from ELEVENLABS_API_KEY or a gitignored elevenlabs_key.txt.
+ELEVEN_KEY_FILE = os.path.join(DIRECTORY, "elevenlabs_key.txt")
+ELEVEN_VOICE = "21m00Tcm4TlvDq8ikWAM"  # "Rachel", warm and natural
+
+
+def eleven_key():
+    k = os.environ.get("ELEVENLABS_API_KEY", "").strip()
+    if not k and os.path.exists(ELEVEN_KEY_FILE):
+        k = open(ELEVEN_KEY_FILE).read().strip()
+    return k
+
+
+def speak_text(text):
+    """Returns (mp3_bytes, None) on success or (None, error_dict)."""
+    key = eleven_key()
+    if not key:
+        return None, {"error": "no_key"}
+    try:
+        s = _session()
+        r = s.post(f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVEN_VOICE}",
+                   headers={"xi-api-key": key, "Content-Type": "application/json"},
+                   json={"text": text[:2500], "model_id": "eleven_multilingual_v2",
+                         "voice_settings": {"stability": 0.45, "similarity_boost": 0.8,
+                                            "style": 0.25}},
+                   timeout=30)
+        if r.status_code == 401:
+            return None, {"error": "auth", "message": "ElevenLabs rejected the key."}
+        r.raise_for_status()
+        return r.content, None
+    except Exception as e:
+        return None, {"error": "tts", "message": str(e)[:150]}
+
+
 _mkt_cache = {"at": 0, "data": None}
 
 
@@ -416,6 +451,29 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def do_POST(self):
         path = self.path.split("?", 1)[0]
+        if path == "/api/speak":
+            length = int(self.headers.get("Content-Length", 0))
+            if length <= 0 or length > 20000:
+                self.send_error(413, "Bad size")
+                return
+            try:
+                body = json.loads(self.rfile.read(length).decode("utf-8"))
+                text = str(body.get("text", "")).strip()
+                if not text:
+                    raise ValueError("empty text")
+            except Exception as e:
+                self.send_error(400, f"Bad request: {e}")
+                return
+            audio, err = speak_text(text)
+            if err:
+                self._send_json(err)
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "audio/mpeg")
+            self.send_header("Content-Length", str(len(audio)))
+            self.end_headers()
+            self.wfile.write(audio)
+            return
         if path == "/api/goal-plan":
             length = int(self.headers.get("Content-Length", 0))
             if length <= 0 or length > 10000:

@@ -81,11 +81,19 @@
   .rank li{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);font-size:13px}
   .rank li:last-child{border-bottom:none} .rank .v{color:var(--muted)}
   .pill2{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:2px 8px;margin:3px 4px 0 0;font-size:12px}
-  #main{display:grid;grid-template-columns:200px 1fr;gap:22px;align-items:start}
-  .tabs{display:flex;flex-direction:column;gap:2px;grid-column:1;grid-row:1/span 99;position:sticky;top:16px;
-    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px}
-  .pane{grid-column:2}
-  .cmdwrap{grid-column:2;margin-bottom:14px}
+  #main{display:block}
+  .tabs{display:flex;flex-direction:column;gap:2px;position:fixed;top:66px;left:max(20px,calc(50vw - 590px));
+    z-index:60;width:224px;max-height:calc(100vh - 90px);overflow:auto;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;
+    opacity:0;transform:translateY(-14px);pointer-events:none;
+    transition:opacity .28s ease,transform .34s cubic-bezier(.22,1,.36,1);
+    box-shadow:0 18px 55px rgba(0,0,0,.6),0 0 0 1px rgba(34,211,238,.08)}
+  body.navopen .tabs{opacity:1;transform:none;pointer-events:auto}
+  h1{cursor:pointer;user-select:none}
+  #navCaret{font-size:12px;color:#67e8f9;opacity:.75;transition:transform .3s;display:inline-block;letter-spacing:0}
+  body.navopen #navCaret{transform:rotate(180deg)}
+  .pane{grid-column:auto}
+  .cmdwrap{margin-bottom:14px}
   .cmdbar{width:100%;padding:12px 16px;font-size:15px;border-radius:12px;background:var(--panel);
     border:1px solid var(--line);transition:.15s}
   .cmdbar:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,211,238,.15)}
@@ -97,8 +105,7 @@
   .hero .hl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
   .hero .ht{font-size:20px;font-weight:700;margin:6px 0 4px}
   .hero .hs{color:var(--muted);font-size:13px;margin-bottom:12px}
-  @media(max-width:820px){#main{grid-template-columns:1fr}.tabs{flex-direction:row;flex-wrap:wrap;position:static;grid-row:auto}
-    .pane,.cmdwrap{grid-column:1}.navlbl{display:none}}
+  @media(max-width:820px){.tabs{left:12px;width:min(224px,calc(100vw - 24px))}}
   .frm{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
   .frm input,.frm select{min-width:0}
   .frm .grow{flex:1;min-width:160px}
@@ -287,8 +294,8 @@
 <div class="wrap">
   <header>
     <div>
-      <h1><span class="reactor"></span> S.A.R.A.H.</h1>
-      <div class="sub">Personal command center · <span id="totalSub">0 applications</span> tracked live from Notion</div>
+      <h1 id="brand"><span class="reactor"></span> S.A.R.A.H. <span id="navCaret">▾</span></h1>
+      <div class="sub">Personal command center · <span id="totalSub">0 applications</span> tracked live from Notion · hover the name for your menu</div>
     </div>
     <div class="controls">
       <span id="hudClock"></span>
@@ -340,6 +347,7 @@
 
     <div class="pane" data-pane="today" hidden>
       <div class="hero" id="nowCard"></div>
+      <div class="icard" id="mktBox" style="margin-bottom:14px"></div>
       <div class="icard" id="dailyBox" style="margin-bottom:14px"></div>
       <div class="icard" id="briefBox" style="margin-bottom:14px"></div>
       <div class="charts">
@@ -350,7 +358,6 @@
         <div class="icard" id="agendaBox"></div>
         <div class="icard" id="usageBox"></div>
       </div>
-      <div class="icard" id="mktBox" style="margin-top:14px"></div>
       <div class="icard" id="badgeBox" style="margin-top:14px"></div>
     </div>
 
@@ -889,7 +896,18 @@ $("calBox").addEventListener("click",e=>{
   if(cell && !cell.classList.contains("empty")){ const ds=cell.dataset.day;
     selectedDay=selectedDay===ds?null:ds; render(); if(selectedDay) switchTab("apps"); }
 });
-$("tabs").addEventListener("click",e=>{ const t=e.target.closest(".tab"); if(t) switchTab(t.dataset.tab); });
+$("tabs").addEventListener("click",e=>{ const t=e.target.closest(".tab");
+  if(t){ switchTab(t.dataset.tab); document.body.classList.remove("navopen"); } });
+(function navHover(){
+  const brand=$("brand"), tabs=$("tabs");
+  let closeT=null;
+  const open=()=>{ clearTimeout(closeT); document.body.classList.add("navopen"); };
+  const close=()=>{ clearTimeout(closeT); closeT=setTimeout(()=>document.body.classList.remove("navopen"),320); };
+  brand.addEventListener("mouseenter",open); brand.addEventListener("mouseleave",close);
+  tabs.addEventListener("mouseenter",open); tabs.addEventListener("mouseleave",close);
+  brand.addEventListener("click",()=>{ clearTimeout(closeT); document.body.classList.toggle("navopen"); });
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape") document.body.classList.remove("navopen"); });
+})();
 $("followBox").addEventListener("click",e=>{ const b=e.target.closest("[data-mail]"); if(!b) return;
   const txt=decodeURIComponent(b.dataset.mail);
   if(navigator.clipboard) navigator.clipboard.writeText(txt).then(()=>toast("Follow-up email copied")).catch(()=>toast("Copy failed"));
@@ -1639,17 +1657,39 @@ function tickClock(){ const el=$("hudClock"); if(!el) return;
   el.textContent=new Date().toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit",second:"2-digit"}); }
 setInterval(tickClock,1000); tickClock();
 
-document.addEventListener("click",e=>{
-  if(!e.target.closest("[data-speak]")) return;
+let briefAudio=null;
+function browserSpeak(txt){
   if(!("speechSynthesis" in window)){ toast("Voice not supported in this browser"); return; }
   speechSynthesis.cancel();
-  const txt=$("briefBox").innerText.replace(/🔊 Read it to me|☀️ Your daily rundown/g,"")
-    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu,"").trim();
   const u=new SpeechSynthesisUtterance(txt); u.rate=1.02; u.pitch=1;
   const vs=speechSynthesis.getVoices();
   const v=vs.find(x=>/samantha|ava|zoe/i.test(x.name))||vs.find(x=>/en(-|_)(GB|UK)/i.test(x.lang))||vs.find(x=>x.lang.startsWith("en"));
   if(v) u.voice=v;
-  speechSynthesis.speak(u); toast("🔊 Reading your rundown");
+  speechSynthesis.speak(u);
+}
+document.addEventListener("click",async e=>{
+  const btn=e.target.closest("[data-speak]"); if(!btn) return;
+  if(briefAudio){ briefAudio.pause(); briefAudio=null; }
+  if("speechSynthesis" in window) speechSynthesis.cancel();
+  const txt=$("briefBox").innerText.replace(/🔊 Read it to me|☀️ Your daily rundown/g,"")
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu,"").trim();
+  btn.disabled=true; btn.textContent="🔊 One sec…";
+  try{
+    const r=await fetch("/api/speak",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({text:txt})});
+    const type=r.headers.get("Content-Type")||"";
+    if(r.ok&&type.includes("audio")){
+      const blob=await r.blob();
+      briefAudio=new Audio(URL.createObjectURL(blob));
+      briefAudio.play(); toast("🔊 Reading your rundown");
+      btn.disabled=false; btn.textContent="🔊 Read it to me"; return;
+    }
+    const j=await r.json().catch(()=>({}));
+    if(j.error==="no_key") toast("Add an ElevenLabs key for the natural voice. Using the built in one for now.");
+    else if(j.error) toast("The natural voice is unavailable right now, using the built in one.");
+  }catch(err){}
+  btn.disabled=false; btn.textContent="🔊 Read it to me";
+  browserSpeak(txt);
 });
 
 (function bootSeq(){

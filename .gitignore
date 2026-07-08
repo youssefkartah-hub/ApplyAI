@@ -163,3 +163,4 @@ __pycache__/
 venv/
 env/
 token_calendar.json
+elevenlabs_key.txt
