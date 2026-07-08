@@ -94,6 +94,14 @@
   body.navopen #navCaret{transform:rotate(180deg)}
   .pane{grid-column:auto}
   .cmdwrap{margin-bottom:14px}
+  .headright{flex:1;min-width:300px;max-width:660px;display:flex;flex-direction:column;gap:8px;margin-left:auto}
+  .headright .cmdwrap{margin:0}
+  .headright .cmdbar{padding:10px 14px;font-size:14px}
+  .headright .controls{justify-content:flex-end}
+  .herowrap{padding:0;overflow:hidden;margin-bottom:14px}
+  .herowrap #nowCard{padding:18px 20px 14px}
+  .herowrap #briefBox{background:transparent;border:none;box-shadow:none;border-radius:0;
+    border-top:1px solid rgba(34,211,238,.22);padding:13px 20px 16px}
   .cmdbar{width:100%;padding:12px 16px;font-size:15px;border-radius:12px;background:var(--panel);
     border:1px solid var(--line);transition:.15s}
   .cmdbar:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,211,238,.15)}
@@ -297,6 +305,9 @@
       <h1 id="brand"><span class="reactor"></span> S.A.R.A.H. <span id="navCaret">▾</span></h1>
       <div class="sub">Personal command center · <span id="totalSub">0 applications</span> tracked live from Notion · hover the name for your menu</div>
     </div>
+    <div class="headright">
+    <div class="cmdwrap"><input id="cmdbar" class="cmdbar"
+      placeholder='Ask or add anything…  ("apply to SpaceX tomorrow", "goal: get a Boeing internship")'/></div>
     <div class="controls">
       <span id="hudClock"></span>
       <span class="live"><span id="livedot"></span><span id="connText">Live</span></span>
@@ -310,6 +321,7 @@
       <button id="refreshNow">Refresh</button>
       <button id="exportCsv">Export CSV</button>
       <button id="themeBtn" title="Toggle light/dark">🌓</button>
+    </div>
     </div>
   </header>
 
@@ -342,14 +354,13 @@
       <button class="tab" data-tab="habits">🔥 Habits</button>
       <button class="tab" data-tab="focus">⏱ Focus</button>
     </div>
-    <div class="cmdwrap"><input id="cmdbar" class="cmdbar"
-      placeholder='Ask or add anything…  ("apply to SpaceX tomorrow", "goal: get a Boeing internship", "find airbus")'/></div>
-
     <div class="pane" data-pane="today" hidden>
-      <div class="hero" id="nowCard"></div>
+      <div class="hero herowrap">
+        <div id="nowCard"></div>
+        <div class="icard" id="briefBox"></div>
+      </div>
       <div class="icard" id="mktBox" style="margin-bottom:14px"></div>
       <div class="icard" id="dailyBox" style="margin-bottom:14px"></div>
-      <div class="icard" id="briefBox" style="margin-bottom:14px"></div>
       <div class="charts">
         <div class="icard" id="topActions"></div>
         <div class="icard" id="todaySide"></div>
@@ -1000,9 +1011,9 @@ function openTasks(){ return OS.tasks.filter(t=>!t.done).map(t=>({...t,score:pSc
 function categorize(txt){
   const l=txt.toLowerCase();
   const type=/https?:\/\//.test(l)?"link":/\b(remember|remind|don.?t forget)\b/.test(l)?"reminder":"note";
-  const rules=[["University",/exam|assignment|homework|hw|class|lecture|gpa|semester|professor|midterm|final/],
+  const rules=[["Health",/gym|workout|run|sleep|diet|doctor|meal|bjj|jiu.?jitsu|muay.?thai|spar|boxing/],
+    ["University",/exam|assignment|homework|hw|class|lecture|gpa|semester|professor|midterm|final/],
     ["Career",/apply|application|resume|cv|interview|recruiter|job|linkedin|offer|cover letter/],
-    ["Health",/gym|workout|run|sleep|diet|doctor|meal|bjj|jiu.?jitsu|muay.?thai|spar|training|boxing/],
     ["Finance",/pay|budget|tuition|rent|bank|save|money|invoice|\$/],
     ["Projects",/build|cad|github|project|prototype|design|print|code/],
     ["Knowledge",/read|learn|course|book|article|study|notes?/],
