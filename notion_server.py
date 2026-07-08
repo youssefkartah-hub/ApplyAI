@@ -317,6 +317,67 @@ def fetch_calendar():
         return {"error": "cal", "message": str(e)[:150]}
 
 
+_mkt_cache = {"at": 0, "data": None}
+
+
+def fetch_markets():
+    """BTC + SOL from CoinGecko, S&P 500 from Yahoo Finance. Cached 60s."""
+    now = time.time()
+    if _mkt_cache["data"] is not None and now - _mkt_cache["at"] < 60:
+        return _mkt_cache["data"]
+    try:
+        s = _session()
+    except Exception:
+        return {"error": "deps", "message": "The 'requests' package is missing. Run: pip3 install requests"}
+
+    def downsample(pts, n=40):
+        pts = [p for p in pts if p is not None]
+        if len(pts) <= n:
+            return pts
+        step = len(pts) / n
+        return [pts[int(i * step)] for i in range(n)] + [pts[-1]]
+
+    assets = []
+    try:
+        r = s.get("https://api.coingecko.com/api/v3/coins/markets",
+                  params={"vs_currency": "usd", "ids": "bitcoin,solana",
+                          "sparkline": "true", "price_change_percentage": "24h"},
+                  timeout=15)
+        r.raise_for_status()
+        for c in r.json():
+            assets.append({
+                "symbol": "BTC" if c["id"] == "bitcoin" else "SOL",
+                "name": "Bitcoin" if c["id"] == "bitcoin" else "Solana",
+                "price": c.get("current_price"),
+                "change": c.get("price_change_percentage_24h"),
+                "spark": downsample((c.get("sparkline_in_7d") or {}).get("price") or []),
+                "range": "7d",
+            })
+    except Exception:
+        pass
+    try:
+        r = s.get("https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC",
+                  params={"range": "1d", "interval": "5m"},
+                  headers={"User-Agent": "Mozilla/5.0"}, timeout=15)
+        r.raise_for_status()
+        res = r.json()["chart"]["result"][0]
+        meta = res.get("meta", {})
+        closes = downsample(res["indicators"]["quote"][0].get("close") or [])
+        price = meta.get("regularMarketPrice")
+        prev = meta.get("chartPreviousClose") or meta.get("previousClose")
+        change = (100 * (price - prev) / prev) if (price and prev) else None
+        assets.append({"symbol": "S&P 500", "name": "S&P 500", "price": price,
+                       "change": change, "spark": closes, "range": "1d"})
+    except Exception:
+        pass
+
+    data = {"assets": assets} if assets else {"error": "markets",
+            "message": "Couldn't reach the market data services."}
+    if assets:
+        _mkt_cache["data"], _mkt_cache["at"] = data, now
+    return data
+
+
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=DIRECTORY, **kwargs)
@@ -337,6 +398,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return
         if path == "/api/calendar":
             self._send_json(fetch_calendar())
+            return
+        if path == "/api/markets":
+            self._send_json(fetch_markets())
             return
         if path == "/api/store":
             try:

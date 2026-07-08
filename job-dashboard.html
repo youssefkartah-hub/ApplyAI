@@ -244,6 +244,42 @@
   html[data-theme="light"] body{background:radial-gradient(1200px 600px at 80% -10%,rgba(34,211,238,.07),transparent 60%),var(--bg);background-size:auto}
   html[data-theme="light"] h1{color:#0e7490}
   html[data-theme="light"] #hudClock{color:#0e7490}
+  /* ===== Daily life sections ===== */
+  .lifegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:12px}
+  .lifesec{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:13px 15px;
+    transition:border-color .4s,box-shadow .4s}
+  .lifesec.complete{border-color:rgba(34,197,94,.5);box-shadow:0 0 20px rgba(34,197,94,.10)}
+  .lhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+  .lname{font-weight:600;font-size:13px}
+  .lpct{font-size:12px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;transition:color .4s}
+  .lifesec.complete .lpct{color:var(--offer)}
+  .lifebar{height:6px;background:rgba(0,0,0,.35);border-radius:4px;overflow:hidden;margin-bottom:9px}
+  .lifebar>span{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#22d3ee,#22c55e);
+    transition:width .6s cubic-bezier(.22,1,.36,1)}
+  .lchk{display:flex;align-items:center;gap:8px;padding:5px 8px;margin:3px 0;border-radius:8px;cursor:pointer;
+    font-size:13px;color:var(--muted);border:1px solid transparent;transition:.25s}
+  .lchk:hover{border-color:var(--line);color:var(--txt)}
+  .lchk.on{color:var(--txt)}
+  .lchk.on .lbl{text-decoration:line-through;opacity:.55}
+  .lchk input{width:15px;height:15px;accent-color:var(--offer);cursor:pointer}
+  .overallbar{height:9px;background:rgba(0,0,0,.35);border-radius:5px;overflow:hidden;margin-top:8px}
+  .overallbar>span{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#22d3ee,#22c55e);
+    transition:width .7s cubic-bezier(.22,1,.36,1)}
+  .ringwrap{display:flex;gap:14px;align-items:center}
+  .ring .seg{fill:none;stroke:rgba(148,190,220,.14);stroke-width:8;stroke-linecap:round;
+    transition:stroke .5s ease,filter .5s ease}
+  .ring .seg.on{stroke:#22d3ee;filter:drop-shadow(0 0 4px rgba(34,211,238,.65))}
+  .ring.full .seg.on{stroke:#22c55e;filter:drop-shadow(0 0 6px rgba(34,197,94,.75))}
+  .ringlbl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+  /* ===== Markets ===== */
+  .mkt{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+  .mcell{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .mcell .mn{font-size:12px;color:var(--muted)}
+  .mcell .mp{font-size:19px;font-weight:700;margin:2px 0;font-variant-numeric:tabular-nums}
+  .mcell .mc{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+  .mcell .mc.up{color:var(--offer)} .mcell .mc.down{color:var(--rejected)}
+  .mcell svg{width:100%;height:46px;margin-top:8px;display:block}
 </style>
 </head>
 <body>
@@ -314,6 +350,7 @@
         <div class="icard" id="agendaBox"></div>
         <div class="icard" id="usageBox"></div>
       </div>
+      <div class="icard" id="mktBox" style="margin-top:14px"></div>
       <div class="icard" id="badgeBox" style="margin-top:14px"></div>
     </div>
 
@@ -680,15 +717,15 @@ function renderPace(all){
   const worst=Object.entries(kw).filter(([,o])=>o.q>0).sort((a,b)=>b[1].q-a[1].q)[0];
   const silent=all.filter(a=>a.status==="Applied"&&a.date&&daysSince(a.date)>=7).length;
   const recs=[];
-  recs.push(remaining>0?`Apply to <b>${remaining}</b> more today to hit your goal (${got}/${dailyGoal}).`
-    :`Daily goal reached — <b>${got}/${dailyGoal}</b> today. 🎉`);
-  if(behind.length) recs.push(`Most needed today: ${behind.slice(0,3).map(r=>`<b>${r.k}</b> (${r.left})`).join(", ")}.`);
-  if(best) recs.push(`Lean into <b>${esc(best[0])}</b> roles — your strongest interview rate.`);
-  if(worst) recs.push(`Tailor or skip <b>${esc(worst[0])}</b> roles — they auto-reject fastest.`);
-  if(silent) recs.push(`<b>${silent}</b> application${silent>1?"s have":" has"} been silent 7+ days — time to follow up.`);
+  recs.push(remaining>0?`You need <b>${remaining}</b> more application${remaining>1?"s":""} to hit today\'s goal. You\'re at ${got} of ${dailyGoal}.`
+    :`Daily goal reached, <b>${got}/${dailyGoal}</b> today. 🎉`);
+  if(behind.length) recs.push(`Focus regions today: ${behind.slice(0,3).map(r=>`<b>${r.k}</b> (${r.left})`).join(", ")}.`);
+  if(best) recs.push(`Lean into <b>${esc(best[0])}</b> roles. They get you the most interviews.`);
+  if(worst) recs.push(`Tailor or skip <b>${esc(worst[0])}</b> roles. They auto reject the fastest.`);
+  if(silent) recs.push(`<b>${silent}</b> application${silent>1?"s have":" has"} been quiet for over a week. Time to follow up.`);
   const pct=Math.min(100,Math.round(100*got/dailyGoal));
   $("paceBox").innerHTML=`<div class="icard">
-    <h3>⚡ Today's pace &amp; recommendations</h3>
+    <h3>⚡ Today's pace and what to do about it</h3>
     <div class="pacebar"><div class="pacefill" style="width:${pct}%"></div></div>
     <div class="muted" style="margin:6px 0 10px">${got}/${dailyGoal} today · ${thisWeek} this week${wow!=null?` (${wow>=0?"+":""}${wow}% vs last week)`:""}</div>
     <ul class="obs">${recs.map(r=>`<li>${r}</li>`).join("")}</ul></div>`;
@@ -907,7 +944,7 @@ function importCalendar(){
       createdAt:Date.now(),done:false,slot,calId:id,fromCal:true});
     done.push(id); added++;
   });
-  if(added){ osSave(); toast(`📡 ${added} calendar event${added>1?"s":""} synced into today's tasks`); }
+  if(added){ osSave(); toast(`Added ${added} calendar event${added>1?"s":""} to today\'s plan`); }
 }
 async function osLoad(){
   try{ const r=await fetch("/api/store",{cache:"no-store"}); const j=await r.json();
@@ -947,7 +984,7 @@ function categorize(txt){
   const type=/https?:\/\//.test(l)?"link":/\b(remember|remind|don.?t forget)\b/.test(l)?"reminder":"note";
   const rules=[["University",/exam|assignment|homework|hw|class|lecture|gpa|semester|professor|midterm|final/],
     ["Career",/apply|application|resume|cv|interview|recruiter|job|linkedin|offer|cover letter/],
-    ["Health",/gym|workout|run|sleep|diet|doctor|meal/],
+    ["Health",/gym|workout|run|sleep|diet|doctor|meal|bjj|jiu.?jitsu|muay.?thai|spar|training|boxing/],
     ["Finance",/pay|budget|tuition|rent|bank|save|money|invoice|\$/],
     ["Projects",/build|cad|github|project|prototype|design|print|code/],
     ["Knowledge",/read|learn|course|book|article|study|notes?/],
@@ -991,12 +1028,12 @@ function renderUsage(){
   const tabs=Object.entries(agg).filter(([k])=>k.startsWith("tab:")).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const acts=Object.entries(agg).filter(([k])=>k.startsWith("act:")).sort((a,b)=>b[1]-a[1]).slice(0,5);
   const maxT=Math.max(1,...tabs.map(t=>t[1]));
-  box.innerHTML=`<h3>📊 Systems usage · last 14 days</h3>`+
+  box.innerHTML=`<h3>📊 Where your time goes</h3>`+
     (tabs.length?tabs.map(([k,n])=>`<div class="fn-row"><div class="fn-lbl" style="width:130px">${USAGE_LBL[k]||k}</div>
       <div class="fn-bar"><span style="width:${Math.round(100*n/maxT)}%"></span><i>${n}</i></div></div>`).join("")
-      :`<p class="muted">Calibrating — usage data builds up as you work.</p>`)+
+      :`<p class="muted">Nothing to show yet. This fills in as you use the app.</p>`)+
     (acts.length?`<div style="margin-top:10px">${acts.map(([k,n])=>`<span class="pill2">${USAGE_LBL[k]||k} · ${n}</span>`).join("")}</div>`:"")+
-    `<div class="usage-note">S.A.R.A.H. tracks module opens and actions locally to learn your patterns. Nothing leaves this machine.</div>`;
+    `<div class="usage-note">A quiet count of what you actually use, from the last two weeks. It never leaves this machine.</div>`;
 }
 function renderAgenda(){
   const box=$("agendaBox"); if(!box) return;
@@ -1004,8 +1041,8 @@ function renderAgenda(){
   const evs=(calEvents||[]).filter(ev=>ev.allday?ev.start===tk:(ev.start||"").slice(0,10)===tk)
     .sort((a,b)=>(a.allday?"":a.start)<(b.allday?"":b.start)?-1:1);
   let body;
-  if(calEvents===null) body=`<p class="muted">📡 Calendar uplink offline — restart the app and approve Google Calendar access.</p>`;
-  else if(!evs.length) body=`<p class="muted">No events today. Clear runway, sir.</p>`;
+  if(calEvents===null) body=`<p class="muted">Your calendar isn't connected yet. Restart the app and approve Google Calendar access when the browser asks.</p>`;
+  else if(!evs.length) body=`<p class="muted">Nothing scheduled today. The day is yours.</p>`;
   else body=evs.map(ev=>{
     const past=!ev.allday&&ev.end&&Date.parse(ev.end)<Date.now();
     const at=ev.allday?"all day":new Date(ev.start).toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"});
@@ -1014,13 +1051,14 @@ function renderAgenda(){
       <div class="tt" style="flex:1">${esc(ev.title)}</div>
       ${linked?`<span class="sync">${linked.done?"✅ done":"⚡ in tasks"}</span>`:past?`<span class="muted" style="font-size:11px">ended</span>`:""}</div>`;
   }).join("");
-  box.innerHTML=`<h3>📡 Today's agenda · auto-synced from Google Calendar</h3>${body}
-    <div class="usage-note">Checked every 5 minutes — new events for today are added to your tasks automatically.</div>`;
+  box.innerHTML=`<h3>📅 Today's schedule</h3>${body}
+    <div class="usage-note">Pulled straight from your calendar every few minutes. New events land in your tasks on their own.</div>`;
 }
 function renderToday(){
   renderDaily();
   renderAgenda();
   renderUsage();
+  renderMarkets();
   const all=jobRows(), tasks=openTasks();
   const appsToday=all.filter(isToday).length, goal=Object.values(TARGETS).reduce((a,b)=>a+b,0);
   const interviews=all.filter(a=>a.status==="Interview Scheduled");
@@ -1031,18 +1069,22 @@ function renderToday(){
   const dayName=new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
   const brief=[];
   const greet=new Date().getHours()<12?"Good morning":new Date().getHours()<18?"Good afternoon":"Good evening";
-  brief.push(`${greet}, sir — ${dayName}. All systems operational.`);
-  const todayEvs=(calEvents||[]).filter(ev=>ev.allday?ev.start===todayKey():(ev.start||"").slice(0,10)===todayKey());
+  brief.push(`${greet}, Youssef. It's ${dayName}. Here's where things stand.`);
+  const todayEvs=todayCalEvents();
   if(todayEvs.length){ const next=todayEvs.find(ev=>!ev.allday&&Date.parse(ev.start)>Date.now());
-    brief.push(`📡 <b>${todayEvs.length}</b> calendar event${todayEvs.length>1?"s":""} on today's schedule${next?` — next: <b>${esc(next.title)}</b> at ${new Date(next.start).toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})}`:""}.`); }
-  brief.push(`Applications: <b>${appsToday}/${goal}</b> today${silent.length?` · <b>${silent.length}</b> need follow-up`:""}${interviews.length?` · <b>${interviews.length}</b> interview${interviews.length>1?"s":""} in play — prep!`:""}.`);
-  if(overdue.length) brief.push(`⚠️ <b>${overdue.length}</b> overdue task${overdue.length>1?"s":""} — clear ${esc(overdue[0].title)} first.`);
-  if(tasks[0]) brief.push(`Highest-value action right now: <b>${esc(tasks[0].title)}</b> (${tasks[0].score}).`);
-  if(habitsLeft.length) brief.push(`Habits left today: ${habitsLeft.slice(0,4).map(h=>esc(h.name)).join(", ")}.`);
-  brief.push(`Deep work so far: <b>${focusToday}</b> min.`);
-  if(new Date().getDay()===0) brief.push(`🗓 It's Sunday — <b>weekly review</b>: ${weeklyReview()}`);
-  $("briefBox").innerHTML=`<h3>☀️ Daily briefing
-    <button class="rowbtn" data-speak style="float:right;text-transform:none;letter-spacing:0">🔊 Brief me</button></h3>
+    brief.push(`You have <b>${todayEvs.length}</b> thing${todayEvs.length>1?"s":""} on the calendar today${next?`. Next up is <b>${esc(next.title)}</b> at ${new Date(next.start).toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})}`:""}.`); }
+  const appLine=[`You've sent <b>${appsToday}</b> of ${goal} applications today.`];
+  if(silent.length) appLine.push(`<b>${silent.length}</b> compan${silent.length>1?"ies have":"y has"} gone quiet and could use a nudge.`);
+  if(interviews.length) appLine.push(`You have <b>${interviews.length}</b> interview${interviews.length>1?"s":""} in play, so make sure you're ready.`);
+  brief.push(appLine.join(" "));
+  if(overdue.length) brief.push(`<b>${overdue.length}</b> task${overdue.length>1?"s":""} slipped past the deadline. Knock out <b>${esc(overdue[0].title)}</b> first and the rest gets easier.`);
+  if(tasks[0]) brief.push(`Best use of your time right now: <b>${esc(tasks[0].title)}</b>.`);
+  if(habitsLeft.length) brief.push(`Still open today: ${habitsLeft.slice(0,4).map(h=>esc(h.name)).join(", ")}.`);
+  brief.push(focusToday?`You've logged <b>${focusToday}</b> minutes of deep work so far. Keep stacking.`
+    :`No deep work logged yet. One focused session gets the ball rolling.`);
+  if(new Date().getDay()===0) brief.push(`It's Sunday, time for your weekly review: ${weeklyReview()}`);
+  $("briefBox").innerHTML=`<h3>☀️ Your daily rundown
+    <button class="rowbtn" data-speak style="float:right;text-transform:none;letter-spacing:0">🔊 Read it to me</button></h3>
     <div class="brief">${brief.map(b=>`<p>${b}</p>`).join("")}</div>`;
 
   const ga=goalActions().map(x=>({kind:"goal",x,score:x.score}));
@@ -1052,35 +1094,35 @@ function renderToday(){
   $("nowCard").innerHTML=heroItem?(()=>{ const isG=heroItem.kind==="goal";
     const title=isG?heroItem.x.t.title:heroItem.t.title;
     const sub=isG?`🎯 ${esc(heroItem.x.g.title)}${heroItem.x.t.daily?" · 🔁 daily":""}`:`${AREA_ICON[heroItem.t.area]||""} ${heroItem.t.area}${heroItem.t.due?" · "+fmtDue(heroItem.t):""}`;
-    return `<div class="hl">Do this now · score ${heroItem.score}</div><div class="ht">${esc(title)}</div>
-      <div class="hs">${sub} · ~${(isG?heroItem.x.t.dur:heroItem.t.dur)||30} min</div>
+    return `<div class="hl">Your next move</div><div class="ht">${esc(title)}</div>
+      <div class="hs">${sub} · about ${(isG?heroItem.x.t.dur:heroItem.t.dur)||30} min</div>
       <button class="primary" data-hero="done">✅ Done</button> <button data-hero="focus">⏱ Focus on it</button>`;})()
     :`<div class="hl">All clear</div><div class="ht">Nothing urgent right now 🎉</div>
       <div class="hs">Capture what's on your mind or set a goal below.</div>`;
-  $("topActions").innerHTML=`<h3>🥇 Do these next</h3>`+(top.length?top.map(it=>{
+  $("topActions").innerHTML=`<h3>⚡ Up next</h3>`+(top.length?top.map(it=>{
     if(it.kind==="task") return taskRow(it.t,true);
     const {g,ph,t}=it.x;
     return `<div class="trow"><input type="checkbox" data-gt="${g.id}|${ph.id}|${t.id}"/>
-      <div class="tt">${esc(t.title)}<div class="sub">🎯 ${esc(g.title)}${t.daily?" · 🔁 daily":""}${it.x.stuck?' · <span style="color:var(--warn)">stuck — break it down?</span>':""} · ${t.dur}m</div></div>
+      <div class="tt">${esc(t.title)}<div class="sub">🎯 ${esc(g.title)}${t.daily?" · 🔁 daily":""}${it.x.stuck?' · <span style="color:var(--warn)">stuck, break it down?</span>':""} · ${t.dur}m</div></div>
       <span class="pscore ${it.score>=70?"hot":""}">${it.score}</span></div>`;
-  }).join(""):`<p class="muted">No open tasks — capture something in the Inbox (<kbd>C</kbd>) or create a goal.</p>`);
+  }).join(""):`<p class="muted">Nothing on the list. Capture something in the Inbox (press <kbd>C</kbd>) or set a goal.</p>`);
 
   const side=[];
-  if(interviews.length) side.push(`<div class="areahead">Interviews to prep</div>`+interviews.slice(0,4).map(a=>
+  if(interviews.length) side.push(`<div class="areahead">Interviews coming up</div>`+interviews.slice(0,4).map(a=>
     `<div class="trow"><div class="tt">${esc(a.company)}<div class="sub">${esc(a.position||"")}</div></div></div>`).join(""));
-  if(silent.length) side.push(`<div class="areahead">Follow-ups waiting</div>`+silent.slice(0,4).map(a=>
+  if(silent.length) side.push(`<div class="areahead">Waiting on a reply</div>`+silent.slice(0,4).map(a=>
     `<div class="trow"><div class="tt">${esc(a.company)}<div class="sub">${daysSince(a.date)}d silent</div></div></div>`).join(""));
   const actG=(OS.goalTrees||[]).filter(g=>g.status==="active"&&goalProgress(g)<100);
   if(actG.length) side.push(`<div class="areahead">Active goals</div>`+actG.slice(0,3).map(g=>
     `<div class="trow"><div class="tt">${esc(g.title)}<div class="sub">${goalProgress(g)}% complete</div></div></div>`).join(""));
-  if(calEvents&&calEvents.length) side.push(`<div class="areahead">Calendar</div>`+calEvents.slice(0,3).map(ev=>{
+  if(calEvents&&calEvents.length) side.push(`<div class="areahead">Later on the calendar</div>`+calEvents.slice(0,3).map(ev=>{
     const when=ev.allday?"all day":new Date(ev.start).toLocaleString(undefined,{weekday:"short",hour:"numeric",minute:"2-digit"});
     return `<div class="trow"><div class="tt">📅 ${esc(ev.title)}<div class="sub">${when}</div></div></div>`;}).join(""));
-  side.push(`<div class="areahead">Habits today</div>`+(OS.habits.length?OS.habits.map(h=>{
+  side.push(`<div class="areahead">Today's habits</div>`+(OS.habits.length?OS.habits.map(h=>{
     const on=(h.days||{})[todayKey()];
     return `<div class="trow"><input type="checkbox" data-habit-today="${h.id}" ${on?"checked":""}/><div class="tt ${on?"done":""}">${esc(h.name)}<div class="sub">🔥 ${habitStreak(h)}-day streak</div></div></div>`;
-  }).join(""):`<p class="muted">No habits yet — add some in the Habits tab.</p>`));
-  $("todaySide").innerHTML=`<h3>📌 On your radar</h3>`+side.join("");
+  }).join(""):`<p class="muted">No habits yet. Add a couple in the Habits tab.</p>`));
+  $("todaySide").innerHTML=`<h3>📌 Worth keeping an eye on</h3>`+side.join("");
   renderBadges(all);
 }
 function weeklyReview(){
@@ -1099,7 +1141,7 @@ function renderBadges(all){
     ["🎤","First interview",all.some(a=>a.status==="Interview Scheduled"||a.status==="Offer Received")],
     ["🔥","7-day habit streak",bestStreak>=7],["🧠","10h deep work",focusH>=10],
     ["✅","25 tasks done",doneN>=25],["🏆","Offer received",all.some(a=>a.status==="Offer Received")]];
-  $("badgeBox").innerHTML=`<h3>🏅 Achievements</h3><div class="badges">`+defs.map(([e,l,on])=>
+  $("badgeBox").innerHTML=`<h3>🏆 Milestones</h3><div class="badges">`+defs.map(([e,l,on])=>
     `<div class="badge2 ${on?"":"locked"}">${e} ${l}</div>`).join("")+`</div>`;
 }
 
@@ -1151,7 +1193,7 @@ function autoPlan(){
   const t=openTasks(); let i=0;
   OS.tasks.forEach(x=>{ if(!x.done) x.slot=null; });
   for(const s of SLOTS){ if(i>=t.length) break; const task=OS.tasks.find(x=>x.id===t[i].id); if(task){ task.slot=s; i++; } }
-  osSave(); renderOS(); toast("Day planned by priority ✨");
+  osSave(); renderOS(); toast("Your day is mapped out. Start at the top ✨");
 }
 
 /* ---- habits ---- */
@@ -1184,7 +1226,7 @@ function renderFocusStats(){
   $("focusWhat").innerHTML=nt?`Suggested focus: <b>${esc(nt.title)}</b>`:"";
 }
 function focusDone(mins){ OS.sessions.push({date:todayKey(),mins}); track("act:focus"); osSave(); renderOS();
-  toast(`Focus session logged — ${mins} min 🎉`); }
+  toast(`That\'s ${mins} minutes of deep work in the books 🎉`); }
 
 /* ---- Interview Center + CRM + resume performance ---- */
 const IV_CHECKS=["Research company","Review job description","Prepare STAR stories","Questions to ask","Technical review","Logistics confirmed"];
@@ -1236,22 +1278,70 @@ function renderProjects(){
 setInterval(()=>{ OS.projects.forEach(pr=>{ if(pr.startedAt){
   const e=document.querySelector(`[data-prj-elapsed="${pr.id}"]`); if(e) e.textContent=prjFmt(prjElapsed(pr)); } }); },1000);
 
-/* ---- Daily performance tracker ---- */
-const DAILY_ITEMS=[["fajr","🕌 Fajr"],["dhuhr","🕌 Dhuhr"],["asr","🕌 Asr"],["maghrib","🕌 Maghrib"],["isha","🕌 Isha"],
-  ["lesson","🗣 Language lesson"],["narcos","📺 1 Narcos episode"],["money","💵 Make $100"]];
+/* ---- Daily performance: life areas, each with its own progress ---- */
+const PRAYERS=[["fajr","Fajr"],["dhuhr","Dhuhr"],["asr","Asr"],["maghrib","Maghrib"],["isha","Isha"]];
+const TRAINING_DETECT=[["bjj",/bjj|jiu.?jitsu/i,"BJJ session"],["muaythai",/muay.?thai/i,"Muay Thai session"]];
 function dayChecks(){ if(!OS.daily||Array.isArray(OS.daily)) OS.daily={}; return OS.daily[todayKey()]=OS.daily[todayKey()]||{}; }
+function todayCalEvents(){ const tk=todayKey();
+  return (calEvents||[]).filter(ev=>ev.allday?ev.start===tk:(ev.start||"").slice(0,10)===tk); }
+function trainingToday(){
+  const evs=todayCalEvents(), out=[];
+  TRAINING_DETECT.forEach(([key,re,label])=>{ if(evs.some(ev=>re.test(ev.title||""))) out.push([key,label]); });
+  return out;
+}
+function lifeSections(){
+  return [
+    {id:"faith",name:"Faith",icon:"🕌",ring:true,items:PRAYERS},
+    {id:"training",name:"Training",icon:"🥋",cal:true,items:trainingToday(),
+      rest:"Rest day. No sessions on the calendar."},
+    {id:"mind",name:"Mind",icon:"🧠",items:[["lesson","Language lesson"],["narcos","One episode of Narcos"]]},
+    {id:"income",name:"Income",icon:"💵",items:[["money","Make $100 today"]]},
+  ];
+}
+function secPct(sec,d){ if(!sec.items.length) return null;
+  return Math.round(100*sec.items.filter(([k])=>d[k]).length/sec.items.length); }
+function prayerRing(done){
+  const C=2*Math.PI*34, seg=C/5, dash=seg-6;
+  const circles=[0,1,2,3,4].map(i=>
+    `<circle class="seg ${i<done?"on":""}" cx="40" cy="40" r="34"
+      stroke-dasharray="${dash.toFixed(1)} ${(C-dash).toFixed(1)}" stroke-dashoffset="${(-i*seg).toFixed(1)}"/>`).join("");
+  return `<div style="position:relative;width:80px;height:80px;min-width:80px">
+    <svg class="ring ${done===5?"full":""}" width="80" height="80" viewBox="0 0 80 80" style="transform:rotate(-90deg)">${circles}</svg>
+    <div class="ringlbl">${done*20}%</div></div>`;
+}
+function lifeChk(k,label,on){
+  return `<label class="lchk ${on?"on":""}"><input type="checkbox" data-daily="${k}" ${on?"checked":""}/>
+    <span class="lbl">${esc(label)}</span></label>`;
+}
 function renderDaily(){
-  const d=dayChecks();
-  const done=DAILY_ITEMS.filter(([k])=>d[k]).length, pct=Math.round(100*done/DAILY_ITEMS.length);
-  const missing=DAILY_ITEMS.filter(([k])=>!d[k]).map(([,n])=>n.split(" ").slice(1).join(" "));
-  $("dayPct").textContent=pct+"%";
-  $("dayPct").style.color=pct>=100?"var(--offer)":pct>=50?"var(--warn)":"var(--rejected)";
-  $("dailyBox").innerHTML=`<h3>📿 Daily performance · <span style="color:${pct>=100?"var(--offer)":"var(--txt)"}">${pct}%</span></h3>
-    <div class="pacebar"><div class="pacefill" style="width:${pct}%"></div></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">${DAILY_ITEMS.map(([k,n])=>
-      `<label class="chk ${d[k]?"on":""}" style="background:var(--panel2);border:1px solid ${d[k]?"var(--offer)":"var(--line)"};border-radius:8px;padding:6px 10px;margin:0;cursor:pointer">
-        <input type="checkbox" data-daily="${k}" ${d[k]?"checked":""}/>${n}</label>`).join("")}</div>
-    <div class="muted" style="font-size:12px;margin-top:8px">${pct>=100?"💯 Perfect day — everything done!":"Missing: "+missing.join(", ")}</div>`;
+  const d=dayChecks(), secs=lifeSections();
+  const pcts=secs.map(s=>secPct(s,d)).filter(p=>p!=null);
+  const overall=pcts.length?Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length):0;
+  $("dayPct").textContent=overall+"%";
+  $("dayPct").style.color=overall>=100?"var(--offer)":overall>=50?"var(--warn)":"var(--rejected)";
+  const cards=secs.map(sec=>{
+    const pct=secPct(sec,d), complete=pct===100;
+    let body;
+    if(!sec.items.length) body=`<p class="muted" style="font-size:12px;margin:6px 0 0">${sec.rest||"Nothing here today."}</p>`;
+    else if(sec.ring){
+      const done=sec.items.filter(([k])=>d[k]).length;
+      body=`<div class="ringwrap">${prayerRing(done)}<div style="flex:1">${
+        sec.items.map(([k,n])=>lifeChk(k,n,d[k])).join("")}</div></div>`;
+    } else body=sec.items.map(([k,n])=>lifeChk(k,n,d[k]))
+      .join("")+(sec.cal?`<div class="usage-note">Synced from your calendar. Check it off once you train.</div>`:"");
+    return `<div class="lifesec ${complete?"complete":""}">
+      <div class="lhead"><span class="lname">${sec.icon} ${sec.name}</span><span class="lpct">${pct==null?"":complete?"Done ✓":pct+"%"}</span></div>
+      ${pct!=null?`<div class="lifebar"><span style="width:${pct}%"></span></div>`:""}
+      ${body}</div>`;
+  }).join("");
+  const msg=overall>=100?"Perfect day. Every single category closed out. 💯"
+    :overall>=75?"Almost there. Finish strong.":overall>=40?"Good momentum, keep it going."
+    :"Fresh slate. Pick one and get started.";
+  $("dailyBox").innerHTML=`<h3>🎯 Your day at a glance
+      <span style="float:right;color:${overall>=100?"var(--offer)":"var(--txt)"};text-transform:none;letter-spacing:0">${overall}%</span></h3>
+    <div class="overallbar"><span style="width:${overall}%"></span></div>
+    <div class="muted" style="font-size:12px;margin-top:6px">${msg}</div>
+    <div class="lifegrid">${cards}</div>`;
 }
 
 /* ---- Goal Intelligence System ---- */
@@ -1305,7 +1395,7 @@ async function createGoal(){
       body:JSON.stringify({goal:v})}); plan=await r.json(); }
   catch(e){ plan=null; }
   $("gAdd").disabled=false; $("gAdd").textContent="Generate plan";
-  if(!plan||!plan.phases){ toast("Couldn't build a plan — is the app server running?"); return; }
+  if(!plan||!plan.phases){ toast("Couldn\'t build a plan. Is the app server running?"); return; }
   OS.goalTrees.push({id:uid(),title:v,created:Date.now(),status:"active",open:true,source:plan.source,
     phases:plan.phases.map(p=>({id:uid(),name:p.name,tasks:(p.tasks||[]).map(t=>({
       id:uid(),title:t.title,daily:!!t.daily,dur:t.minutes||30,imp:t.importance||2,done:false,days:{}}))}))});
@@ -1379,7 +1469,7 @@ const _origRender=render; render=function(){ _origRender(); renderOS(); };
 
 document.addEventListener("click",e=>{
   const tk=e.target.closest("[data-task]"); if(tk){ const t=OS.tasks.find(x=>x.id===tk.dataset.task);
-    if(t){ t.done=tk.checked; t.doneAt=t.done?Date.now():null; if(t.done){toast("Nice. ✅");track("act:task-done");} osSave(); renderOS(); } return; }
+    if(t){ t.done=tk.checked; t.doneAt=t.done?Date.now():null; if(t.done){toast("Done. Keep it moving ✅");track("act:task-done");} osSave(); renderOS(); } return; }
   const ht=e.target.closest("[data-habit-today]"); if(ht){ const h=OS.habits.find(x=>x.id===ht.dataset.habitToday);
     if(h){ h.days=h.days||{}; if(ht.checked){h.days[todayKey()]=true;track("act:habit");} else delete h.days[todayKey()]; osSave(); renderOS(); } return; }
   const dt=e.target.closest("[data-del-task]"); if(dt){ OS.tasks=OS.tasks.filter(x=>x.id!==dt.dataset.delTask); osSave(); renderOS(); return; }
@@ -1431,7 +1521,7 @@ $("focusStop").addEventListener("click",()=>{
   clearInterval(fTimer); const mins=Math.round((fTotal*60-fLeft)/60);
   $("focusStart").disabled=false; $("focusStop").disabled=true;
   $("timerDisp").textContent=fmtT(+$("focusLen").value*60); document.title="S.A.R.A.H.";
-  if(mins>=5) focusDone(mins); else toast("Session under 5 min — not logged");
+  if(mins>=5) focusDone(mins); else toast("Under 5 minutes, so I didn\'t log it");
 });
 $("themeBtn").addEventListener("click",()=>{
   const light=document.documentElement.dataset.theme==="light";
@@ -1485,6 +1575,10 @@ document.addEventListener("click",e=>{
     if(r){ r[rv.dataset.f]=(r[rv.dataset.f]||0)+1; osSave(); renderOS(); } return; }
   const dc=e.target.closest("[data-daily]"); if(dc){ const d=dayChecks();
     if(dc.checked) d[dc.dataset.daily]=true; else delete d[dc.dataset.daily];
+    const det=TRAINING_DETECT.find(([k])=>k===dc.dataset.daily);
+    if(det) OS.tasks.forEach(t=>{ if(t.fromCal&&t.due===todayKey()&&det[1].test(t.title||"")){
+      t.done=dc.checked; t.doneAt=dc.checked?Date.now():null; } });
+    if(dc.checked&&det) toast("Training logged. Strong work. 🥋");
     osSave(); renderOS(); return; }
   const pt=e.target.closest("[data-prj-tgl]"); if(pt){ const pr=OS.projects.find(x=>x.id===pt.dataset.prjTgl);
     if(pr){ if(pr.startedAt){ const mins=Math.round((Date.now()-pr.startedAt)/60000);
@@ -1500,12 +1594,45 @@ document.addEventListener("click",e=>{
     if(hb.dataset.hero==="focus"){ switchTab("focus"); return; }
     if(heroItem.kind==="task"){ const t=OS.tasks.find(x=>x.id===heroItem.t.id); if(t){ t.done=true; t.doneAt=Date.now(); } }
     else { const t=heroItem.x.t; if(t.daily){ t.days=t.days||{}; t.days[todayKey()]=true; } else { t.done=true; t.doneAt=Date.now(); } }
-    osSave(); renderOS(); toast("Next action queued up ⚡"); return; }
+    osSave(); renderOS(); toast("Nice. Next one is queued up ⚡"); return; }
 });
 document.addEventListener("focusout",e=>{
   const ta=e.target.closest&&e.target.closest("[data-iv-notes]");
   if(ta){ const iv=OS.interviews.find(x=>x.id===ta.dataset.ivNotes); if(iv&&iv.notes!==ta.value){ iv.notes=ta.value; osSave(); toast("Notes saved"); } }
 });
+
+/* ---- Markets: BTC, SOL, S&P 500 with sparkline graphs ---- */
+let mktData=null;
+function sparkSvg(points,up){
+  if(!points||points.length<2) return "";
+  const min=Math.min(...points),max=Math.max(...points),rng=(max-min)||1;
+  const pts=points.map((p,i)=>`${(i/(points.length-1)*100).toFixed(1)},${(43-38*(p-min)/rng).toFixed(1)}`);
+  const col=up?"#22c55e":"#ef4444", fill=up?"rgba(34,197,94,.12)":"rgba(239,68,68,.12)";
+  return `<svg viewBox="0 0 100 46" preserveAspectRatio="none">
+    <polygon points="0,46 ${pts.join(" ")} 100,46" fill="${fill}"/>
+    <polyline points="${pts.join(" ")}" fill="none" stroke="${col}" stroke-width="1.4"
+      vector-effect="non-scaling-stroke"/></svg>`;
+}
+function fmtPrice(p){ if(p==null) return "…";
+  return "$"+p.toLocaleString(undefined,{minimumFractionDigits:p>=1000?0:2,maximumFractionDigits:p>=1000?0:2}); }
+function renderMarkets(){
+  const box=$("mktBox"); if(!box) return;
+  if(!mktData){ box.innerHTML=`<h3>📈 Markets</h3><p class="muted">Loading live prices…</p>`; return; }
+  if(mktData.error){ box.innerHTML=`<h3>📈 Markets</h3><p class="muted">Market data is unreachable right now. It'll retry on its own.</p>`; return; }
+  box.innerHTML=`<h3>📈 Markets</h3><div class="mkt">`+mktData.assets.map(a=>{
+    const up=(a.change||0)>=0;
+    return `<div class="mcell"><div class="mn">${esc(a.name)} <span style="opacity:.6">· ${a.range==="7d"?"past week":"today"}</span></div>
+      <div class="mp">${fmtPrice(a.price)}</div>
+      <div class="mc ${up?"up":"down"}">${up?"▲":"▼"} ${a.change==null?"":Math.abs(a.change).toFixed(2)+"%"}${a.range==="7d"?" in 24h":""}</div>
+      ${sparkSvg(a.spark,up)}</div>`;
+  }).join("")+`</div><div class="usage-note">Live prices, refreshed every minute while the app is open.</div>`;
+}
+async function loadMarkets(){
+  try{ mktData=await fetch("/api/markets",{cache:"no-store"}).then(r=>r.json()); }
+  catch(e){ mktData={error:"net"}; }
+  renderMarkets();
+}
+setInterval(loadMarkets,60*1000);
 
 /* ---- HUD: clock, boot sequence, voice briefing ---- */
 function tickClock(){ const el=$("hudClock"); if(!el) return;
@@ -1516,18 +1643,20 @@ document.addEventListener("click",e=>{
   if(!e.target.closest("[data-speak]")) return;
   if(!("speechSynthesis" in window)){ toast("Voice not supported in this browser"); return; }
   speechSynthesis.cancel();
-  const txt=$("briefBox").innerText.replace(/🔊 Brief me|☀️ Daily briefing/g,"").replace(/[⚠️📡🗓🎉]/g,"").trim();
-  const u=new SpeechSynthesisUtterance(txt); u.rate=1.04; u.pitch=.95;
-  const v=speechSynthesis.getVoices().find(v=>/en(-|_)(GB|UK)/i.test(v.lang))||speechSynthesis.getVoices().find(v=>v.lang.startsWith("en"));
+  const txt=$("briefBox").innerText.replace(/🔊 Read it to me|☀️ Your daily rundown/g,"")
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu,"").trim();
+  const u=new SpeechSynthesisUtterance(txt); u.rate=1.02; u.pitch=1;
+  const vs=speechSynthesis.getVoices();
+  const v=vs.find(x=>/samantha|ava|zoe/i.test(x.name))||vs.find(x=>/en(-|_)(GB|UK)/i.test(x.lang))||vs.find(x=>x.lang.startsWith("en"));
   if(v) u.voice=v;
-  speechSynthesis.speak(u); toast("🔊 Briefing…");
+  speechSynthesis.speak(u); toast("🔊 Reading your rundown");
 });
 
 (function bootSeq(){
   const el=$("boot");
   if(sessionStorage.getItem("sarahBooted")){ el.remove(); return; }
-  const lines=["S.A.R.A.H. OS v3.0","Notion pipeline","Calendar uplink","Priority engine","Usage telemetry",
-    `${new Date().getHours()<12?"Good morning":new Date().getHours()<18?"Good afternoon":"Good evening"}, sir. All systems online.`];
+  const lines=["S.A.R.A.H.","Your applications","Your calendar","Your priorities","Your markets",
+    `${new Date().getHours()<12?"Good morning":new Date().getHours()<18?"Good afternoon":"Good evening"}, Youssef. Let's get after it.`];
   const log=$("bootlog"); let i=0;
   const next=()=>{ if(i>=lines.length){
       sessionStorage.setItem("sarahBooted","1");
@@ -1538,7 +1667,7 @@ document.addEventListener("click",e=>{
   next();
 })();
 
-osLoad().then(()=>{ switchTab("today"); loadCal(); }); setInterval(loadCal,5*60*1000);
+osLoad().then(()=>{ switchTab("today"); loadCal(); loadMarkets(); }); setInterval(loadCal,5*60*1000);
 </script>
 </body>
 </html>
