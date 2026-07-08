@@ -373,6 +373,7 @@ def assistant_reply(payload):
 # Key comes from ELEVENLABS_API_KEY or a gitignored elevenlabs_key.txt.
 ELEVEN_KEY_FILE = os.path.join(DIRECTORY, "elevenlabs_key.txt")
 ELEVEN_VOICE_NAME = os.environ.get("ELEVEN_VOICE_NAME", "Elise")
+ELEVEN_VOICE_ID = os.environ.get("ELEVEN_VOICE_ID", "EST9Ui6982FZPSi7gCHi")  # Elise
 ELEVEN_FALLBACK_VOICE = "EXAVITQu4vr4xnSDxMaL"  # premade "Sarah" if Elise can't be found
 _voice_cache = {"id": None, "at": 0}
 
@@ -426,15 +427,24 @@ def speak_text(text):
         return None, {"error": "no_key"}
     try:
         s = _session()
-        voice = resolve_voice_id(s, key)
-        r = s.post(f"https://api.elevenlabs.io/v1/text-to-speech/{voice}",
-                   headers={"xi-api-key": key, "Content-Type": "application/json"},
-                   json={"text": text[:2500], "model_id": "eleven_multilingual_v2",
-                         "voice_settings": {"stability": 0.45, "similarity_boost": 0.8,
-                                            "style": 0.25}},
-                   timeout=30)
+
+        def tts(voice):
+            return s.post(f"https://api.elevenlabs.io/v1/text-to-speech/{voice}",
+                          headers={"xi-api-key": key, "Content-Type": "application/json"},
+                          json={"text": text[:2500], "model_id": "eleven_multilingual_v2",
+                                "voice_settings": {"stability": 0.45, "similarity_boost": 0.8,
+                                                   "style": 0.25}},
+                          timeout=30)
+
+        r = tts(ELEVEN_VOICE_ID)
         if r.status_code == 401:
             return None, {"error": "auth", "message": "ElevenLabs rejected the key."}
+        if not r.ok:
+            # The pinned voice may not be in this account yet; resolve by name
+            # (auto-adds from the shared library), then last-resort premade voice.
+            r = tts(resolve_voice_id(s, key))
+        if not r.ok:
+            r = tts(ELEVEN_FALLBACK_VOICE)
         r.raise_for_status()
         return r.content, None
     except Exception as e:
