@@ -321,7 +321,7 @@ def fetch_calendar():
 # ElevenLabs text to speech: natural voice for the daily rundown.
 # Key comes from ELEVENLABS_API_KEY or a gitignored elevenlabs_key.txt.
 ELEVEN_KEY_FILE = os.path.join(DIRECTORY, "elevenlabs_key.txt")
-ELEVEN_VOICE = "21m00Tcm4TlvDq8ikWAM"  # "Rachel", warm and natural
+ELEVEN_VOICE = "EXAVITQu4vr4xnSDxMaL"  # "Sarah", soft and natural
 
 
 def eleven_key():
@@ -521,6 +521,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 def main():
     token, db = load_token_and_db()
     url = f"http://localhost:{PORT}/job-dashboard.html"
+    socketserver.TCPServer.allow_reuse_address = True
     try:
         httpd = socketserver.TCPServer(("", PORT), Handler)
     except OSError as e:
@@ -534,6 +535,11 @@ def main():
         else:
             print("Notion token: NOT set yet — the dashboard will show setup steps.")
             print("Add notion_token.txt (or export NOTION_TOKEN) and refresh.")
+        if eleven_key():
+            print("ElevenLabs voice: ready (Sarah). 'Read it to me' will sound human.")
+        else:
+            print("ElevenLabs voice: no key found — falling back to the browser voice.")
+            print("Put your key in elevenlabs_key.txt to enable it.")
         print("\nKeep this window open while you use the dashboard. Ctrl+C to stop.")
         threading.Timer(0.8, lambda: webbrowser.open(url)).start()
         try:

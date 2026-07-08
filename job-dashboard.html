@@ -936,9 +936,9 @@ loadData(false).then(startTicking);
 const AREAS=["Career","University","Projects","Productivity","Health","Finance","Goals","Knowledge"];
 const AREA_ICON={Career:"💼",University:"🎓",Projects:"🛠",Productivity:"⚡",Health:"💪",Finance:"💰",Goals:"🎯",Knowledge:"📚"};
 let OS={tasks:[],habits:[],sessions:[],inbox:[],goals:[],courses:[],uniItems:[],
-  contacts:[],interviews:[],resumes:[],projects:[],finance:[],notes:[],settings:{}};
+  contacts:[],interviews:[],resumes:[],projects:[],finance:[],notes:[],incomeLog:[],settings:{}};
 const OS_LISTS=["tasks","habits","sessions","inbox","goals","goalTrees","courses","uniItems",
-  "contacts","interviews","resumes","projects","finance","notes"];
+  "contacts","interviews","resumes","projects","finance","notes","incomeLog"];
 let osSaveT=null;
 
 let calEvents=null;
@@ -1108,7 +1108,16 @@ function renderToday(){
   brief.push(appLine.join(" "));
   if(overdue.length) brief.push(`<b>${overdue.length}</b> task${overdue.length>1?"s":""} slipped past the deadline. Knock out <b>${esc(overdue[0].title)}</b> first and the rest gets easier.`);
   if(tasks[0]) brief.push(`Best use of your time right now: <b>${esc(tasks[0].title)}</b>.`);
-  if(habitsLeft.length) brief.push(`Still open today: ${habitsLeft.slice(0,4).map(h=>esc(h.name)).join(", ")}.`);
+  const dd=dayChecks(), leftBits=[];
+  const pl=PRAYERS.filter(([k])=>!dd[k]).map(([,n])=>n);
+  if(pl.length) leftBits.push(pl.length===5?"all five prayers":`${pl.length} prayer${pl.length>1?"s":""} (${pl.join(", ")})`);
+  trainingToday().filter(([k])=>!dd[k]).forEach(([,n])=>leftBits.push(n));
+  [["lesson","your language lesson"],["narcos","an episode of Narcos"]].forEach(([k,n])=>{ if(!dd[k]) leftBits.push(n); });
+  const incLeft=Math.max(0,INCOME_GOAL-incomeToday());
+  if(incLeft>0) leftBits.push(`<b>$${incLeft.toLocaleString()}</b> more to hit your income goal`);
+  brief.push(leftBits.length?`Still on the board today: ${leftBits.join(", ")}.`
+    :`Every daily category is done. That's a perfect day. 💯`);
+  if(habitsLeft.length) brief.push(`Habits you haven't checked yet: ${habitsLeft.slice(0,4).map(h=>esc(h.name)).join(", ")}.`);
   brief.push(focusToday?`You've logged <b>${focusToday}</b> minutes of deep work so far. Keep stacking.`
     :`No deep work logged yet. One focused session gets the ball rolling.`);
   if(new Date().getDay()===0) brief.push(`It's Sunday, time for your weekly review: ${weeklyReview()}`);
@@ -1318,16 +1327,21 @@ function trainingToday(){
   TRAINING_DETECT.forEach(([key,re,label])=>{ if(evs.some(ev=>re.test(ev.title||""))) out.push([key,label]); });
   return out;
 }
+const INCOME_GOAL=100;
+function incomeToday(){ return (OS.incomeLog||[]).filter(e=>e.date===todayKey()).reduce((a,b)=>a+(+b.amount||0),0); }
+function incomeTotal(){ return (OS.incomeLog||[]).reduce((a,b)=>a+(+b.amount||0),0); }
 function lifeSections(){
   return [
     {id:"faith",name:"Faith",icon:"🕌",ring:true,items:PRAYERS},
     {id:"training",name:"Training",icon:"🥋",cal:true,items:trainingToday(),
       rest:"Rest day. No sessions on the calendar."},
     {id:"mind",name:"Mind",icon:"🧠",items:[["lesson","Language lesson"],["narcos","One episode of Narcos"]]},
-    {id:"income",name:"Income",icon:"💵",items:[["money","Make $100 today"]]},
+    {id:"income",name:"Income",icon:"💵",money:true,items:[]},
   ];
 }
-function secPct(sec,d){ if(!sec.items.length) return null;
+function secPct(sec,d){
+  if(sec.money) return Math.min(100,Math.round(100*incomeToday()/INCOME_GOAL));
+  if(!sec.items.length) return null;
   return Math.round(100*sec.items.filter(([k])=>d[k]).length/sec.items.length); }
 function prayerRing(done){
   const C=2*Math.PI*34, seg=C/5, dash=seg-6;
@@ -1343,6 +1357,8 @@ function lifeChk(k,label,on){
     <span class="lbl">${esc(label)}</span></label>`;
 }
 function renderDaily(){
+  const prevInc=document.querySelector("[data-inc-in]");
+  const incVal=prevInc?prevInc.value:"", incFocus=prevInc&&document.activeElement===prevInc;
   const d=dayChecks(), secs=lifeSections();
   const pcts=secs.map(s=>secPct(s,d)).filter(p=>p!=null);
   const overall=pcts.length?Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length):0;
@@ -1351,7 +1367,22 @@ function renderDaily(){
   const cards=secs.map(sec=>{
     const pct=secPct(sec,d), complete=pct===100;
     let body;
-    if(!sec.items.length) body=`<p class="muted" style="font-size:12px;margin:6px 0 0">${sec.rest||"Nothing here today."}</p>`;
+    if(sec.money){
+      const earned=incomeToday(), left=Math.max(0,INCOME_GOAL-earned);
+      const entries=(OS.incomeLog||[]).filter(e=>e.date===todayKey()).slice().reverse();
+      body=`<div style="font-size:21px;font-weight:700">$${earned.toLocaleString()}
+          <span class="muted" style="font-size:12px;font-weight:400">of $${INCOME_GOAL} today</span></div>
+        <div class="muted" style="font-size:12px;margin:2px 0 9px">${left>0
+          ?`$${left.toLocaleString()} left to make`
+          :"Goal hit. Everything extra is a bonus. 🎉"}</div>
+        <div style="display:flex;gap:6px">
+          <input data-inc-in type="number" min="0" step="any" inputmode="decimal" placeholder="Log an amount…" style="flex:1;min-width:0;padding:6px 9px"/>
+          <button class="rowbtn" data-inc-add>Log it</button></div>
+        ${entries.map(en=>`<div class="trow" style="padding:5px 2px"><div class="tt">$${(+en.amount).toLocaleString()}</div>
+          <span class="x" data-inc-del="${en.id}" style="cursor:pointer;color:var(--muted)">✕</span></div>`).join("")}
+        <div class="usage-note">All time you've made <b style="color:var(--offer)">$${incomeTotal().toLocaleString()}</b></div>`;
+    }
+    else if(!sec.items.length) body=`<p class="muted" style="font-size:12px;margin:6px 0 0">${sec.rest||"Nothing here today."}</p>`;
     else if(sec.ring){
       const done=sec.items.filter(([k])=>d[k]).length;
       body=`<div class="ringwrap">${prayerRing(done)}<div style="flex:1">${
@@ -1371,6 +1402,8 @@ function renderDaily(){
     <div class="overallbar"><span style="width:${overall}%"></span></div>
     <div class="muted" style="font-size:12px;margin-top:6px">${msg}</div>
     <div class="lifegrid">${cards}</div>`;
+  if(incVal||incFocus){ const ni=document.querySelector("[data-inc-in]");
+    if(ni){ ni.value=incVal; if(incFocus) ni.focus(); } }
 }
 
 /* ---- Goal Intelligence System ---- */
@@ -1602,6 +1635,16 @@ document.addEventListener("click",e=>{
     if(iv){ iv.checks=iv.checks||{}; if(chk.checked) iv.checks[chk.dataset.c]=true; else delete iv.checks[chk.dataset.c]; osSave(); renderOS(); } return; }
   const rv=e.target.closest("[data-rv]"); if(rv){ const r=OS.resumes.find(x=>x.id===rv.dataset.rv);
     if(r){ r[rv.dataset.f]=(r[rv.dataset.f]||0)+1; osSave(); renderOS(); } return; }
+  const ia=e.target.closest("[data-inc-add]"); if(ia){
+    const inp=document.querySelector("[data-inc-in]"), v=parseFloat(inp&&inp.value);
+    if(!v||v<=0){ toast("Type an amount first"); return; }
+    OS.incomeLog.push({id:uid(),date:todayKey(),amount:Math.round(v*100)/100});
+    const left=Math.max(0,INCOME_GOAL-incomeToday());
+    osSave(); renderOS();
+    toast(left>0?`Logged $${v}. $${left.toLocaleString()} to go 💵`:`Logged $${v}. Daily goal hit 🎉`);
+    return; }
+  const idel=e.target.closest("[data-inc-del]"); if(idel){
+    OS.incomeLog=OS.incomeLog.filter(x=>x.id!==idel.dataset.incDel); osSave(); renderOS(); return; }
   const dc=e.target.closest("[data-daily]"); if(dc){ const d=dayChecks();
     if(dc.checked) d[dc.dataset.daily]=true; else delete d[dc.dataset.daily];
     const det=TRAINING_DETECT.find(([k])=>k===dc.dataset.daily);
@@ -1624,6 +1667,10 @@ document.addEventListener("click",e=>{
     if(heroItem.kind==="task"){ const t=OS.tasks.find(x=>x.id===heroItem.t.id); if(t){ t.done=true; t.doneAt=Date.now(); } }
     else { const t=heroItem.x.t; if(t.daily){ t.days=t.days||{}; t.days[todayKey()]=true; } else { t.done=true; t.doneAt=Date.now(); } }
     osSave(); renderOS(); toast("Nice. Next one is queued up ⚡"); return; }
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&e.target.matches&&e.target.matches("[data-inc-in]")){
+    const b=document.querySelector("[data-inc-add]"); if(b) b.click(); }
 });
 document.addEventListener("focusout",e=>{
   const ta=e.target.closest&&e.target.closest("[data-iv-notes]");
