@@ -295,17 +295,22 @@ def fetch_calendar():
             with open(CAL_TOKEN, "w") as f:
                 f.write(creds.to_json())
         svc = build("calendar", "v3", credentials=creds, cache_discovery=False)
-        now = dt.datetime.now(dt.timezone.utc)
-        start = now - dt.timedelta(hours=2)
-        end = now + dt.timedelta(days=2)
+        # Full current day (local) through tomorrow, so the daily sync catches
+        # everything on today's schedule, not just upcoming events.
+        now = dt.datetime.now().astimezone()
+        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = start + dt.timedelta(days=2)
         r = svc.events().list(calendarId="primary", timeMin=start.isoformat(),
                               timeMax=end.isoformat(), singleEvents=True,
-                              orderBy="startTime", maxResults=20).execute()
+                              orderBy="startTime", maxResults=40).execute()
         out = []
         for e in r.get("items", []):
             st = e.get("start", {})
-            out.append({"title": e.get("summary", "(no title)"),
+            en = e.get("end", {})
+            out.append({"id": e.get("id", ""),
+                        "title": e.get("summary", "(no title)"),
                         "start": st.get("dateTime") or st.get("date", ""),
+                        "end": en.get("dateTime") or en.get("date", ""),
                         "allday": "date" in st})
         return {"events": out}
     except Exception as e:
