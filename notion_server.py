@@ -280,48 +280,70 @@ def goal_plan(goal):
 
 CAL_TOKEN = os.path.join(DIRECTORY, "token_calendar.json")
 CAL_SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
+_cal_lock = threading.Lock()
 
 
 def fetch_calendar():
-    """Read today's + tomorrow's events from the user's primary Google Calendar."""
+    """Read today's + tomorrow's events from all of the user's Google Calendars."""
     try:
         from google.auth.transport.requests import Request
         from google.oauth2.credentials import Credentials
         from google_auth_oauthlib.flow import InstalledAppFlow
         from googleapiclient.discovery import build
         import datetime as dt
-        creds = None
-        if os.path.exists(CAL_TOKEN):
-            creds = Credentials.from_authorized_user_file(CAL_TOKEN, CAL_SCOPES)
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                if not os.path.exists(os.path.join(DIRECTORY, "credentials.json")):
-                    return {"error": "no_creds"}
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    os.path.join(DIRECTORY, "credentials.json"), CAL_SCOPES)
-                creds = flow.run_local_server(port=0)  # opens browser once
-            with open(CAL_TOKEN, "w") as f:
-                f.write(creds.to_json())
+        with _cal_lock:
+            creds = None
+            if os.path.exists(CAL_TOKEN):
+                creds = Credentials.from_authorized_user_file(CAL_TOKEN, CAL_SCOPES)
+            if not creds or not creds.valid:
+                if creds and creds.expired and creds.refresh_token:
+                    creds.refresh(Request())
+                else:
+                    if not os.path.exists(os.path.join(DIRECTORY, "credentials.json")):
+                        return {"error": "no_creds"}
+                    print("\nGoogle Calendar needs a one-time approval — check your browser.")
+                    flow = InstalledAppFlow.from_client_secrets_file(
+                        os.path.join(DIRECTORY, "credentials.json"), CAL_SCOPES)
+                    creds = flow.run_local_server(port=0)  # opens browser once
+                    print("Calendar connected. ✓")
+                with open(CAL_TOKEN, "w") as f:
+                    f.write(creds.to_json())
         svc = build("calendar", "v3", credentials=creds, cache_discovery=False)
         # Full current day (local) through tomorrow, so the daily sync catches
         # everything on today's schedule, not just upcoming events.
         now = dt.datetime.now().astimezone()
         start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         end = start + dt.timedelta(days=2)
-        r = svc.events().list(calendarId="primary", timeMin=start.isoformat(),
-                              timeMax=end.isoformat(), singleEvents=True,
-                              orderBy="startTime", maxResults=40).execute()
-        out = []
-        for e in r.get("items", []):
-            st = e.get("start", {})
-            en = e.get("end", {})
-            out.append({"id": e.get("id", ""),
-                        "title": e.get("summary", "(no title)"),
-                        "start": st.get("dateTime") or st.get("date", ""),
-                        "end": en.get("dateTime") or en.get("date", ""),
-                        "allday": "date" in st})
+        # Read every calendar the account can see (gym schedules, shared and
+        # secondary calendars), not just the primary one.
+        cal_ids = ["primary"]
+        try:
+            cl = svc.calendarList().list(maxResults=50).execute()
+            cal_ids = [c["id"] for c in cl.get("items", [])
+                       if c.get("selected", True)] or ["primary"]
+        except Exception:
+            pass
+        out, seen = [], set()
+        for cid in cal_ids:
+            try:
+                r = svc.events().list(calendarId=cid, timeMin=start.isoformat(),
+                                      timeMax=end.isoformat(), singleEvents=True,
+                                      orderBy="startTime", maxResults=40).execute()
+            except Exception:
+                continue
+            for e in r.get("items", []):
+                eid = e.get("id", "")
+                if not eid or eid in seen or e.get("status") == "cancelled":
+                    continue
+                seen.add(eid)
+                st = e.get("start", {})
+                en = e.get("end", {})
+                out.append({"id": eid,
+                            "title": e.get("summary", "(no title)"),
+                            "start": st.get("dateTime") or st.get("date", ""),
+                            "end": en.get("dateTime") or en.get("date", ""),
+                            "allday": "date" in st})
+        out.sort(key=lambda ev: (ev["allday"] and "0" or "1", ev["start"]))
         return {"events": out}
     except Exception as e:
         return {"error": "cal", "message": str(e)[:150]}
@@ -656,9 +678,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 def main():
     token, db = load_token_and_db()
     url = f"http://localhost:{PORT}/job-dashboard.html"
-    socketserver.TCPServer.allow_reuse_address = True
+    socketserver.ThreadingTCPServer.allow_reuse_address = True
+    socketserver.ThreadingTCPServer.daemon_threads = True
     try:
-        httpd = socketserver.TCPServer(("", PORT), Handler)
+        httpd = socketserver.ThreadingTCPServer(("", PORT), Handler)
     except OSError as e:
         print(f"Could not start on port {PORT}: {e}\nTry: python3 notion_server.py {PORT + 1}")
         sys.exit(1)

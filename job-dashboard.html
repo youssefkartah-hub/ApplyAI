@@ -1027,7 +1027,7 @@ function openTasks(){ return OS.tasks.filter(t=>!t.done).map(t=>({...t,score:pSc
 function categorize(txt){
   const l=txt.toLowerCase();
   const type=/https?:\/\//.test(l)?"link":/\b(remember|remind|don.?t forget)\b/.test(l)?"reminder":"note";
-  const rules=[["Health",/gym|workout|run|sleep|diet|doctor|meal|bjj|jiu.?jitsu|muay.?thai|spar|boxing/],
+  const rules=[["Health",/gym|workout|run|sleep|diet|doctor|meal|bjj|jiu.?jitsu|jujitsu|muay.?thai|spar|training|grappling|wrestling|boxing/],
     ["University",/exam|assignment|homework|hw|class|lecture|gpa|semester|professor|midterm|final/],
     ["Career",/apply|application|resume|cv|interview|recruiter|job|linkedin|offer|cover letter/],
     ["Finance",/pay|budget|tuition|rent|bank|save|money|invoice|\$/],
@@ -1328,13 +1328,17 @@ setInterval(()=>{ OS.projects.forEach(pr=>{ if(pr.startedAt){
 
 /* ---- Daily performance: life areas, each with its own progress ---- */
 const PRAYERS=[["fajr","Fajr"],["dhuhr","Dhuhr"],["asr","Asr"],["maghrib","Maghrib"],["isha","Isha"]];
-const TRAINING_DETECT=[["bjj",/bjj|jiu.?jitsu/i,"BJJ session"],["muaythai",/muay.?thai/i,"Muay Thai session"]];
+const TRAINING_DETECT=[["bjj",/bjj|jiu.?jitsu|jujitsu/i,"BJJ session"],["muaythai",/muay.?thai/i,"Muay Thai session"]];
+const TRAINING_GENERIC=/\btrain(ing)?\b|grappling|wrestling|sparring|martial ?arts|kickboxing|boxing/i;
 function dayChecks(){ if(!OS.daily||Array.isArray(OS.daily)) OS.daily={}; return OS.daily[todayKey()]=OS.daily[todayKey()]||{}; }
 function todayCalEvents(){ const tk=todayKey();
   return (calEvents||[]).filter(ev=>ev.allday?ev.start===tk:(ev.start||"").slice(0,10)===tk); }
 function trainingToday(){
   const evs=todayCalEvents(), out=[];
   TRAINING_DETECT.forEach(([key,re,label])=>{ if(evs.some(ev=>re.test(ev.title||""))) out.push([key,label]); });
+  // catch sessions that don't name the discipline, like "Training 6pm"
+  if(evs.some(ev=>TRAINING_GENERIC.test(ev.title||"")&&!TRAINING_DETECT.some(([,re])=>re.test(ev.title||""))))
+    out.push(["training","Training session"]);
   return out;
 }
 const INCOME_GOAL=100;
@@ -1668,9 +1672,10 @@ document.addEventListener("click",e=>{
   const dc=e.target.closest("[data-daily]"); if(dc){ const d=dayChecks();
     if(dc.checked) d[dc.dataset.daily]=true; else delete d[dc.dataset.daily];
     const det=TRAINING_DETECT.find(([k])=>k===dc.dataset.daily);
-    if(det) OS.tasks.forEach(t=>{ if(t.fromCal&&t.due===todayKey()&&det[1].test(t.title||"")){
+    const tre=det?det[1]:(dc.dataset.daily==="training"?TRAINING_GENERIC:null);
+    if(tre) OS.tasks.forEach(t=>{ if(t.fromCal&&t.due===todayKey()&&tre.test(t.title||"")){
       t.done=dc.checked; t.doneAt=dc.checked?Date.now():null; } });
-    if(dc.checked&&det) toast("Training logged. Strong work. 🥋");
+    if(dc.checked&&tre) toast("Training logged. Strong work. 🥋");
     osSave(); renderOS(); return; }
   const pt=e.target.closest("[data-prj-tgl]"); if(pt){ const pr=OS.projects.find(x=>x.id===pt.dataset.prjTgl);
     if(pr){ if(pr.startedAt){ const mins=Math.round((Date.now()-pr.startedAt)/60000);
@@ -1793,7 +1798,8 @@ function showBubble(you,sarah){
 function checkDaily(k){ const d=dayChecks(); d[k]=true; }
 function markTrainingTask(key){
   const det=TRAINING_DETECT.find(([k])=>k===key);
-  if(det) OS.tasks.forEach(t=>{ if(t.fromCal&&t.due===todayKey()&&det[1].test(t.title||"")){ t.done=true; t.doneAt=Date.now(); } });
+  const re=det?det[1]:(key==="training"?TRAINING_GENERIC:null);
+  if(re) OS.tasks.forEach(t=>{ if(t.fromCal&&t.due===todayKey()&&re.test(t.title||"")){ t.done=true; t.doneAt=Date.now(); } });
 }
 function leftSummarySpeech(){
   const bits=dailyLeftBits();
@@ -1825,6 +1831,8 @@ function localIntent(t){
   else PRAYERS.forEach(([k,n])=>{ if(PRAYER_HEARD[k].test(l)){ checkDaily(k); acted.push(n); } });
   if(/(bjj|jiu.?jitsu|jujitsu)/.test(l)){ checkDaily("bjj"); markTrainingTask("bjj"); acted.push("BJJ"); }
   if(/(muay ?thai|my tie|moy tai)/.test(l)){ checkDaily("muaythai"); markTrainingTask("muaythai"); acted.push("Muay Thai"); }
+  if(/\btrain(ed|ing)?\b|sparring|grappling|wrestling/.test(l)&&!/(bjj|jiu|jujitsu|muay|my tie)/.test(l)){
+    checkDaily("training"); markTrainingTask("training"); acted.push("training"); }
   if(/(language lesson|my lesson|duolingo)/.test(l)){ checkDaily("lesson"); acted.push("your lesson"); }
   if(/narcos|episode/.test(l)&&/watch|did|done|finish/.test(l)){ checkDaily("narcos"); acted.push("Narcos"); }
   const task=t.match(/(?:remind me to|add (?:a )?task(?: to)?|i need to remember to)\s+(.+)/i);
