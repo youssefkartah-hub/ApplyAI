@@ -367,6 +367,7 @@
       <button class="tab" data-tab="crm">🎤 Interviews·CRM</button>
       <div class="navlbl">Life</div>
       <button class="tab" data-tab="train">🏋️ Train</button>
+      <button class="tab" data-tab="fin">💰 Finance</button>
       <button class="tab" data-tab="proj">🛠 Projects</button>
       <button class="tab" data-tab="habits">🔥 Habits</button>
       <button class="tab" data-tab="focus">⏱ Focus</button>
@@ -480,6 +481,22 @@
       <div class="charts" style="margin-top:14px">
         <div class="icard" id="prBox"></div>
         <div class="icard" id="histBox"></div>
+      </div>
+    </div>
+
+    <div class="pane" data-pane="fin" hidden>
+      <div class="icard" id="finOverview" style="margin-bottom:14px"></div>
+      <div class="charts">
+        <div class="icard" id="finExpenses"></div>
+        <div class="icard" id="finBudgets"></div>
+      </div>
+      <div class="charts" style="margin-top:14px">
+        <div class="icard" id="finGoals"></div>
+        <div class="icard" id="finWorth"></div>
+      </div>
+      <div class="charts" style="margin-top:14px">
+        <div class="icard" id="finTrend"></div>
+        <div class="icard" id="finMkts"></div>
       </div>
     </div>
 
@@ -1196,6 +1213,8 @@ function computePatterns(){
   });
   // 10. What the training numbers say (from the athletic system)
   try{ trainInsights().slice(0,2).forEach(x=>say(x,x)); }catch(e){}
+  // 10b. What the money says (from finance)
+  try{ finInsights().slice(0,1).forEach(x=>say(x,x)); }catch(e){}
   // 11. Which resume version converts (needs real volume)
   const rv=(OS.resumes||[]).filter(r=>r.apps>=3);
   if(rv.length>=2){
@@ -1769,7 +1788,7 @@ function renderGoals(){
 let heroItem=null, currentTab="today";
 const PANE_R={today:[renderToday],inbox:[renderAreas,renderInbox],planner:[renderPlanner],
   habits:[renderHabits],focus:[renderFocusStats],crm:[renderCRM],
-  proj:[renderProjects],goals:[renderGoals],train:[renderTrain]};
+  proj:[renderProjects],goals:[renderGoals],train:[renderTrain],fin:[renderFin]};
 function renderOS(){ try{
   // Only rebuild what's on screen: the Today pane rerenders when visible,
   // other tabs get their own renderers, and the header day % stays fresh
@@ -2308,6 +2327,196 @@ document.addEventListener("change",e=>{
     renderLiftForm(); }
 });
 
+/* ==================================================================
+   Finance. Income (from the daily log), expenses with monthly budgets,
+   savings goals, net worth with live-priced crypto, monthly trends.
+   All local; crypto valuation reuses the market feed already fetched.
+   ================================================================== */
+const FIN_CATS=["Food","Rent","Transport","Training","Subscriptions","School","Fun","Other"];
+const FIN_DEFAULT_BUDGET={Food:400,Rent:1200,Transport:120,Training:150,Subscriptions:60,School:200,Fun:150,Other:100};
+function fin(){ if(!OS.finance||Array.isArray(OS.finance))
+    OS.finance={expenses:[],budgets:{...FIN_DEFAULT_BUDGET},savingsGoals:[],assets:[]};
+  const f=OS.finance;
+  f.expenses=f.expenses||[]; f.budgets=f.budgets||{...FIN_DEFAULT_BUDGET};
+  f.savingsGoals=f.savingsGoals||[]; f.assets=f.assets||[];
+  return f; }
+function monthKey(off=0){ const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-off);
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); }
+function monthLabel(off){ const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-off);
+  return d.toLocaleDateString(undefined,{month:"short"}); }
+function incomeInMonth(mk){ return (OS.incomeLog||[]).filter(e=>(e.date||"").startsWith(mk)).reduce((a,b)=>a+(+b.amount||0),0); }
+function spendInMonth(mk,cat){ return fin().expenses.filter(e=>(e.date||"").startsWith(mk)&&(!cat||e.cat===cat))
+  .reduce((a,b)=>a+(+b.amount||0),0); }
+function cryptoPrice(sym){ if(!mktData||!mktData.assets) return null;
+  const a=mktData.assets.find(x=>x.symbol===sym); return a?a.price:null; }
+function assetValue(a){
+  if(a.type==="crypto"){ const p=cryptoPrice(a.sym); return p!=null?Math.round(a.qty*p):(+a.value||0); }
+  return (+a.value||0)*(a.type==="debt"?-1:1); }
+function netWorth(){ return fin().assets.reduce((s,a)=>s+assetValue(a),0); }
+function guessCat(text){ const l=(text||"").toLowerCase();
+  if(/food|eat|grocer|restaurant|coffee|lunch|dinner|meal/.test(l)) return "Food";
+  if(/rent|housing/.test(l)) return "Rent";
+  if(/gas|uber|lyft|bus|train ticket|parking|car/.test(l)) return "Transport";
+  if(/gym|bjj|muay|dues|supplement|protein/.test(l)) return "Training";
+  if(/netflix|spotify|subscri|icloud|chatgpt/.test(l)) return "Subscriptions";
+  if(/tuition|book|school|course|lab/.test(l)) return "School";
+  if(/movie|game|fun|night|trip/.test(l)) return "Fun";
+  return "Other"; }
+function logExpense(amount,cat,note){
+  const v=Math.round((+amount||0)*100)/100; if(v<=0) return false;
+  fin().expenses.push({id:uid(),date:todayKey(),amount:v,cat:FIN_CATS.includes(cat)?cat:guessCat(cat||note),note:(note||"").slice(0,80)});
+  if(fin().expenses.length>5000) fin().expenses=fin().expenses.slice(-5000);
+  return true; }
+function finInsights(){
+  const out=[], mk=monthKey(0), inc=incomeInMonth(mk), sp=spendInMonth(mk);
+  if(inc>0&&sp>0){
+    const rate=Math.round(100*(inc-sp)/inc);
+    if(rate<0) out.push(`You've spent $${(sp-inc).toLocaleString()} more than you've earned this month. Worth a look before it compounds.`);
+    else if(rate>=30) out.push(`You're keeping ${rate}% of what you earn this month. That's how net worth gets built.`);
+  }
+  const dayOfMonth=new Date().getDate(), frac=dayOfMonth/30;
+  Object.entries(fin().budgets).forEach(([cat,b])=>{
+    if(!b) return; const s=spendInMonth(mk,cat);
+    if(s>b) out.push(`${cat} is $${(s-b).toLocaleString()} over its monthly budget.`);
+    else if(frac<0.8&&s>b*0.9) out.push(`${cat} is at ${Math.round(100*s/b)}% of budget with ${30-dayOfMonth} days left in the month.`);
+  });
+  return out.slice(0,3); }
+/* ---- Finance rendering ---- */
+function renderFin(){
+  if(!$("finOverview")) return;
+  const f=fin(), mk=monthKey(0);
+  const inc=incomeInMonth(mk), sp=spendInMonth(mk), net=inc-sp, nw=netWorth();
+  $("finOverview").innerHTML=`<h3>💰 This month</h3>
+    <div class="imetrics" style="margin-top:6px">
+      <div class="imetric"><div class="n" style="color:var(--offer)">$${inc.toLocaleString()}</div><div class="l">Income</div></div>
+      <div class="imetric"><div class="n" style="color:var(--rejected)">$${sp.toLocaleString()}</div><div class="l">Spent</div></div>
+      <div class="imetric"><div class="n" style="color:${net>=0?"var(--offer)":"var(--rejected)"}">${net<0?"-":""}$${Math.abs(net).toLocaleString()}</div><div class="l">Net${inc>0?` · keeping ${Math.max(0,Math.round(100*net/inc))}%`:""}</div></div>
+      <div class="imetric"><div class="n">${nw<0?"-":""}$${Math.abs(nw).toLocaleString()}</div><div class="l">Net worth</div></div>
+    </div>
+    ${finInsights().map(x=>`<div class="usage-note">${x}</div>`).join("")}`;
+  renderFinExpenses(); renderFinBudgets(); renderFinGoals(); renderFinWorth(); renderFinTrend(); renderFinMkts();
+}
+function renderFinExpenses(){
+  const mk=monthKey(0);
+  const list=fin().expenses.filter(e=>(e.date||"").startsWith(mk)).slice(-12).reverse();
+  $("finExpenses").innerHTML=`<h3>🧾 Expenses</h3>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 8px">
+      <input data-exp-amt type="number" inputmode="decimal" placeholder="$" style="width:84px;padding:6px 8px"/>
+      <select data-exp-cat style="padding:6px 8px">${FIN_CATS.map(c=>`<option>${c}</option>`).join("")}</select>
+      <input data-exp-note placeholder="What was it?" style="flex:1;min-width:120px;padding:6px 8px"/>
+      <button class="rowbtn" data-exp-add>Log it</button></div>
+    ${list.length?list.map(e=>`<div class="trow" style="padding:5px 2px">
+      <div class="tt">$${(+e.amount).toLocaleString()} <span class="muted">· ${e.cat}${e.note?` · ${esc(e.note)}`:""}</span>
+        <div class="sub">${e.date}</div></div>
+      <span class="x" data-exp-del="${e.id}" style="cursor:pointer;color:var(--muted)">✕</span></div>`).join("")
+      :`<p class="muted">Nothing logged this month yet.</p>`}`;
+}
+function renderFinBudgets(){
+  const mk=monthKey(0), b=fin().budgets;
+  $("finBudgets").innerHTML=`<h3>📊 Monthly budgets</h3>`+FIN_CATS.map(cat=>{
+    const bud=+b[cat]||0, s=spendInMonth(mk,cat), pct=bud?Math.min(100,Math.round(100*s/bud)):0;
+    const over=bud&&s>bud;
+    return `<div class="fn-row"><div class="fn-lbl" style="width:100px">${cat}</div>
+      <div class="fn-bar"><span style="width:${pct}%${over?";background:linear-gradient(90deg,#f59e0b,#ef4444)":""}"></span>
+        <i>$${s.toLocaleString()}</i></div>
+      <span style="display:inline-flex;align-items:center;gap:2px;width:86px"><span class="muted" style="font-size:11px">/$</span>
+        <input data-budget="${cat}" type="number" value="${bud||""}" placeholder="0" style="width:64px;padding:3px 5px;font-size:12px"/></span></div>`;
+  }).join("")+`<div class="usage-note">Edit any budget inline. Red means over.</div>`;
+}
+function renderFinGoals(){
+  const gs=fin().savingsGoals;
+  $("finGoals").innerHTML=`<h3>🎯 Savings goals</h3>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 8px">
+      <input data-sg-name placeholder="Goal (e.g. Emergency fund)" style="flex:1;min-width:140px;padding:6px 8px"/>
+      <input data-sg-target type="number" placeholder="Target $" style="width:100px;padding:6px 8px"/>
+      <button class="rowbtn" data-sg-add>Add</button></div>
+    ${gs.length?gs.map(g=>{
+      const pct=g.target?Math.min(100,Math.round(100*g.saved/g.target)):0;
+      return `<div style="padding:7px 2px;border-bottom:1px solid var(--line)">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+          <b>${esc(g.name)}</b>
+          <span style="display:inline-flex;gap:5px;align-items:center">
+            <input data-sg-dep-in="${g.id}" type="number" placeholder="+$" style="width:72px;padding:3px 6px;font-size:12px"/>
+            <button class="rowbtn" data-sg-dep="${g.id}">Add</button>
+            <span class="x" data-sg-del="${g.id}" style="cursor:pointer;color:var(--muted)">✕</span></span></div>
+        <div class="lifebar" style="margin:6px 0 3px"><span style="width:${pct}%"></span></div>
+        <div class="muted" style="font-size:12px">$${(+g.saved).toLocaleString()} of $${(+g.target).toLocaleString()} · ${pct}%${pct>=100?" · funded 🎉":""}</div></div>`;
+    }).join(""):`<p class="muted">Name a goal and a target. Deposits build it up.</p>`}`;
+}
+function renderFinWorth(){
+  const f=fin();
+  $("finWorth").innerHTML=`<h3>🏦 Net worth</h3>
+    <div style="font-size:22px;font-weight:700;margin:4px 0 8px">${netWorth()<0?"-":""}$${Math.abs(netWorth()).toLocaleString()}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+      <input data-as-name placeholder="Asset name" style="flex:1;min-width:110px;padding:6px 8px"/>
+      <select data-as-type style="padding:6px 8px">
+        <option value="cash">Cash</option><option value="savings">Savings</option>
+        <option value="investment">Investment</option><option value="crypto-BTC">Crypto: BTC</option>
+        <option value="crypto-SOL">Crypto: SOL</option><option value="debt">Debt (owed)</option></select>
+      <input data-as-val type="number" placeholder="$ or qty" style="width:96px;padding:6px 8px"/>
+      <button class="rowbtn" data-as-add>Add</button></div>
+    ${f.assets.length?f.assets.map(a=>{
+      const v=assetValue(a);
+      const detail=a.type==="crypto"?`${a.qty} ${a.sym}${cryptoPrice(a.sym)?` @ $${cryptoPrice(a.sym).toLocaleString()} live`:""}`:a.type;
+      return `<div class="trow" style="padding:5px 2px"><div class="tt">${esc(a.name)}
+          <div class="sub">${detail}</div></div>
+        <span class="pill2" style="color:${v<0?"var(--rejected)":"var(--txt)"}">${v<0?"-":""}$${Math.abs(v).toLocaleString()}</span>
+        <span class="x" data-as-del="${a.id}" style="cursor:pointer;color:var(--muted)">✕</span></div>`;
+    }).join(""):`<p class="muted">Add cash, savings, crypto holdings and debts. Crypto values itself from the live market feed.</p>`}`;
+}
+function renderFinTrend(){
+  const rows=[];
+  for(let o=5;o>=0;o--){
+    const mk=monthKey(o), inc=incomeInMonth(mk), sp=spendInMonth(mk);
+    rows.push({l:monthLabel(o),inc,sp});
+  }
+  const max=Math.max(50,...rows.map(r=>Math.max(r.inc,r.sp)));
+  $("finTrend").innerHTML=`<h3>📈 Six month trend</h3>`+rows.map(r=>
+    `<div class="fn-row"><div class="fn-lbl" style="width:44px">${r.l}</div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+        <div class="fn-bar" style="flex:0 0 13px;height:13px"><span style="width:${Math.round(100*r.inc/max)}%;background:linear-gradient(90deg,#22c55e,#16a34a)"></span><i style="top:0;font-size:10px">$${r.inc.toLocaleString()}</i></div>
+        <div class="fn-bar" style="flex:0 0 13px;height:13px"><span style="width:${Math.round(100*r.sp/max)}%;background:linear-gradient(90deg,#f59e0b,#ef4444)"></span><i style="top:0;font-size:10px">$${r.sp.toLocaleString()}</i></div>
+      </div></div>`).join("")+
+    `<div class="usage-note">Green is income, red is spending, month by month.</div>`;
+}
+function renderFinMkts(){
+  const box=$("finMkts"); if(!box) return;
+  box.innerHTML=$("mktBox")?$("mktBox").innerHTML||"<h3>📈 Markets</h3><p class='muted'>Loading…</p>":"";
+}
+document.addEventListener("click",e=>{
+  if(e.target.closest("[data-exp-add]")){
+    const amt=document.querySelector("[data-exp-amt]"), cat=document.querySelector("[data-exp-cat]"), note=document.querySelector("[data-exp-note]");
+    if(!logExpense(amt&&amt.value,cat&&cat.value,note&&note.value)){ toast("Enter an amount first"); return; }
+    osSave(); renderFin(); toast("Expense logged."); return; }
+  const xd=e.target.closest("[data-exp-del]"); if(xd){
+    fin().expenses=fin().expenses.filter(x=>x.id!==xd.dataset.expDel); osSave(); renderFin(); return; }
+  if(e.target.closest("[data-sg-add]")){
+    const n=document.querySelector("[data-sg-name]"), t=document.querySelector("[data-sg-target]");
+    if(!n.value.trim()||!(+t.value>0)){ toast("Name and target first"); return; }
+    fin().savingsGoals.push({id:uid(),name:n.value.trim(),target:+t.value,saved:0});
+    osSave(); renderFin(); return; }
+  const sd=e.target.closest("[data-sg-dep]"); if(sd){
+    const g=fin().savingsGoals.find(x=>x.id===sd.dataset.sgDep);
+    const inp=document.querySelector(`[data-sg-dep-in="${sd.dataset.sgDep}"]`), v=parseFloat(inp&&inp.value);
+    if(g&&v>0){ g.saved=Math.round((g.saved+v)*100)/100; osSave(); renderFin();
+      toast(g.saved>=g.target?`${g.name} is fully funded 🎉`:`$${v} toward ${g.name}.`); } return; }
+  const sx=e.target.closest("[data-sg-del]"); if(sx){
+    fin().savingsGoals=fin().savingsGoals.filter(x=>x.id!==sx.dataset.sgDel); osSave(); renderFin(); return; }
+  if(e.target.closest("[data-as-add]")){
+    const n=document.querySelector("[data-as-name]"), t=document.querySelector("[data-as-type]"), v=document.querySelector("[data-as-val]");
+    if(!n.value.trim()||!(+v.value>0)){ toast("Name and value first"); return; }
+    const a={id:uid(),name:n.value.trim()};
+    if(t.value.startsWith("crypto-")){ a.type="crypto"; a.sym=t.value.split("-")[1]; a.qty=+v.value; }
+    else { a.type=t.value; a.value=+v.value; }
+    fin().assets.push(a); osSave(); renderFin(); return; }
+  const ad=e.target.closest("[data-as-del]"); if(ad){
+    fin().assets=fin().assets.filter(x=>x.id!==ad.dataset.asDel); osSave(); renderFin(); return; }
+});
+document.addEventListener("change",e=>{
+  const bd=e.target.closest("[data-budget]"); if(bd){
+    fin().budgets[bd.dataset.budget]=Math.max(0,+bd.value||0); osSave(); renderFinBudgets(); }
+});
+
 /* ---- Markets: BTC, SOL, S&P 500 with sparkline graphs ---- */
 let mktData=null;
 function sparkSvg(points,up){
@@ -2333,6 +2542,7 @@ function renderMarkets(){
       <div class="mc ${up?"up":"down"}">${up?"▲":"▼"} ${a.change==null?"":Math.abs(a.change).toFixed(2)+"%"}${a.range==="7d"?" in 24h":""}</div>
       ${sparkSvg(a.spark,up)}</div>`;
   }).join("")+`</div><div class="usage-note">Live prices, refreshed every minute while the app is open.</div>`;
+  if(currentTab==="fin") renderFinMkts();
 }
 async function loadMarkets(){
   if(document.hidden) return; // no market polling while the tab is hidden
@@ -2430,6 +2640,12 @@ function localIntent(t){
       const e=incomeToday(), left=Math.max(0,INCOME_GOAL-e);
       return `You've made $${e.toLocaleString()} today${left?`, so $${left.toLocaleString()} to go`:", goal hit"}. All time you're at $${incomeTotal().toLocaleString()}.`;
     }
+    if(/how much.*(spent|spend(ing)?)/.test(l)){
+      const mk=monthKey(0), sp=spendInMonth(mk);
+      const byCat=FIN_CATS.map(c=>[c,spendInMonth(mk,c)]).sort((a,b)=>b[1]-a[1])[0];
+      return `You've spent $${sp.toLocaleString()} this month${byCat&&byCat[1]?`, most of it on ${byCat[0].toLowerCase()} at $${byCat[1].toLocaleString()}`:""}. Net worth stands at $${netWorth().toLocaleString()}.`;
+    }
+    if(/net worth/.test(l)) return `Your net worth stands at $${netWorth().toLocaleString()}.`;
     if(/(rundown|brief|my day)/.test(l)) return cleanSpeech($("briefBox").innerText.replace(/🔊 Read it to me|☀️ Your daily rundown/g,""));
     return null;
   }
@@ -2440,6 +2656,10 @@ function localIntent(t){
     ath().bodyweight=ath().bodyweight.filter(b=>b.date!==todayKey());
     ath().bodyweight.push({date:todayKey(),lbs:v});
     acted.push(`bodyweight at ${v} pounds`); }
+  const sm=l.match(/spent\D{0,10}?(\d+(?:\.\d+)?)(?:\s*(?:dollars?|bucks?))?(?:\s*(?:on|for)\s+([a-z ]{2,30}))?/);
+  if(sm){ const cat=guessCat(sm[2]||"");
+    logExpense(sm[1],cat,sm[2]||"");
+    acted.push(`$${(+sm[1]).toLocaleString()} spent on ${cat.toLowerCase()}`); }
   const m=l.match(/(?:made|earned|got paid|log(?:ged)?)\D{0,12}?(\d+(?:\.\d+)?)/);
   if(m){ const v=Math.round(parseFloat(m[1])*100)/100;
     OS.incomeLog.push({id:uid(),date:todayKey(),amount:v});
@@ -2476,6 +2696,8 @@ function voiceState(){
     calendarToday:todayCalEvents().map(ev=>ev.title).slice(0,8),
     topTasks:openTasks().slice(0,6).map(t=>t.title),
     learnedPatterns:computePatterns().facts.slice(0,8),
+    finance:{monthIncome:incomeInMonth(monthKey(0)),monthSpend:spendInMonth(monthKey(0)),
+      netWorth:netWorth(),notes:finInsights()},
     trainingPlan:(()=>{try{const sp=todaySplit();
       return {today:sp.rest?"rest day":[sp.lift?PROGRAM[sp.lift].name:null,sp.combat].filter(Boolean).join(" + "),
         liftLogged:liftLoggedToday(),recoveryScore:recoveryScore(),
@@ -2487,6 +2709,7 @@ const AI_ACTIONS={
   check_training:a=>{ if(["bjj","muaythai","training","lift"].includes(a.key)){ checkDaily(a.key); markTrainingTask(a.key); } },
   check_mind:a=>{ if(["lesson","narcos"].includes(a.key)) checkDaily(a.key); },
   log_income:a=>{ const v=+a.amount; if(v>0) OS.incomeLog.push({id:uid(),date:todayKey(),amount:Math.round(v*100)/100}); },
+  log_expense:a=>{ if(+a.amount>0) logExpense(a.amount,a.key||a.title,a.title); },
   add_task:a=>{ if(a.title) OS.tasks.push({id:uid(),title:a.title,area:categorize(a.title).area,imp:2,dur:30,createdAt:Date.now(),done:false}); },
   complete_task:a=>{ if(!a.title) return; const l=a.title.toLowerCase();
     const t=OS.tasks.find(x=>!x.done&&x.title.toLowerCase().includes(l))

@@ -361,7 +361,8 @@ ASSIST_SCHEMA = {
             "properties": {
                 "type": {"type": "string",
                          "enum": ["check_prayer", "check_training", "check_mind",
-                                  "log_income", "add_task", "complete_task", "none"]},
+                                  "log_income", "log_expense", "add_task",
+                                  "complete_task", "none"]},
                 "key": {"type": "string"},
                 "amount": {"type": "number"},
                 "title": {"type": "string"}},
@@ -398,9 +399,13 @@ ASSIST_PROMPT = (
     "acknowledge it briefly and emit matching actions: check_prayer with key "
     "fajr/dhuhr/asr/maghrib/isha, check_training with key "
     "bjj/muaythai/training/lift (lift covers his scheduled gym session), "
-    "check_mind with key lesson/narcos, log_income with amount, add_task with "
-    "title, complete_task with the task's title. Never invent progress he "
-    "didn't mention, and never fake numbers not in STATE."
+    "check_mind with key lesson/narcos, log_income with amount, log_expense "
+    "with amount plus key for the category (Food, Rent, Transport, Training, "
+    "Subscriptions, School, Fun, Other) and title for what it was, add_task "
+    "with title, complete_task with the task's title. STATE.finance carries "
+    "month income, month spend, net worth and budget notes; use it when money "
+    "comes up. Never invent progress he didn't mention, and never fake numbers "
+    "not in STATE."
 )
 
 

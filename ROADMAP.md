@@ -49,13 +49,19 @@ Thai/BJJ, joint durability, proper recovery), not bodybuilding.
   calves, stretching, foam rolling) with nudges when skipped.
 - AI coaching lines from real data ("pushing improving faster than pulling").
 
-## Phase 3 — Finance (next)
+## Phase 3 — Finance ✅ (shipped)
 
-- Dedicated finance section absorbing the income tracker and the Markets card:
-  income, expenses, savings, budgets, savings goals, net worth, crypto/investments,
-  monthly trends with graphs.
+- Dedicated Finance tab: this-month overview (income, spent, net + savings rate,
+  net worth) with inline insights; expense logging with categories and delete;
+  editable monthly budgets per category with over-budget warnings; savings goals
+  with deposits and progress; net worth from assets and debts with crypto holdings
+  valued live from the market feed; six-month income-vs-spending trend; markets
+  card mirrored into Finance. Voice: "I spent 35 on gas", "how much did I spend",
+  "what's my net worth". Claude gains a log_expense action and a finance state
+  snapshot. Budget/overspend insights feed the pattern engine and daily briefing.
+  The Today income card keeps feeding the same income log.
 
-## Phase 4 — Knowledge base
+## Phase 4 — Knowledge base (next)
 
 - Upload documents (resume, papers, lecture slides, visa/tax docs, PDFs, images);
   local storage + indexing; ask questions through Sarah ("what did my Structures PDF
