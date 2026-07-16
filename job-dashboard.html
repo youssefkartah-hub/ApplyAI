@@ -375,6 +375,7 @@
         <div id="nowCard"></div>
         <div class="icard" id="briefBox"></div>
       </div>
+      <div class="icard" id="reviewBox" style="margin-bottom:14px;display:none"></div>
       <div class="icard" id="mktBox" style="margin-bottom:14px"></div>
       <div class="icard" id="dailyBox" style="margin-bottom:14px"></div>
       <div class="charts">
@@ -942,7 +943,8 @@ $("followBox").addEventListener("click",e=>{ const b=e.target.closest("[data-mai
 $("modal").addEventListener("click",e=>{ if(e.target.id==="modal"||e.target.id==="modalClose") $("modal").hidden=true; });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape") $("modal").hidden=true; });
 $("dayBanner").addEventListener("click",e=>{ if(e.target.id==="clearDay"){ selectedDay=null; render(); } });
-document.addEventListener("visibilitychange",()=>{ if(!document.hidden) loadData(false); });
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden){ loadData(false);
+  if(typeof loadCal==="function") loadCal(); if(typeof loadMarkets==="function") loadMarkets(); } });
 
 intervalSec=+$("intervalSel").value; resetTimer();
 loadData(false).then(startTicking);
@@ -959,6 +961,7 @@ let osSaveT=null;
 
 let calEvents=null;
 async function loadCal(){
+  if(document.hidden) return; // stay quiet while the tab is in the background
   try{ const j=await fetch("/api/calendar",{cache:"no-store"}).then(r=>r.json());
     calEvents=j.events||null; }catch(e){ calEvents=null; }
   importCalendar();
@@ -1057,10 +1060,222 @@ const USAGE_LBL={ "tab:today":"⚡ Today","tab:goals":"🎯 Goals","tab:planner"
 function track(k){ if(!OS) return; OS.usage=(OS.usage&&!Array.isArray(OS.usage))?OS.usage:{};
   const d=OS.usage[todayKey()]=OS.usage[todayKey()]||{};
   d[k]=(d[k]||0)+1;
-  // keep 30 days of telemetry
-  Object.keys(OS.usage).forEach(day=>{ if((Date.now()-Date.parse(day))/86400000>30) delete OS.usage[day]; });
+  // keep 90 days of telemetry so the pattern engine has history to learn from
+  Object.keys(OS.usage).forEach(day=>{ if((Date.now()-Date.parse(day))/86400000>90) delete OS.usage[day]; });
   osSave();
 }
+
+/* ==================================================================
+   Long-term memory: the pattern engine.
+   Learns who you are from data the app already keeps. Runs entirely
+   locally, recomputed at most once per day (and when data changes),
+   so it costs nothing and works offline.
+   ================================================================== */
+let _patCache={key:"",data:null};
+const WDAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+function hourLabel(h){ h=((h%24)+24)%24; return h===0?"midnight":h<12?h+" am":h===12?"noon":(h-12)+" pm"; }
+function computePatterns(){
+  const key=todayKey()+"|"+OS.tasks.length+"|"+(OS.incomeLog||[]).length+"|"+OS.sessions.length;
+  if(_patCache.key===key) return _patCache.data;
+  const now=Date.now(), day=86400000, since=d=>now-d*day;
+  const P={facts:[],briefLines:[]};
+  const say=(fact,line)=>{ P.facts.push(fact); if(line) P.briefLines.push(line); };
+
+  // 1. When you actually get things done (completed-task hours, last 60 days)
+  const doneT=OS.tasks.filter(t=>t.done&&t.doneAt&&t.doneAt>since(60));
+  if(doneT.length>=8){
+    const byH=Array(24).fill(0);
+    doneT.forEach(t=>byH[new Date(t.doneAt).getHours()]++);
+    let best=-1,bi=9;
+    for(let h=5;h<=19;h++){ const v=byH[h]+byH[h+1]+byH[h+2]; if(v>best){best=v;bi=h;} }
+    P.peakStart=bi;
+    say(`Most productive between ${hourLabel(bi)} and ${hourLabel(bi+3)}`,
+      `You get the most done between ${hourLabel(bi)} and ${hourLabel(bi+3)}. Protect that window for the hardest work.`);
+  }
+  // 2. Best and worst weekday (tasks + focus minutes, last 6 weeks)
+  const recentT=OS.tasks.filter(t=>t.done&&t.doneAt&&t.doneAt>since(42));
+  const recentS=OS.sessions.filter(s=>Date.parse(s.date)>since(42));
+  if(recentT.length+recentS.length>=10){
+    const byW=Array(7).fill(0);
+    recentT.forEach(t=>byW[new Date(t.doneAt).getDay()]+=1);
+    recentS.forEach(s=>byW[new Date(s.date+"T12:00").getDay()]+=s.mins/45);
+    const hi=byW.indexOf(Math.max(...byW)), lo=byW.indexOf(Math.min(...byW));
+    P.bestDay=WDAYS[hi]; P.worstDay=WDAYS[lo];
+    if(hi!==lo) say(`${WDAYS[hi]}s are the strongest day, ${WDAYS[lo]}s the weakest`,
+      `${WDAYS[hi]}s are consistently your strongest day. ${WDAYS[lo]}s are where output dips, so plan lighter work there.`);
+  }
+  // 3. Prayer consistency, last 14 days
+  const dailyDays=Object.keys(OS.daily||{}).filter(d=>Date.parse(d)>since(14)&&d!==todayKey());
+  if(dailyDays.length>=5){
+    const miss={}; let done=0;
+    dailyDays.forEach(d=>PRAYERS.forEach(([k,n])=>{ if((OS.daily[d]||{})[k]) done++; else miss[n]=(miss[n]||0)+1; }));
+    const pct=Math.round(100*done/(dailyDays.length*5));
+    P.prayerPct=pct;
+    const worst=Object.entries(miss).sort((a,b)=>b[1]-a[1])[0];
+    say(`Prayer completion ${pct}% over the last two weeks`);
+    if(pct>=90) P.briefLines.push(`Prayer consistency is at ${pct}% over the last two weeks. Strong.`);
+    else if(worst&&worst[1]>=3) P.briefLines.push(`${worst[0]} is the prayer that slips most, missed ${worst[1]} times in the last two weeks. It may need an anchor, like praying right after a fixed event.`);
+  }
+  // 4. Easiest and hardest habit (last 21 days)
+  if(OS.habits.length>=2){
+    const rates=OS.habits.map(h=>{
+      const n=Object.keys(h.days||{}).filter(d=>Date.parse(d)>since(21)).length;
+      return [h.name,Math.round(100*n/21)];
+    }).sort((a,b)=>b[1]-a[1]);
+    if(rates[0][1]>=30){
+      P.easiestHabit=rates[0][0]; P.hardestHabit=rates[rates.length-1][0];
+      if(rates[rates.length-1][1]<40&&rates[0][1]-rates[rates.length-1][1]>=30)
+        say(`Habit gap: ${rates[0][0]} sticks, ${rates[rates.length-1][0]} doesn't`,
+          `${rates[0][0]} is basically automatic now, but ${rates[rates.length-1][0]} lands under half the time. Consider shrinking it until it sticks.`);
+    }
+  }
+  // 5. The task you keep avoiding
+  const stale=openTasks().filter(t=>t.createdAt&&(now-t.createdAt)/day>=5).sort((a,b)=>a.createdAt-b.createdAt)[0];
+  if(stale){
+    const age=Math.floor((now-stale.createdAt)/day);
+    say(`Oldest open task: "${stale.title}" (${age} days)`,
+      `"${esc(stale.title)}" has been open for ${age} days. When something slides that long, the task itself is usually the problem. Break it down or delete it.`);
+  }
+  // 6. Income rhythm, last 14 days
+  const inc=(OS.incomeLog||[]).filter(e=>Date.parse(e.date)>since(14));
+  if(inc.length>=4){
+    const byDate={}; inc.forEach(e=>byDate[e.date]=(byDate[e.date]||0)+e.amount);
+    const daysHit=Object.values(byDate).filter(v=>v>=INCOME_GOAL).length;
+    const byW=Array(7).fill(0); inc.forEach(e=>byW[new Date(e.date+"T12:00").getDay()]+=e.amount);
+    const bestW=byW.indexOf(Math.max(...byW));
+    say(`Income goal hit ${daysHit} of the last 14 days, ${WDAYS[bestW]}s earn most`,
+      `You've hit the income goal ${daysHit} of the last 14 days, and ${WDAYS[bestW]}s are your best earning day. Worth studying what works then.`);
+  }
+  // 7. Deep work trend: this week vs the prior three-week average
+  const wk=(o)=>OS.sessions.filter(s=>{const t=Date.parse(s.date);return t>since(7*(o+1))&&t<=since(7*o);}).reduce((a,b)=>a+b.mins,0);
+  const thisW=wk(0), prevAvg=(wk(1)+wk(2)+wk(3))/3;
+  if(prevAvg>=60){
+    const diff=Math.round(100*(thisW-prevAvg)/prevAvg);
+    P.focusTrend=diff;
+    if(diff<=-30) say(`Deep work down ${-diff}% vs your average`,
+      `Deep work is running ${-diff}% below your three-week average. One focus session today closes most of that gap.`);
+    else if(diff>=30) say(`Deep work up ${diff}% vs your average`,
+      `Deep work is up ${diff}% on your three-week average. You're ahead of your own pace.`);
+  }
+  // 8. Usual training days (last 28 days)
+  const trainDays=Object.keys(OS.daily||{}).filter(d=>Date.parse(d)>since(28))
+    .filter(d=>["bjj","muaythai","training"].some(k=>(OS.daily[d]||{})[k]));
+  if(trainDays.length>=4){
+    const byW=Array(7).fill(0); trainDays.forEach(d=>byW[new Date(d+"T12:00").getDay()]++);
+    const top=byW.map((v,i)=>[v,i]).sort((a,b)=>b[0]-a[0]).filter(x=>x[0]>=2).slice(0,3).map(x=>WDAYS[x[1]]+"s");
+    if(top.length) say(`Usually trains ${top.join(", ")}`);
+  }
+  // 9. Goals that stopped moving
+  (OS.goalTrees||[]).filter(g=>g.status==="active").forEach(g=>{
+    let last=g.created||0;
+    g.phases.forEach(ph=>ph.tasks.forEach(t=>{
+      if(t.doneAt) last=Math.max(last,t.doneAt);
+      Object.keys(t.days||{}).forEach(d=>last=Math.max(last,Date.parse(d)));
+    }));
+    if(last&&(now-last)/day>=7&&goalProgress(g)<100)
+      say(`Goal "${g.title}" hasn't moved in ${Math.floor((now-last)/day)} days`,
+        `Your goal "${esc(g.title)}" hasn't moved in over a week. Either recommit to it today or pause it deliberately.`);
+  });
+  // 10. Which resume version converts (needs real volume)
+  const rv=(OS.resumes||[]).filter(r=>r.apps>=3);
+  if(rv.length>=2){
+    const best=rv.slice().sort((a,b)=>(b.ints/b.apps)-(a.ints/a.apps))[0];
+    const rate=Math.round(100*best.ints/best.apps);
+    if(best.ints>0) say(`Resume "${best.name}" converts best (${rate}%)`,
+      `Resume "${esc(best.name)}" is converting at ${rate}%. Default to it unless a role demands otherwise.`);
+  }
+  _patCache={key,data:P};
+  return P;
+}
+function pickDaily(arr,n){
+  if(!arr.length) return [];
+  const seed=Math.floor(Date.now()/86400000), out=[];
+  for(let i=0;i<Math.min(n,arr.length);i++) out.push(arr[(seed*7+i*3)%arr.length]);
+  return [...new Set(out)];
+}
+
+/* ---- Weekly review: auto-generated, with week-over-week deltas ---- */
+function weekStats(offset){
+  const now=Date.now(), day=86400000, end=now-offset*7*day, start=end-7*day;
+  const inW=t=>t>=start&&t<end, inD=d=>inW(Date.parse(d+"T12:00"));
+  const s={};
+  s.tasksDone=OS.tasks.filter(t=>t.done&&t.doneAt&&inW(t.doneAt)).length;
+  s.focusMins=OS.sessions.filter(x=>inD(x.date)).reduce((a,b)=>a+b.mins,0);
+  const hDays=OS.habits.reduce((a,h)=>a+Object.keys(h.days||{}).filter(inD).length,0);
+  s.habitPct=OS.habits.length?Math.round(100*hDays/(OS.habits.length*7)):null;
+  const pDays=Object.keys(OS.daily||{}).filter(inD);
+  const pDone=pDays.reduce((a,d)=>a+PRAYERS.filter(([k])=>(OS.daily[d]||{})[k]).length,0);
+  s.prayerPct=pDays.length?Math.round(100*pDone/(pDays.length*5)):null;
+  s.income=(OS.incomeLog||[]).filter(e=>inD(e.date)).reduce((a,b)=>a+(+b.amount||0),0);
+  const apps=jobRows();
+  s.apps=apps.filter(a=>a.date&&inW(a.date)).length;
+  s.interviews=apps.filter(a=>(a.status==="Interview Scheduled"||a.status==="Offer Received")&&a.updated&&inW(a.updated)).length;
+  s.projectMins=(OS.projects||[]).reduce((a,p)=>a+(p.log||[]).filter(l=>inD(l.date)).reduce((x,y)=>x+(y.mins||0),0),0);
+  const byDay={};
+  OS.tasks.forEach(t=>{ if(t.done&&t.doneAt&&inW(t.doneAt)){ const k=new Date(t.doneAt).getDay(); byDay[k]=(byDay[k]||0)+1; } });
+  OS.sessions.forEach(x=>{ if(inD(x.date)){ const k=new Date(x.date+"T12:00").getDay(); byDay[k]=(byDay[k]||0)+x.mins/45; } });
+  const ranked=Object.entries(byDay).sort((a,b)=>b[1]-a[1]);
+  s.bestDay=ranked.length?WDAYS[+ranked[0][0]]:null;
+  s.worstDay=ranked.length>1?WDAYS[+ranked[ranked.length-1][0]]:null;
+  return s;
+}
+function buildWeeklyReview(){
+  const a=weekStats(0), b=weekStats(1);
+  const rows=[
+    ["Tasks completed",a.tasksDone,b.tasksDone,""],
+    ["Deep work",Math.round(a.focusMins/6)/10,Math.round(b.focusMins/6)/10,"h"],
+    ["Habit completion",a.habitPct,b.habitPct,"%"],
+    ["Prayer completion",a.prayerPct,b.prayerPct,"%"],
+    ["Income","$"+a.income.toLocaleString(),"$"+b.income.toLocaleString(),"",a.income-b.income],
+    ["Applications sent",a.apps,b.apps,""],
+    ["Interview movement",a.interviews,b.interviews,""],
+    ["Project time",Math.round(a.projectMins/6)/10,Math.round(b.projectMins/6)/10,"h"],
+  ];
+  const deltas=[["tasks",a.tasksDone-b.tasksDone],["deep work",a.focusMins-b.focusMins],
+    ["habits",(a.habitPct||0)-(b.habitPct||0)],["prayers",(a.prayerPct||0)-(b.prayerPct||0)],
+    ["income",a.income-b.income],["applications",a.apps-b.apps]];
+  const up=deltas.slice().sort((x,y)=>y[1]-x[1])[0], down=deltas.slice().sort((x,y)=>x[1]-y[1])[0];
+  const sug=[];
+  if(a.prayerPct!=null&&a.prayerPct<80) sug.push("Prayer completion was under 80%. Anchor the slipping prayers to fixed daily events.");
+  if(a.focusMins<180) sug.push("Under three hours of deep work this week. Two 50-minute sessions on your strong days would double it.");
+  if(a.apps<70) sug.push(`Applications came in at ${a.apps} against a weekly pace of 140. Batch them into your peak window.`);
+  if(a.habitPct!=null&&a.habitPct<60) sug.push("Habits landed under 60%. Cut the list to the two that matter most until they stick.");
+  if(a.income<300) sug.push("Income was light this week. Block one earning session on your best earning day.");
+  if(!sug.length) sug.push("No weak spots worth flagging. Hold the line and raise one target next week.");
+  return {a,b,rows,up,down,sug};
+}
+function reviewSpeech(){
+  const r=buildWeeklyReview();
+  return `Here's your week. ${r.a.tasksDone} tasks completed, ${Math.round(r.a.focusMins/60)} hours of deep work, `+
+    `$${r.a.income.toLocaleString()} earned, and ${r.a.apps} applications sent. `+
+    (r.a.bestDay?`${r.a.bestDay} was your strongest day. `:"")+
+    `Biggest improvement: ${r.up[0]}. Weakest area: ${r.down[0]}. `+r.sug[0];
+}
+function renderReview(){
+  const box=$("reviewBox"); if(!box) return;
+  const show=new Date().getDay()===0||OS.settings.showReview;
+  box.style.display=show?"":"none";
+  if(!show){ box.innerHTML=""; return; }
+  const r=buildWeeklyReview();
+  const arrow=(v,p)=>{ if(v==null||p==null||v===p) return "";
+    const n=parseFloat(String(v).replace(/[$,]/g,""))-parseFloat(String(p).replace(/[$,]/g,""));
+    return n>0?` <span style="color:var(--offer);font-size:11px">▲</span>`:n<0?` <span style="color:var(--rejected);font-size:11px">▼</span>`:""; };
+  box.innerHTML=`<h3>📊 Your week in review
+      <button class="rowbtn" data-close-review style="float:right;text-transform:none;letter-spacing:0">Close</button>
+      <button class="rowbtn" data-speak-review style="float:right;margin-right:6px;text-transform:none;letter-spacing:0">🔊 Hear it</button></h3>
+    <div class="imetrics" style="margin-top:6px">${r.rows.map(([l,v,p,u])=>
+      `<div class="imetric"><div class="n" style="font-size:19px">${v==null?"—":v}${u||""}${arrow(v,p)}</div>
+       <div class="l">${l}<div style="opacity:.6">last wk: ${p==null?"—":p}${u||""}</div></div></div>`).join("")}</div>
+    <ul class="obs" style="margin-top:10px">
+      ${r.a.bestDay?`<li>Strongest day: <b>${r.a.bestDay}</b>${r.a.worstDay?`, weakest: <b>${r.a.worstDay}</b>`:""}.</li>`:""}
+      <li>Biggest improvement: <b>${r.up[0]}</b>. Needs attention: <b>${r.down[0]}</b>.</li>
+      ${r.sug.map(s=>`<li>${s}</li>`).join("")}
+    </ul>`;
+}
+document.addEventListener("click",e=>{
+  if(e.target.closest("[data-close-review]")){ OS.settings.showReview=false; osSave(); renderReview(); return; }
+  if(e.target.closest("[data-speak-review]")){ speakText(reviewSpeech()); return; }
+});
 function usageAgg(days){
   const agg={}, u=OS.usage||{};
   Object.entries(u).forEach(([day,d])=>{ if((Date.now()-Date.parse(day))/86400000<=days)
@@ -1104,6 +1319,7 @@ function renderToday(){
   renderAgenda();
   renderUsage();
   renderMarkets();
+  renderReview();
   const all=jobRows(), tasks=openTasks();
   const appsToday=all.filter(isToday).length, goal=Object.values(TARGETS).reduce((a,b)=>a+b,0);
   const interviews=all.filter(a=>a.status==="Interview Scheduled");
@@ -1124,6 +1340,7 @@ function renderToday(){
   brief.push(appLine.join(" "));
   if(overdue.length) brief.push(`<b>${overdue.length}</b> task${overdue.length>1?"s":""} slipped past the deadline. Knock out <b>${esc(overdue[0].title)}</b> first and the rest gets easier.`);
   if(tasks[0]) brief.push(`Best use of your time right now: <b>${esc(tasks[0].title)}</b>.`);
+  pickDaily(computePatterns().briefLines,2).forEach(x=>brief.push(x));
   const leftBits=dailyLeftBits();
   brief.push(leftBits.length?`Still on the board today: ${leftBits.join(", ")}.`
     :`Every daily category is done. That's a perfect day. 💯`);
@@ -1380,14 +1597,22 @@ function dailyLeftBits(){
   if(incLeft>0) bits.push(`$${incLeft.toLocaleString()} more to hit your income goal`);
   return bits;
 }
+function overallPct(){
+  const d=dayChecks();
+  const pcts=lifeSections().map(s=>secPct(s,d)).filter(p=>p!=null);
+  return pcts.length?Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length):0;
+}
+function updateDayPct(){
+  const overall=overallPct();
+  $("dayPct").textContent=overall+"%";
+  $("dayPct").style.color=overall>=100?"var(--offer)":overall>=50?"var(--warn)":"var(--rejected)";
+  return overall;
+}
 function renderDaily(){
   const prevInc=document.querySelector("[data-inc-in]");
   const incVal=prevInc?prevInc.value:"", incFocus=prevInc&&document.activeElement===prevInc;
   const d=dayChecks(), secs=lifeSections();
-  const pcts=secs.map(s=>secPct(s,d)).filter(p=>p!=null);
-  const overall=pcts.length?Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length):0;
-  $("dayPct").textContent=overall+"%";
-  $("dayPct").style.color=overall>=100?"var(--offer)":overall>=50?"var(--warn)":"var(--rejected)";
+  const overall=updateDayPct();
   const cards=secs.map(sec=>{
     const pct=secPct(sec,d), complete=pct===100;
     let body;
@@ -1519,7 +1744,10 @@ const PANE_R={today:[renderToday],inbox:[renderAreas,renderInbox],planner:[rende
   habits:[renderHabits],focus:[renderFocusStats],crm:[renderCRM],
   proj:[renderProjects],goals:[renderGoals]};
 function renderOS(){ try{
-  renderToday();
+  // Only rebuild what's on screen: the Today pane rerenders when visible,
+  // other tabs get their own renderers, and the header day % stays fresh
+  // everywhere. Hidden panes rebuild on next visit instead of every change.
+  if(currentTab==="today") renderToday(); else updateDayPct();
   (PANE_R[currentTab]||[]).forEach(f=>{ if(f!==renderToday) f(); });
 }catch(e){ console.error(e); } }
 const _switchTab=switchTab;
@@ -1535,6 +1763,7 @@ function runCmd(v){
   if((m=pref("find "))||(m=pref("search "))||(m=pref("?"))){
     switchTab("apps"); $("search").value=m; searchTerm=m.toLowerCase(); render(); toast(`Searching "${m}"`); return; }
   if((m=pref("habit:"))){ OS.habits.push({id:uid(),name:m,days:{}}); osSave(); renderOS(); toast("Habit added 🔥"); return; }
+  if(l==="review"||l==="weekly review"){ OS.settings.showReview=true; osSave(); switchTab("today"); renderReview(); return; }
   if((m=pref("focus"))!==null&&m===""){ switchTab("focus"); return; }
   // default: smart task/capture — detect due words, then categorize
   let due=null; const t=new Date();
@@ -1729,6 +1958,7 @@ function renderMarkets(){
   }).join("")+`</div><div class="usage-note">Live prices, refreshed every minute while the app is open.</div>`;
 }
 async function loadMarkets(){
+  if(document.hidden) return; // no market polling while the tab is hidden
   try{ mktData=await fetch("/api/markets",{cache:"no-store"}).then(r=>r.json()); }
   catch(e){ mktData={error:"net"}; }
   renderMarkets();
@@ -1736,7 +1966,7 @@ async function loadMarkets(){
 setInterval(loadMarkets,60*1000);
 
 /* ---- HUD: clock, boot sequence, voice briefing ---- */
-function tickClock(){ const el=$("hudClock"); if(!el) return;
+function tickClock(){ if(document.hidden) return; const el=$("hudClock"); if(!el) return;
   el.textContent=new Date().toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit",second:"2-digit"}); }
 setInterval(tickClock,1000); tickClock();
 
@@ -1811,6 +2041,10 @@ const PRAYER_HEARD={fajr:/fajr|fajer|fudger|fazr/,dhuhr:/dhuhr|duhr|zuhr|dohr|th
 function localIntent(t){
   const l=" "+t.toLowerCase().trim()+" ";
   const isQuestion=/^\s*(what|when|how|do i|did i|is there|are there|any(thing)?\b)/.test(t.toLowerCase())||t.trim().endsWith("?");
+  if(/(weekly |my )?review\b/.test(l)&&/(week|review)/.test(l)&&!/interview/.test(l)){
+    OS.settings.showReview=true; osSave(); switchTab("today"); renderReview();
+    return reviewSpeech();
+  }
   if(isQuestion){
     if(/(left|remaining|still (need|have|got) to|to ?do)/.test(l)) return leftSummarySpeech();
     if(/how much.*(made|earned|make)/.test(l)){
@@ -1856,11 +2090,12 @@ function voiceState(){
     focusMinutesToday:OS.sessions.filter(s=>s.date===todayKey()).reduce((a,b)=>a+b.mins,0),
     habitsLeft:OS.habits.filter(h=>!(h.days||{})[todayKey()]).map(h=>h.name).slice(0,6),
     calendarToday:todayCalEvents().map(ev=>ev.title).slice(0,8),
-    topTasks:openTasks().slice(0,6).map(t=>t.title) };
+    topTasks:openTasks().slice(0,6).map(t=>t.title),
+    learnedPatterns:computePatterns().facts.slice(0,8) };
 }
 const AI_ACTIONS={
   check_prayer:a=>{ if(PRAYERS.some(([k])=>k===a.key)) checkDaily(a.key); },
-  check_training:a=>{ if(["bjj","muaythai"].includes(a.key)){ checkDaily(a.key); markTrainingTask(a.key); } },
+  check_training:a=>{ if(["bjj","muaythai","training"].includes(a.key)){ checkDaily(a.key); markTrainingTask(a.key); } },
   check_mind:a=>{ if(["lesson","narcos"].includes(a.key)) checkDaily(a.key); },
   log_income:a=>{ const v=+a.amount; if(v>0) OS.incomeLog.push({id:uid(),date:todayKey(),amount:Math.round(v*100)/100}); },
   add_task:a=>{ if(a.title) OS.tasks.push({id:uid(),title:a.title,area:categorize(a.title).area,imp:2,dur:30,createdAt:Date.now(),done:false}); },
