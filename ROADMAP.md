@@ -27,7 +27,7 @@ execute life more effectively?"
   refresh immediately on return. Usage telemetry retention extended to 90 days for
   pattern learning.
 
-## Phase 2 — AI Athletic Performance System (next)
+## Phase 2 — AI Athletic Performance System ✅ (shipped)
 
 Goal: complete athlete (lean muscle, visible abs, explosiveness for football/Muay
 Thai/BJJ, joint durability, proper recovery), not bodybuilding.
@@ -49,7 +49,7 @@ Thai/BJJ, joint durability, proper recovery), not bodybuilding.
   calves, stretching, foam rolling) with nudges when skipped.
 - AI coaching lines from real data ("pushing improving faster than pulling").
 
-## Phase 3 — Finance
+## Phase 3 — Finance (next)
 
 - Dedicated finance section absorbing the income tracker and the Markets card:
   income, expenses, savings, budgets, savings goals, net worth, crypto/investments,
