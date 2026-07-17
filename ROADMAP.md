@@ -61,18 +61,35 @@ Thai/BJJ, joint durability, proper recovery), not bodybuilding.
   snapshot. Budget/overspend insights feed the pattern engine and daily briefing.
   The Today income card keeps feeding the same income log.
 
-## Phase 4 — Knowledge base (next)
+## Phase 4 — Knowledge base ✅ (shipped)
 
-- Upload documents (resume, papers, lecture slides, visa/tax docs, PDFs, images);
-  local storage + indexing; ask questions through Sarah ("what did my Structures PDF
-  say about beam loading?", "which resume did I send Boeing?").
+- 📚 Docs tab: upload PDFs, Word docs, notes, slides and images (drag-and-drop or
+  picker, 25 MB per file). Files live in ./knowledge on your machine, gitignored
+  and never served over HTTP. Text extracted locally (txt/md natively, docx via
+  the stdlib, PDF via optional pypdf). Ask questions in the tab or by voice
+  ("what did my advisor recommend?"); retrieval is local keyword scoring, and only
+  the matching excerpts are sent to Claude, which answers citing the document.
+  Without an AI key you still get the best matching passages.
 
-## Phase 5 — Consolidation & monthly reviews
+## Phase 5 — Consolidation & monthly reviews ✅ (shipped)
 
-- Monthly reviews with long-term trend graphs.
-- Generic language-learning tracker (not tied to one show).
-- Sharpen module boundaries (Projects vs Goals vs Tasks vs Habits vs Planner) —
-  everything still flows into Today, which remains the center.
+- Monthly reviews: week/month toggle on the review card, month-over-month deltas
+  (tasks, deep work, habits, prayers, income, spending, applications, lifting
+  sessions) plus six-month trend graphs for tasks, deep work and income. Open with
+  "monthly review" in the command bar or by voice; speakable.
+- Language tracker generalized: the Mind category now tracks a language lesson
+  plus a generic immersion session; customize the immersion item anytime with
+  "mind: <label>" in the command bar. Old data keeps counting.
+- Module boundaries (the intended split): Tasks are one-off actions; Habits are
+  daily repeatables; Goals decompose ambitions into phased actions that feed
+  Today; Planner is time-boxing for today only; Projects are long-running efforts
+  measured in tracked hours; Train owns physical performance; Finance owns money.
+  Everything surfaces on Today, which remains the center of the app.
+
+## Later ideas (unscheduled)
+
+- Journal, spaced-repetition flashcards, richer language stats, deeper knowledge
+  base (embeddings), auto-start at login packaging.
 
 ## Standing performance requirements (apply to every phase)
 

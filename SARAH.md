@@ -263,3 +263,26 @@ The server is threaded, so a slow market fetch or the one-time Google approval n
 ## 18. Everyday flow
 
 Morning: double-click `start.command`. Boot sequence, then Today. Your calendar has already become your plan. Hit "Read it to me" while making coffee. Through the day: check prayers as you pray (watch the ring fill), tell Sarah "just finished BJJ, made 60 bucks today" on your way out of the gym, capture stray thoughts with `C`, run Focus sessions for deep work, and keep the application pace bar green. Evening: the day-at-a-glance percentages tell you exactly what's left; clear them and get the perfect-day message. The all-time income counter and the milestones make the compounding visible.
+
+---
+
+## 19. Sarah 2.0 additions
+
+Since this guide was written, five major phases shipped (full detail in ROADMAP.md):
+
+- **Pattern engine**: Sarah learns your productive hours, strong and weak days,
+  prayer consistency, habit difficulty, stale tasks, income rhythm, deep-work
+  trends, training days, stalled goals and best resume version — locally, with
+  zero setup — and weaves two observations into every daily rundown.
+- **Weekly and monthly reviews**: automatic on Sundays or on demand ("review" /
+  "monthly review"), with deltas, six-month trend graphs, suggestions, and voice.
+- **🏋️ Train**: a complete athletic performance system — weekly split with combat
+  integration, full workout library with prehab, session logging, automatic
+  progressive-overload recommendations, e1RM and PR tracking, fatigue and
+  recovery scoring, deload management, and an athlete dashboard.
+- **💰 Finance**: expenses with budgets, savings goals, net worth with
+  live-valued crypto holdings, six-month trends; markets mirrored in; voice
+  expense logging.
+- **📚 Docs**: a private document library. Upload PDFs, Word docs, notes and
+  slides; ask questions about them in the tab or by voice; everything stays on
+  your machine and only matching excerpts reach Claude.

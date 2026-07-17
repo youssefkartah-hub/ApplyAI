@@ -399,7 +399,7 @@ ASSIST_PROMPT = (
     "acknowledge it briefly and emit matching actions: check_prayer with key "
     "fajr/dhuhr/asr/maghrib/isha, check_training with key "
     "bjj/muaythai/training/lift (lift covers his scheduled gym session), "
-    "check_mind with key lesson/narcos, log_income with amount, log_expense "
+    "check_mind with key lesson/immersion, log_income with amount, log_expense "
     "with amount plus key for the category (Food, Rent, Transport, Training, "
     "Subscriptions, School, Fun, Other) and title for what it was, add_task "
     "with title, complete_task with the task's title. STATE.finance carries "
@@ -516,6 +516,165 @@ def speak_text(text):
         return None, {"error": "tts", "message": str(e)[:150]}
 
 
+# --------------------------------------------------------------------------
+# Knowledge base: documents live in ./knowledge (gitignored, never served).
+# Text is extracted locally; questions retrieve the best excerpts locally and
+# only those excerpts go to Claude when a key is configured.
+# --------------------------------------------------------------------------
+KB_DIR = os.path.join(DIRECTORY, "knowledge")
+KB_INDEX = os.path.join(KB_DIR, "index.json")
+KB_MAX_FILE = 25_000_000       # 25 MB per upload
+KB_MAX_TEXT = 400_000          # chars of extracted text kept per doc
+_kb_lock = threading.Lock()
+
+
+def kb_load():
+    try:
+        with open(KB_INDEX) as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+def kb_save(idx):
+    os.makedirs(KB_DIR, exist_ok=True)
+    tmp = KB_INDEX + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(idx, f)
+    os.replace(tmp, KB_INDEX)
+
+
+def kb_extract(name, raw):
+    ext = name.lower().rsplit(".", 1)[-1] if "." in name else ""
+    try:
+        if ext in ("txt", "md", "csv", "json", "py", "tex", "html"):
+            return raw.decode("utf-8", "ignore")
+        if ext == "docx":
+            import zipfile, io, re as _re
+            from html import unescape
+            with zipfile.ZipFile(io.BytesIO(raw)) as z:
+                xml = z.read("word/document.xml").decode("utf-8", "ignore")
+            xml = xml.replace("</w:p>", "\n")
+            return unescape(_re.sub(r"<[^>]+>", " ", xml))
+        if ext == "pdf":
+            try:
+                import io
+                from pypdf import PdfReader
+                reader = PdfReader(io.BytesIO(raw))
+                return "\n".join((p.extract_text() or "") for p in reader.pages)
+            except ImportError:
+                return ""  # pip3 install pypdf enables PDF text
+    except Exception:
+        pass
+    return ""
+
+
+def kb_upload(payload):
+    import base64, uuid
+    name = os.path.basename(str(payload.get("name", "file"))).strip() or "file"
+    try:
+        raw = base64.b64decode(payload.get("data", ""))
+    except Exception:
+        return {"error": "bad_data"}
+    if not raw or len(raw) > KB_MAX_FILE:
+        return {"error": "too_big", "message": "Files up to 25 MB."}
+    doc_id = uuid.uuid4().hex[:12]
+    os.makedirs(KB_DIR, exist_ok=True)
+    with open(os.path.join(KB_DIR, f"{doc_id}_{name}"), "wb") as f:
+        f.write(raw)
+    text = kb_extract(name, raw)[:KB_MAX_TEXT]
+    with open(os.path.join(KB_DIR, f"{doc_id}.txt"), "w", encoding="utf-8") as f:
+        f.write(text)
+    ext = name.lower().rsplit(".", 1)[-1] if "." in name else ""
+    with _kb_lock:
+        idx = kb_load()
+        entry = {"id": doc_id, "name": name, "size": len(raw), "kind": ext,
+                 "chars": len(text), "added": time.strftime("%Y-%m-%d")}
+        idx.append(entry)
+        kb_save(idx)
+    note = None
+    if ext == "pdf" and not text:
+        note = "Stored, but no text could be extracted. Run: pip3 install pypdf, then re-upload."
+    elif not text and ext not in ("png", "jpg", "jpeg", "gif", "webp"):
+        note = "Stored, but no searchable text found in this file type."
+    return {"ok": True, "doc": entry, "note": note}
+
+
+def kb_delete(doc_id):
+    with _kb_lock:
+        idx = kb_load()
+        keep = [d for d in idx if d["id"] != doc_id]
+        kb_save(keep)
+    for fn in os.listdir(KB_DIR) if os.path.isdir(KB_DIR) else []:
+        if fn.startswith(doc_id):
+            try:
+                os.remove(os.path.join(KB_DIR, fn))
+            except Exception:
+                pass
+    return {"ok": True}
+
+
+def kb_chunks(question, top_n=8):
+    terms = [t for t in "".join(c if c.isalnum() else " " for c in question.lower()).split()
+             if len(t) >= 3]
+    if not terms:
+        return []
+    scored = []
+    for d in kb_load():
+        try:
+            with open(os.path.join(KB_DIR, f"{d['id']}.txt"), encoding="utf-8") as f:
+                text = f.read()
+        except Exception:
+            continue
+        step = 1500
+        for i in range(0, max(1, len(text)), step):
+            chunk = text[i:i + step + 200]
+            low = chunk.lower()
+            score = sum(low.count(t) for t in terms)
+            # small bonus if the doc name itself matches the question
+            score += 2 * sum(1 for t in terms if t in d["name"].lower())
+            if score > 0:
+                scored.append((score, d["name"], chunk.strip()))
+    scored.sort(key=lambda x: -x[0])
+    return scored[:top_n]
+
+
+KB_PROMPT = (
+    "You are Sarah, answering a question from Youssef's personal document "
+    "library. You get excerpts retrieved from his files. Answer from the "
+    "excerpts only, plainly and briefly, and name which document the answer "
+    "came from. If the excerpts don't contain the answer, say so directly. "
+    "The reply may be read aloud, so no lists or markdown."
+)
+
+
+def kb_ask(payload):
+    q = str(payload.get("question", "")).strip()
+    if not q:
+        return {"error": "empty"}
+    chunks = kb_chunks(q)
+    if not chunks:
+        return {"answer": None, "snippets": [],
+                "message": "Nothing in the library matches that. Upload the document first."}
+    key = anthropic_key()
+    if not key:
+        return {"answer": None,
+                "snippets": [{"doc": n, "text": c[:600]} for _, n, c in chunks[:4]]}
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=key)
+        ctx = "\n\n".join(f"[from: {n}]\n{c}" for _, n, c in chunks)
+        resp = client.messages.create(
+            model="claude-sonnet-5", max_tokens=700, system=KB_PROMPT,
+            messages=[{"role": "user", "content": f"EXCERPTS:\n{ctx}\n\nQUESTION: {q}"}])
+        text = next((b.text for b in resp.content if getattr(b, "type", "") == "text"), "")
+        return {"answer": text, "sources": sorted({n for _, n, _ in chunks})}
+    except Exception as e:
+        return {"answer": None,
+                "snippets": [{"doc": n, "text": c[:600]} for _, n, c in chunks[:4]],
+                "message": str(e)[:120]}
+
+
 _mkt_cache = {"at": 0, "data": None}
 
 
@@ -601,6 +760,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if path == "/api/markets":
             self._send_json(fetch_markets())
             return
+        if path == "/api/kb/list":
+            self._send_json({"docs": kb_load()})
+            return
+        # the document library is private: never serve it over HTTP
+        if path == "/knowledge" or path.startswith("/knowledge/"):
+            self.send_error(404, "Not found")
+            return
         if path == "/api/store":
             try:
                 with open(STORE_FILE) as f:
@@ -615,6 +781,23 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def do_POST(self):
         path = self.path.split("?", 1)[0]
+        if path in ("/api/kb/upload", "/api/kb/delete", "/api/kb/ask"):
+            length = int(self.headers.get("Content-Length", 0))
+            if length <= 0 or length > 40_000_000:
+                self.send_error(413, "Bad size")
+                return
+            try:
+                payload = json.loads(self.rfile.read(length).decode("utf-8"))
+            except Exception as e:
+                self.send_error(400, f"Bad request: {e}")
+                return
+            if path == "/api/kb/upload":
+                self._send_json(kb_upload(payload))
+            elif path == "/api/kb/delete":
+                self._send_json(kb_delete(str(payload.get("id", ""))))
+            else:
+                self._send_json(kb_ask(payload))
+            return
         if path == "/api/assistant":
             length = int(self.headers.get("Content-Length", 0))
             if length <= 0 or length > 30000:

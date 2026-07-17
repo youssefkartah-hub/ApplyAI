@@ -360,6 +360,7 @@
       <button class="tab" data-tab="goals">🎯 Goals</button>
       <button class="tab" data-tab="planner">📆 Planner</button>
       <button class="tab" data-tab="inbox">📥 Inbox</button>
+      <button class="tab" data-tab="kb">📚 Docs</button>
       <div class="navlbl">Career</div>
       <button class="tab active" data-tab="overview">📊 Job Insights</button>
       <button class="tab" data-tab="apps">📋 Applications</button>
@@ -482,6 +483,11 @@
         <div class="icard" id="prBox"></div>
         <div class="icard" id="histBox"></div>
       </div>
+    </div>
+
+    <div class="pane" data-pane="kb" hidden>
+      <div class="icard" id="kbAsk" style="margin-bottom:14px"></div>
+      <div class="icard" id="kbDocs"></div>
     </div>
 
     <div class="pane" data-pane="fin" hidden>
@@ -1283,7 +1289,54 @@ function buildWeeklyReview(){
   if(!sug.length) sug.push("No weak spots worth flagging. Hold the line and raise one target next week.");
   return {a,b,rows,up,down,sug};
 }
+function monthStats(off){
+  const mk=monthKey(off), s={};
+  const inM=d=>(d||"").startsWith(mk);
+  const inT=t=>{ const d=new Date(t); return (d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"))===mk; };
+  s.tasksDone=OS.tasks.filter(t=>t.done&&t.doneAt&&inT(t.doneAt)).length;
+  s.focusMins=OS.sessions.filter(x=>inM(x.date)).reduce((a,b)=>a+b.mins,0);
+  const pDays=Object.keys(OS.daily||{}).filter(inM);
+  const pDone=pDays.reduce((a,d)=>a+PRAYERS.filter(([k])=>(OS.daily[d]||{})[k]).length,0);
+  s.prayerPct=pDays.length?Math.round(100*pDone/(pDays.length*5)):null;
+  const hDays=OS.habits.reduce((a,h)=>a+Object.keys(h.days||{}).filter(inM).length,0);
+  const elapsed=off===0?new Date().getDate():30;
+  s.habitPct=OS.habits.length?Math.min(100,Math.round(100*hDays/(OS.habits.length*elapsed))):null;
+  s.income=incomeInMonth(mk); s.spend=spendInMonth(mk);
+  const apps=jobRows();
+  s.apps=apps.filter(a=>a.rawDate&&inM(a.rawDate.slice(0,10))).length;
+  s.interviews=apps.filter(a=>(a.status==="Interview Scheduled"||a.status==="Offer Received")&&a.updated&&inT(a.updated)).length;
+  s.liftSessions=(OS.athlete&&OS.athlete.logs||[]).filter(l=>inM(l.date)&&l.key!=="recovery").length;
+  return s;
+}
+function buildMonthlyReview(){
+  const a=monthStats(0), b=monthStats(1);
+  const rows=[
+    ["Tasks completed",a.tasksDone,b.tasksDone,""],
+    ["Deep work",Math.round(a.focusMins/6)/10,Math.round(b.focusMins/6)/10,"h"],
+    ["Habit completion",a.habitPct,b.habitPct,"%"],
+    ["Prayer completion",a.prayerPct,b.prayerPct,"%"],
+    ["Income","$"+a.income.toLocaleString(),"$"+b.income.toLocaleString(),""],
+    ["Spending","$"+a.spend.toLocaleString(),"$"+b.spend.toLocaleString(),""],
+    ["Applications sent",a.apps,b.apps,""],
+    ["Lifting sessions",a.liftSessions,b.liftSessions,""],
+  ];
+  const deltas=[["tasks",a.tasksDone-b.tasksDone],["deep work",a.focusMins-b.focusMins],
+    ["prayers",(a.prayerPct||0)-(b.prayerPct||0)],["income",a.income-b.income],
+    ["applications",a.apps-b.apps],["training",a.liftSessions-b.liftSessions]];
+  const up=deltas.slice().sort((x,y)=>y[1]-x[1])[0], down=deltas.slice().sort((x,y)=>x[1]-y[1])[0];
+  const trends={labels:[],tasks:[],focus:[],income:[]};
+  for(let o=5;o>=0;o--){ const s=monthStats(o);
+    trends.labels.push(monthLabel(o)); trends.tasks.push(s.tasksDone);
+    trends.focus.push(Math.round(s.focusMins/60)); trends.income.push(s.income); }
+  return {a,b,rows,up,down,trends};
+}
 function reviewSpeech(){
+  if((OS.settings.reviewMode||"week")==="month"){
+    const r=buildMonthlyReview();
+    return `Here's your month so far. ${r.a.tasksDone} tasks completed, ${Math.round(r.a.focusMins/60)} hours of deep work, `+
+      `$${r.a.income.toLocaleString()} earned against $${r.a.spend.toLocaleString()} spent, ${r.a.apps} applications, `+
+      `and ${r.a.liftSessions} lifting sessions. Biggest improvement over last month: ${r.up[0]}. Weakest area: ${r.down[0]}.`;
+  }
   const r=buildWeeklyReview();
   return `Here's your week. ${r.a.tasksDone} tasks completed, ${Math.round(r.a.focusMins/60)} hours of deep work, `+
     `$${r.a.income.toLocaleString()} earned, and ${r.a.apps} applications sent. `+
@@ -1295,13 +1348,35 @@ function renderReview(){
   const show=new Date().getDay()===0||OS.settings.showReview;
   box.style.display=show?"":"none";
   if(!show){ box.innerHTML=""; return; }
-  const r=buildWeeklyReview();
+  const mode=OS.settings.reviewMode||"week";
   const arrow=(v,p)=>{ if(v==null||p==null||v===p) return "";
     const n=parseFloat(String(v).replace(/[$,]/g,""))-parseFloat(String(p).replace(/[$,]/g,""));
     return n>0?` <span style="color:var(--offer);font-size:11px">▲</span>`:n<0?` <span style="color:var(--rejected);font-size:11px">▼</span>`:""; };
-  box.innerHTML=`<h3>📊 Your week in review
-      <button class="rowbtn" data-close-review style="float:right;text-transform:none;letter-spacing:0">Close</button>
-      <button class="rowbtn" data-speak-review style="float:right;margin-right:6px;text-transform:none;letter-spacing:0">🔊 Hear it</button></h3>
+  const toggle=`<span style="float:right">
+    <button class="rowbtn" data-review-mode="week" style="text-transform:none;letter-spacing:0;${mode==="week"?"border-color:var(--accent)":""}">Week</button>
+    <button class="rowbtn" data-review-mode="month" style="text-transform:none;letter-spacing:0;${mode==="month"?"border-color:var(--accent)":""}">Month</button>
+    <button class="rowbtn" data-speak-review style="text-transform:none;letter-spacing:0">🔊</button>
+    <button class="rowbtn" data-close-review style="text-transform:none;letter-spacing:0">Close</button></span>`;
+  if(mode==="month"){
+    const r=buildMonthlyReview();
+    const spark=(pts,label,fmt)=>`<div class="fn-row"><div class="fn-lbl" style="width:92px">${label}</div>
+      <div style="flex:1">${sparkSvg(pts,pts[pts.length-1]>=pts[0])}</div>
+      <div class="fn-conv" style="width:64px">${fmt(pts[pts.length-1])}</div></div>`;
+    box.innerHTML=`<h3>📊 Your month in review ${toggle}</h3>
+      <div class="imetrics" style="margin-top:6px">${r.rows.map(([l,v,p,u])=>
+        `<div class="imetric"><div class="n" style="font-size:19px">${v==null?"—":v}${u||""}${arrow(v,p)}</div>
+         <div class="l">${l}<div style="opacity:.6">last mo: ${p==null?"—":p}${u||""}</div></div></div>`).join("")}</div>
+      <div class="usage-note" style="margin-top:8px">Six month trends</div>
+      ${spark(r.trends.tasks,"Tasks",v=>v)}
+      ${spark(r.trends.focus,"Deep work",v=>v+"h")}
+      ${spark(r.trends.income,"Income",v=>"$"+v.toLocaleString())}
+      <ul class="obs" style="margin-top:8px">
+        <li>Biggest improvement vs last month: <b>${r.up[0]}</b>. Needs attention: <b>${r.down[0]}</b>.</li>
+      </ul>`;
+    return;
+  }
+  const r=buildWeeklyReview();
+  box.innerHTML=`<h3>📊 Your week in review ${toggle}</h3>
     <div class="imetrics" style="margin-top:6px">${r.rows.map(([l,v,p,u])=>
       `<div class="imetric"><div class="n" style="font-size:19px">${v==null?"—":v}${u||""}${arrow(v,p)}</div>
        <div class="l">${l}<div style="opacity:.6">last wk: ${p==null?"—":p}${u||""}</div></div></div>`).join("")}</div>
@@ -1314,6 +1389,8 @@ function renderReview(){
 document.addEventListener("click",e=>{
   if(e.target.closest("[data-close-review]")){ OS.settings.showReview=false; osSave(); renderReview(); return; }
   if(e.target.closest("[data-speak-review]")){ speakText(reviewSpeech()); return; }
+  const rm=e.target.closest("[data-review-mode]"); if(rm){
+    OS.settings.reviewMode=rm.dataset.reviewMode; OS.settings.showReview=true; osSave(); renderReview(); return; }
 });
 function usageAgg(days){
   const agg={}, u=OS.usage||{};
@@ -1607,12 +1684,17 @@ function trainingToday(){
 const INCOME_GOAL=100;
 function incomeToday(){ return (OS.incomeLog||[]).filter(e=>e.date===todayKey()).reduce((a,b)=>a+(+b.amount||0),0); }
 function incomeTotal(){ return (OS.incomeLog||[]).reduce((a,b)=>a+(+b.amount||0),0); }
+function mindItems(){
+  const s=OS.settings&&OS.settings.mindItems;
+  if(Array.isArray(s)&&s.length) return s;
+  return [["lesson","Language lesson"],["immersion","Immersion: one episode or podcast in your target language"]];
+}
 function lifeSections(){
   return [
     {id:"faith",name:"Faith",icon:"🕌",ring:true,items:PRAYERS},
     {id:"training",name:"Training",icon:"🥋",cal:true,items:trainingToday(),
       rest:"Rest day. No sessions on the calendar."},
-    {id:"mind",name:"Mind",icon:"🧠",items:[["lesson","Language lesson"],["narcos","One episode of Narcos"]]},
+    {id:"mind",name:"Mind",icon:"🧠",items:mindItems()},
     {id:"income",name:"Income",icon:"💵",money:true,items:[]},
   ];
 }
@@ -1638,7 +1720,7 @@ function dailyLeftBits(){
   const pl=PRAYERS.filter(([k])=>!dd[k]).map(([,n])=>n);
   if(pl.length) bits.push(pl.length===5?"all five prayers":`${pl.length} prayer${pl.length>1?"s":""} (${pl.join(", ")})`);
   trainingToday().filter(([k])=>!dd[k]).forEach(([,n])=>bits.push(n));
-  [["lesson","your language lesson"],["narcos","an episode of Narcos"]].forEach(([k,n])=>{ if(!dd[k]) bits.push(n); });
+  mindItems().forEach(([k,n])=>{ if(!dd[k]) bits.push(n.toLowerCase().startsWith("language")?"your language lesson":n.toLowerCase()); });
   const incLeft=Math.max(0,INCOME_GOAL-incomeToday());
   if(incLeft>0) bits.push(`$${incLeft.toLocaleString()} more to hit your income goal`);
   return bits;
@@ -1788,7 +1870,7 @@ function renderGoals(){
 let heroItem=null, currentTab="today";
 const PANE_R={today:[renderToday],inbox:[renderAreas,renderInbox],planner:[renderPlanner],
   habits:[renderHabits],focus:[renderFocusStats],crm:[renderCRM],
-  proj:[renderProjects],goals:[renderGoals],train:[renderTrain],fin:[renderFin]};
+  proj:[renderProjects],goals:[renderGoals],train:[renderTrain],fin:[renderFin],kb:[renderKB]};
 function renderOS(){ try{
   // Only rebuild what's on screen: the Today pane rerenders when visible,
   // other tabs get their own renderers, and the header day % stays fresh
@@ -1809,7 +1891,11 @@ function runCmd(v){
   if((m=pref("find "))||(m=pref("search "))||(m=pref("?"))){
     switchTab("apps"); $("search").value=m; searchTerm=m.toLowerCase(); render(); toast(`Searching "${m}"`); return; }
   if((m=pref("habit:"))){ OS.habits.push({id:uid(),name:m,days:{}}); osSave(); renderOS(); toast("Habit added 🔥"); return; }
-  if(l==="review"||l==="weekly review"){ OS.settings.showReview=true; osSave(); switchTab("today"); renderReview(); return; }
+  if(l==="review"||l==="weekly review"||l==="monthly review"){
+    OS.settings.showReview=true; OS.settings.reviewMode=l==="monthly review"?"month":"week";
+    osSave(); switchTab("today"); renderReview(); return; }
+  if((m=pref("mind:"))){ OS.settings.mindItems=[["lesson","Language lesson"],["immersion",m]];
+    osSave(); renderOS(); toast(`Mind item set: ${m}`); return; }
   if((m=pref("focus"))!==null&&m===""){ switchTab("focus"); return; }
   // default: smart task/capture — detect due words, then categorize
   let due=null; const t=new Date();
@@ -2328,6 +2414,106 @@ document.addEventListener("change",e=>{
 });
 
 /* ==================================================================
+   Knowledge base: upload documents, ask questions about them.
+   Files live in ./knowledge on your machine; retrieval is local, and
+   only the matching excerpts go to Claude when a key is configured.
+   ================================================================== */
+let kbDocs=null, kbLastAnswer=null, kbBusy=false;
+async function kbRefresh(){
+  try{ const j=await fetch("/api/kb/list",{cache:"no-store"}).then(r=>r.json());
+    kbDocs=j.docs||[]; }catch(e){ kbDocs=[]; }
+  renderKB();
+}
+function fmtBytes(n){ return n>1048576?(n/1048576).toFixed(1)+" MB":Math.max(1,Math.round(n/1024))+" KB"; }
+async function kbUploadFiles(files){
+  for(const f of files){
+    if(f.size>25*1048576){ toast(`${f.name} is over 25 MB, skipped.`); continue; }
+    toast(`Reading ${f.name}…`);
+    const b64=await new Promise(res=>{ const r=new FileReader();
+      r.onload=()=>res(String(r.result).split(",")[1]||""); r.readAsDataURL(f); });
+    try{
+      const j=await fetch("/api/kb/upload",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({name:f.name,data:b64})}).then(r=>r.json());
+      if(j.error) toast(`${f.name}: ${j.message||"upload failed"}`);
+      else toast(j.note?`${f.name} stored. ${j.note}`:`${f.name} is in the library.`);
+    }catch(e){ toast(`${f.name}: upload failed. Is the server running?`); }
+  }
+  kbRefresh();
+}
+async function kbAskRemote(q){
+  try{ return await fetch("/api/kb/ask",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({question:q})}).then(r=>r.json()); }
+  catch(e){ return null; }
+}
+async function kbAskUI(){
+  const inp=document.querySelector("[data-kb-q]"); const q=inp&&inp.value.trim();
+  if(!q||kbBusy) return;
+  kbBusy=true; kbLastAnswer={pending:true,q}; renderKB();
+  const j=await kbAskRemote(q);
+  kbBusy=false;
+  kbLastAnswer={q,
+    answer:j&&j.answer,
+    sources:(j&&j.sources)||[],
+    snippets:(j&&j.snippets)||[],
+    message:j?j.message:"Couldn't reach the server."};
+  renderKB();
+}
+function renderKB(){
+  if(!$("kbAsk")) return;
+  if(kbDocs===null){ kbDocs=[]; kbRefresh(); }
+  const a=kbLastAnswer;
+  $("kbAsk").innerHTML=`<h3>📚 Ask your documents</h3>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <input data-kb-q style="flex:1;padding:10px 12px" placeholder='e.g. "What GPA did my advisor recommend?", "Which resume did I send Boeing?"'/>
+      <button class="primary" data-kb-ask ${kbBusy?"disabled":""}>${kbBusy?"Thinking…":"Ask"}</button></div>
+    ${a&&!a.pending?`<div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px">
+      <div class="muted" style="font-size:12px;font-style:italic">"${esc(a.q)}"</div>
+      ${a.answer?`<p style="margin:8px 0">${esc(a.answer)}</p>
+        ${a.sources.length?`<div>${a.sources.map(s=>`<span class="pill2">📄 ${esc(s)}</span>`).join("")}</div>`:""}
+        <button class="rowbtn" data-kb-speak style="margin-top:6px">🔊 Hear it</button>`
+      :a.snippets.length?`<div class="muted" style="font-size:12px;margin:6px 0">No AI key configured, so here are the best matching passages:</div>
+        ${a.snippets.map(s=>`<div style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:6px 0">
+          <div class="muted" style="font-size:11px">📄 ${esc(s.doc)}</div>
+          <div style="font-size:13px">${esc(s.text)}</div></div>`).join("")}`
+      :`<p class="muted" style="margin:8px 0">${esc(a.message||"Nothing found.")}</p>`}
+    </div>`:""}
+    <div class="usage-note">Everything stays on this machine. When Claude is connected, only the few matching excerpts are sent to answer the question.</div>`;
+  $("kbDocs").innerHTML=`<h3>🗄 Library
+      <button class="rowbtn" data-kb-upload style="float:right;text-transform:none;letter-spacing:0">＋ Upload files</button></h3>
+    <input type="file" data-kb-file multiple style="display:none"
+      accept=".pdf,.docx,.txt,.md,.csv,.json,.tex,.html,.png,.jpg,.jpeg"/>
+    <div data-kb-drop style="border:1px dashed var(--line);border-radius:10px;padding:14px;text-align:center;color:var(--muted);font-size:13px;margin:8px 0">
+      Drop PDFs, Word docs, notes, slides or images here</div>
+    ${kbDocs.length?kbDocs.slice().reverse().map(d=>`<div class="trow">
+      <div class="tt">${esc(d.name)}<div class="sub">${d.kind||"file"} · ${fmtBytes(d.size)} · added ${d.added}${d.chars?"":" · no searchable text"}</div></div>
+      <span class="x" data-kb-del="${d.id}" style="cursor:pointer;color:var(--muted)">✕</span></div>`).join("")
+    :`<p class="muted">Nothing here yet. Resume, lecture slides, visa documents, papers — upload them once and ask about them forever.</p>`}`;
+}
+document.addEventListener("click",async e=>{
+  if(e.target.closest("[data-kb-ask]")){ kbAskUI(); return; }
+  if(e.target.closest("[data-kb-upload]")){ const i=document.querySelector("[data-kb-file]"); if(i) i.click(); return; }
+  if(e.target.closest("[data-kb-speak]")&&kbLastAnswer&&kbLastAnswer.answer){ speakText(kbLastAnswer.answer); return; }
+  const del=e.target.closest("[data-kb-del]"); if(del){
+    await fetch("/api/kb/delete",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({id:del.dataset.kbDel})}).catch(()=>{});
+    kbRefresh(); return; }
+});
+document.addEventListener("change",e=>{
+  const f=e.target.closest("[data-kb-file]");
+  if(f&&f.files.length){ kbUploadFiles([...f.files]); f.value=""; }
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&e.target.matches&&e.target.matches("[data-kb-q]")) kbAskUI();
+});
+document.addEventListener("dragover",e=>{ const z=e.target.closest("[data-kb-drop]");
+  if(z){ e.preventDefault(); z.style.borderColor="var(--accent)"; } });
+document.addEventListener("dragleave",e=>{ const z=e.target.closest("[data-kb-drop]");
+  if(z) z.style.borderColor="var(--line)"; });
+document.addEventListener("drop",e=>{ const z=e.target.closest("[data-kb-drop]");
+  if(z){ e.preventDefault(); z.style.borderColor="var(--line)";
+    if(e.dataTransfer.files.length) kbUploadFiles([...e.dataTransfer.files]); } });
+
+/* ==================================================================
    Finance. Income (from the daily log), expenses with monthly budgets,
    savings goals, net worth with live-priced crypto, monthly trends.
    All local; crypto valuation reuses the market feed already fetched.
@@ -2672,7 +2858,8 @@ function localIntent(t){
   if(/\btrain(ed|ing)?\b|sparring|grappling|wrestling/.test(l)&&!/(bjj|jiu|jujitsu|muay|my tie)/.test(l)){
     checkDaily("training"); markTrainingTask("training"); acted.push("training"); }
   if(/(language lesson|my lesson|duolingo)/.test(l)){ checkDaily("lesson"); acted.push("your lesson"); }
-  if(/narcos|episode/.test(l)&&/watch|did|done|finish/.test(l)){ checkDaily("narcos"); acted.push("Narcos"); }
+  if(/(narcos|episode|podcast|immersion)/.test(l)&&/watch(ed)?|did|done|finish|listen/.test(l)){
+    const k=mindItems()[1]?mindItems()[1][0]:"immersion"; checkDaily(k); acted.push("your immersion time"); }
   const task=t.match(/(?:remind me to|add (?:a )?task(?: to)?|i need to remember to)\s+(.+)/i);
   if(task){ const title=task[1].trim();
     OS.tasks.push({id:uid(),title,area:categorize(title).area,imp:2,dur:30,createdAt:Date.now(),done:false});
@@ -2686,7 +2873,7 @@ function voiceState(){
   const dd=dayChecks(), all=jobRows();
   return { prayersLeft:PRAYERS.filter(([k])=>!dd[k]).map(([,n])=>n),
     trainingLeft:trainingToday().filter(([k])=>!dd[k]).map(([,n])=>n),
-    mindLeft:[["lesson","language lesson"],["narcos","Narcos episode"]].filter(([k])=>!dd[k]).map(([,n])=>n),
+    mindLeft:mindItems().filter(([k])=>!dd[k]).map(([,n])=>n),
     incomeToday:incomeToday(), incomeGoal:INCOME_GOAL, incomeAllTime:incomeTotal(),
     appsToday:all.filter(isToday).length, appsGoal:Object.values(TARGETS).reduce((a,b)=>a+b,0),
     interviewsInPlay:all.filter(a=>a.status==="Interview Scheduled").map(a=>a.company).slice(0,5),
@@ -2707,7 +2894,9 @@ function voiceState(){
 const AI_ACTIONS={
   check_prayer:a=>{ if(PRAYERS.some(([k])=>k===a.key)) checkDaily(a.key); },
   check_training:a=>{ if(["bjj","muaythai","training","lift"].includes(a.key)){ checkDaily(a.key); markTrainingTask(a.key); } },
-  check_mind:a=>{ if(["lesson","narcos"].includes(a.key)) checkDaily(a.key); },
+  check_mind:a=>{ const keys=mindItems().map(([k])=>k);
+    if(keys.includes(a.key)) checkDaily(a.key);
+    else if(a.key==="narcos") checkDaily(keys[1]||"immersion"); },
   log_income:a=>{ const v=+a.amount; if(v>0) OS.incomeLog.push({id:uid(),date:todayKey(),amount:Math.round(v*100)/100}); },
   log_expense:a=>{ if(+a.amount>0) logExpense(a.amount,a.key||a.title,a.title); },
   add_task:a=>{ if(a.title) OS.tasks.push({id:uid(),title:a.title,area:categorize(a.title).area,imp:2,dur:30,createdAt:Date.now(),done:false}); },
@@ -2731,8 +2920,15 @@ async function aiAssist(text){
 }
 async function voiceExchange(heard){
   showBubble(`"${heard}"`,"…");
-  let reply=await aiAssist(heard);          // full conversation when Claude is connected
-  if(reply==null) reply=localIntent(heard); // offline pattern matching otherwise
+  let reply=null;
+  // document questions go to the knowledge base first
+  if(/(resume|pdf|document|docs?\b|notes|paper|slides|textbook|syllabus|advisor)/i.test(heard)
+     &&/what|which|when|where|how|did|says?|recommend/i.test(heard)){
+    const j=await kbAskRemote(heard);
+    if(j&&j.answer) reply=j.answer;
+  }
+  if(reply==null) reply=await aiAssist(heard);  // full conversation when Claude is connected
+  if(reply==null) reply=localIntent(heard);     // offline pattern matching otherwise
   if(reply==null) reply="I heard you, but my full brain isn't connected yet, so I can only handle simple updates. Add an Anthropic API key to the app folder and we can actually talk. For now try: I prayed fajr, I made 40 dollars, or, what's left today.";
   voiceHist.push({role:"user",content:heard},{role:"assistant",content:cleanSpeech(reply)});
   if(voiceHist.length>16) voiceHist=voiceHist.slice(-16);
