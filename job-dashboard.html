@@ -287,6 +287,12 @@
   .wd.miss{background:rgba(239,68,68,.12);border-color:var(--rejected);color:var(--rejected)}
   .wd.rest{opacity:.35}
   .wd.off{opacity:.55}
+  .wd[data-fixday]{cursor:pointer}
+  .wd[data-fixday]:hover{border-color:var(--accent)}
+  .pill2[data-tgl-sess]{cursor:pointer}
+  .pill2[data-tgl-sess]:hover{border-color:var(--accent)}
+  .fixbox{margin-top:7px;padding:8px 9px;border:1px dashed var(--line);border-radius:9px}
+  button:disabled{opacity:.35;cursor:default}
   .overallbar{height:9px;background:rgba(0,0,0,.35);border-radius:5px;overflow:hidden;margin-top:8px}
   .overallbar>span{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#22d3ee,#22c55e);
     transition:width .7s cubic-bezier(.22,1,.36,1)}
@@ -1460,7 +1466,7 @@ function renderToday(){
     brief.push(`You have <b>${todayEvs.length}</b> thing${todayEvs.length>1?"s":""} on the calendar today${next?`. Next up is <b>${esc(next.title)}</b> at ${new Date(next.start).toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})}`:""}.`); }
   try{ const sp=todaySplit();
     if(sp.rest) brief.push(`Full rest day on the training plan. Recovery is training too.`);
-    else{ const bits=[sp.lift?PROGRAM[sp.lift].name:null,sp.combat].filter(Boolean);
+    else{ const bits=scheduledFor(todayKey()).map(([,n])=>n);
       if(bits.length) brief.push(`Training today: <b>${bits.join(" plus ")}</b>.`); }
   }catch(e){}
   const appLine=[`You've sent <b>${appsToday}</b> of ${goal} applications today.`];
@@ -1680,14 +1686,11 @@ function todayCalEvents(){ const tk=todayKey();
   return (calEvents||[]).filter(ev=>ev.allday?ev.start===tk:(ev.start||"").slice(0,10)===tk); }
 function trainingToday(){
   const evs=todayCalEvents(), out=[];
-  // the scheduled lift or recovery session from the weekly program
-  try{ const sp=todaySplit(); if(sp&&sp.lift) out.push(["lift",PROGRAM[sp.lift].name]); }catch(e){}
-  TRAINING_DETECT.forEach(([key,re,label])=>{ if(evs.some(ev=>re.test(ev.title||""))) out.push([key,label]); });
-  // combat from the weekly plan is always on the board, calendar or not
-  // (Mon Muay Thai, Tue BJJ, Thu BJJ, Fri Muay Thai)
-  try{ const sp=todaySplit();
-    if(sp&&sp.combat){ const key=/bjj/i.test(sp.combat)?"bjj":"muaythai";
-      if(!out.some(([k])=>k===key)) out.push([key,sp.combat+" session"]); } }catch(e){}
+  // everything the weekly plan schedules today, in session order
+  try{ scheduledFor(todayKey()).forEach(it=>out.push(it)); }catch(e){}
+  // combat the calendar adds on top of the plan
+  TRAINING_DETECT.forEach(([key,re,label])=>{
+    if(evs.some(ev=>re.test(ev.title||""))&&!out.some(([k])=>k===key)) out.push([key,label]); });
   // catch calendar sessions that don't name the discipline, like "Training 6pm"
   if(evs.some(ev=>TRAINING_GENERIC.test(ev.title||"")&&!TRAINING_DETECT.some(([,re])=>re.test(ev.title||""))))
     out.push(["training","Training session"]);
@@ -1723,8 +1726,8 @@ function prayerRing(done){
     <svg class="ring ${done===5?"full":""}" width="80" height="80" viewBox="0 0 80 80" style="transform:rotate(-90deg)">${circles}</svg>
     <div class="ringlbl">${done*20}%</div></div>`;
 }
-function lifeChk(k,label,on){
-  return `<label class="lchk ${on?"on":""}"><input type="checkbox" data-daily="${k}" ${on?"checked":""}/>
+function lifeChk(k,label,on,dk){
+  return `<label class="lchk ${on?"on":""}"><input type="checkbox" data-daily="${k}"${dk?` data-day="${dk}"`:""} ${on?"checked":""}/>
     <span class="lbl">${esc(label)}</span></label>`;
 }
 function dailyLeftBits(){
@@ -2043,13 +2046,18 @@ document.addEventListener("click",e=>{
     return; }
   const idel=e.target.closest("[data-inc-del]"); if(idel){
     OS.incomeLog=OS.incomeLog.filter(x=>x.id!==idel.dataset.incDel); osSave(); renderOS(); return; }
-  const dc=e.target.closest("[data-daily]"); if(dc){ const d=dayChecks();
+  const dc=e.target.closest("[data-daily]"); if(dc){
+    const dk=dc.dataset.day||todayKey();
+    if(!OS.daily||Array.isArray(OS.daily)) OS.daily={};
+    const d=OS.daily[dk]=OS.daily[dk]||{};
     if(dc.checked) d[dc.dataset.daily]=true; else delete d[dc.dataset.daily];
-    const det=TRAINING_DETECT.find(([k])=>k===dc.dataset.daily);
-    const tre=det?det[1]:(dc.dataset.daily==="training"?TRAINING_GENERIC:null);
-    if(tre) OS.tasks.forEach(t=>{ if(t.fromCal&&t.due===todayKey()&&tre.test(t.title||"")){
-      t.done=dc.checked; t.doneAt=dc.checked?Date.now():null; } });
-    if(dc.checked&&tre) toast("Training logged. Strong work. 🥋");
+    if(dk===todayKey()){
+      const det=TRAINING_DETECT.find(([k])=>k===dc.dataset.daily);
+      const tre=det?det[1]:(dc.dataset.daily==="training"?TRAINING_GENERIC:null);
+      if(tre) OS.tasks.forEach(t=>{ if(t.fromCal&&t.due===todayKey()&&tre.test(t.title||"")){
+        t.done=dc.checked; t.doneAt=dc.checked?Date.now():null; } });
+      if(dc.checked&&tre) toast("Training logged. Strong work. 🥋");
+    }
     osSave(); renderOS(); return; }
   const pt=e.target.closest("[data-prj-tgl]"); if(pt){ const pr=OS.projects.find(x=>x.id===pt.dataset.prjTgl);
     if(pr){ if(pr.startedAt){ const mins=Math.round((Date.now()-pr.startedAt)/60000);
@@ -2125,22 +2133,22 @@ const SPLIT=[
   {lift:"lowerStrength",combat:"BJJ"},           // Tuesday
   {lift:"recovery"},                             // Wednesday
   {lift:"upperB",combat:"BJJ"},                  // Thursday
-  {combat:"Muay Thai"},                          // Friday: off lifting, Muay Thai only
-  {lift:"power"}];                               // Saturday
+  {combat:"Muay Thai",lift:"power",combatFirst:true}, // Friday: Muay Thai, then power work
+  {rest:true}];                                  // Saturday
 function todaySplit(){ return SPLIT[new Date().getDay()]; }
 function dkFor(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
 function dkOffset(o){ return dkFor(new Date(Date.now()-o*86400000)); }
 function splitFor(dk){ return SPLIT[new Date(dk+"T12:00:00").getDay()]; }
 function scheduledFor(dk){
-  const sp=splitFor(dk), out=[];
-  if(sp.lift) out.push(["lift",PROGRAM[sp.lift].name]);
-  if(sp.combat) out.push([/bjj/i.test(sp.combat)?"bjj":"muaythai",sp.combat]);
-  return out;
+  const sp=splitFor(dk);
+  const lift=sp.lift?["lift",PROGRAM[sp.lift].name]:null;
+  const combat=sp.combat?[/bjj/i.test(sp.combat)?"bjj":"muaythai",sp.combat]:null;
+  return (sp.combatFirst?[combat,lift]:[lift,combat]).filter(Boolean);
 }
 /* ---- attendance scoring, shared by training, prayers and languages ---- */
 const WEEK_NAMES=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
-function weekDates(){ // Monday through Sunday of the current week
-  const now=new Date(), off=(now.getDay()+6)%7;
+function weekDates(back=0){ // Monday through Sunday, `back` weeks ago (0 = this week)
+  const now=new Date(), off=(now.getDay()+6)%7+7*back;
   return Array.from({length:7},(_,i)=>dkFor(new Date(now.getFullYear(),now.getMonth(),now.getDate()-off+i)));
 }
 function dayScoreFor(kind,dk){
@@ -2176,12 +2184,30 @@ function weekDots(kind){
     else if(s.done>=s.total) cls="hit";
     else if(s.done>0) cls="part";
     else cls=dk===tk?"off":"miss";
-    return `<span class="wd ${cls}" title="${WEEK_NAMES[i]}">${WEEK_NAMES[i][0]}</span>`;
+    const canFix=dk<=tk?` data-fixday="${kind}|${dk}"`:"";
+    return `<span class="wd ${cls}"${canFix} title="${WEEK_NAMES[i]}${dk<=tk?" · click to fix":""}">${WEEK_NAMES[i][0]}</span>`;
   }).join("")+`</div>`;
+}
+/* fixing a past day: click a week dot, tick what actually happened */
+let dayFix=null; // {kind, dk}
+function fixDayEditor(kind){
+  const dk=dayFix.dk, d=(OS.daily||{})[dk]||{};
+  const items=kind==="training"?scheduledFor(dk):(kind==="faith"?PRAYERS:mindItems());
+  const label=new Date(dk+"T12:00:00").toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
+  const canFwd=dk<todayKey();
+  return `<div class="fixbox">
+    <div style="display:flex;align-items:center;gap:7px;font-size:12px;margin-bottom:5px">
+      <button class="rowbtn" data-fixnav="-1">‹</button>
+      <span style="flex:1">Fixing <b>${label}</b></span>
+      <button class="rowbtn" data-fixnav="1" ${canFwd?"":"disabled"}>›</button>
+      <button class="rowbtn" data-fixclose>Done</button></div>
+    ${items.length?items.map(([k,n])=>lifeChk(k,n,d[k],dk)).join("")
+      :`<p class="muted" style="font-size:12px;margin:0">Rest day, nothing was scheduled.</p>`}</div>`;
 }
 function perfLine(kind){
   const p=perfPair(kind), f=v=>v==null?"—":v+"%";
-  return `<div class="perfline">${weekDots(kind)}<span class="muted" style="font-size:11px">This week <b>${f(p.week)}</b> · 30 days <b>${f(p.month)}</b></span></div>`;
+  const fix=dayFix&&dayFix.kind===kind?fixDayEditor(kind):"";
+  return `<div class="perfline">${weekDots(kind)}<span class="muted" style="font-size:11px">This week <b>${f(p.week)}</b> · 30 days <b>${f(p.month)}</b></span></div>${fix}`;
 }
 function missedThisWeek(){
   const tk=todayKey(), out=[];
@@ -2197,9 +2223,9 @@ function missedThisWeek(){
   return out;
 }
 function trainingTodaySpeech(){
-  const sp=todaySplit();
-  if(sp.rest) return "Today is a full rest day. Recovery is part of the program.";
-  const d=dayChecks(), items=trainingToday();
+  const items=trainingToday();
+  if(!items.length) return "Today is a full rest day. Recovery is part of the program.";
+  const d=dayChecks();
   const done=items.filter(([k])=>d[k]).map(([,n])=>n), left=items.filter(([k])=>!d[k]).map(([,n])=>n);
   let s=`Today is ${items.map(([,n])=>n).join(" plus ")}.`;
   if(done.length) s+=` You've already checked off ${done.join(" and ")}.`;
@@ -2207,6 +2233,7 @@ function trainingTodaySpeech(){
   return s;
 }
 /* ---- Train tab rendering ---- */
+let trainWeekBack=0; // which week the Train tab grid shows (0 = current)
 function renderTrain(){
   if(!$("trainToday")) return;
   const sp=todaySplit(), d=dayChecks(), items=trainingToday(), tk=todayKey();
@@ -2217,8 +2244,9 @@ function renderTrain(){
       `<div class="usage-note">Check a session off once you've been. Same as prayers, no logging.</div>`;
   $("trainToday").innerHTML=`<h3>🏋️ Today's training</h3>${head}`;
 
-  // the week, day by day: went, missed, or still ahead
-  const rows=weekDates().map((dk,i)=>{
+  // the week, day by day: went, missed, or still ahead — flip back to fix old days
+  const back=trainWeekBack;
+  const rows=weekDates(back).map((dk,i)=>{
     const sch=scheduledFor(dk), dd=(OS.daily||{})[dk]||{};
     let credit=(dd.training&&sch.some(([k])=>!dd[k]))?1:0;
     const cells=sch.length?sch.map(([k,label])=>{
@@ -2228,14 +2256,18 @@ function renderTrain(){
       else if(dk<tk){ mark="✗"; color="var(--rejected)"; }
       else if(dk===tk){ mark="•"; color="var(--warn)"; }
       else { mark="•"; color="var(--muted)"; }
-      return `<span class="pill2" style="color:${color}">${mark} ${esc(label)}</span>`;
+      const tgl=dk<=tk?` data-tgl-sess="${dk}|${k}" title="Click to change"`:"";
+      return `<span class="pill2"${tgl} style="color:${color}">${mark} ${esc(label)}</span>`;
     }).join(""):`<span class="muted" style="font-size:12px">Rest</span>`;
     return `<div class="trow" style="${dk===tk?"background:rgba(34,211,238,.05);border-radius:8px":""}">
       <div class="tt" style="flex:0 0 96px">${WEEK_NAMES[i]}${dk===tk?' <span class="muted" style="font-size:10px">today</span>':""}</div>
       <div style="flex:1;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">${cells}</div></div>`;
   }).join("");
-  $("trainWeek").innerHTML=`<h3>📅 This week</h3>${rows}
-    <div class="usage-note">✓ went · ✗ missed · • not yet. Rest days don't count against you.</div>`;
+  const wkLabel=back===0?"This week":back===1?"Last week":`${back} weeks back`;
+  $("trainWeek").innerHTML=`<h3>📅 ${wkLabel}
+      <span style="float:right"><button class="rowbtn" data-wnav="1" title="Earlier week">‹</button>
+      <button class="rowbtn" data-wnav="-1" ${back===0?"disabled":""} title="Later week">›</button></span></h3>${rows}
+    <div class="usage-note">✓ went · ✗ missed · • not yet. Click any past session to change it; ‹ flips to earlier weeks.</div>`;
 
   // performance: week %, 30-day %, sessions attended, and what slipped
   const p=perfPair("training");
@@ -2258,7 +2290,9 @@ function renderTrain(){
   const order=[1,2,3,4,5,6,0], todayDow=new Date().getDay();
   $("trainPlan").innerHTML=`<h3>🗓️ The weekly plan</h3>`+order.map((g,idx)=>{
     const spg=SPLIT[g], isToday=g===todayDow;
-    const label=spg.rest?"Rest":[spg.lift?PROGRAM[spg.lift].name:null,spg.combat].filter(Boolean).join(" + ");
+    const parts=[spg.lift?PROGRAM[spg.lift].name:null,spg.combat].filter(Boolean);
+    if(spg.combatFirst) parts.reverse();
+    const label=spg.rest?"Rest":parts.join(" + ");
     const head=`<b style="${isToday?"color:var(--accent)":""}">${WEEK_NAMES[idx]}</b> <span class="muted">—</span> ${label}${isToday?' <span class="muted" style="font-size:10px">today</span>':""}`;
     const ex=spg.lift?PROGRAM[spg.lift].ex:null;
     return ex?`<details ${isToday?"open":""} style="border-bottom:1px solid var(--line);padding:7px 2px">
@@ -2268,6 +2302,26 @@ function renderTrain(){
       :`<div style="border-bottom:1px solid var(--line);padding:9px 2px">${head}</div>`;
   }).join("")+`<div class="usage-note">Reference only. The one thing worth tracking is whether you showed up.</div>`;
 }
+document.addEventListener("click",e=>{
+  const fd=e.target.closest("[data-fixday]"); if(fd){
+    const [kind,dk]=fd.dataset.fixday.split("|");
+    dayFix=dayFix&&dayFix.kind===kind&&dayFix.dk===dk?null:{kind,dk};
+    renderOS(); return; }
+  const fn=e.target.closest("[data-fixnav]"); if(fn&&dayFix&&!fn.disabled){
+    const d=new Date(dayFix.dk+"T12:00:00"); d.setDate(d.getDate()+(+fn.dataset.fixnav));
+    const ndk=dkFor(d); if(ndk<=todayKey()) dayFix.dk=ndk;
+    renderOS(); return; }
+  if(e.target.closest("[data-fixclose]")){ dayFix=null; renderOS(); return; }
+  const wn=e.target.closest("[data-wnav]"); if(wn&&!wn.disabled){
+    trainWeekBack=Math.max(0,trainWeekBack+(+wn.dataset.wnav)); renderOS(); return; }
+  const tg=e.target.closest("[data-tgl-sess]"); if(tg){
+    const [dk,key]=tg.dataset.tglSess.split("|");
+    if(dk>todayKey()) return;
+    if(!OS.daily||Array.isArray(OS.daily)) OS.daily={};
+    const d=OS.daily[dk]=OS.daily[dk]||{};
+    if(d[key]) delete d[key]; else d[key]=true;
+    osSave(); renderOS(); return; }
+});
 
 /* ==================================================================
    Knowledge base: upload documents, ask questions about them.
@@ -2737,7 +2791,7 @@ function voiceState(){
     finance:{monthIncome:incomeInMonth(monthKey(0)),monthSpend:spendInMonth(monthKey(0)),
       netWorth:netWorth(),notes:finInsights()},
     trainingPlan:(()=>{try{const sp=todaySplit(), dd=dayChecks(), p=perfPair("training");
-      return {today:sp.rest?"rest day":[sp.lift?PROGRAM[sp.lift].name:null,sp.combat].filter(Boolean).join(" + "),
+      return {today:sp.rest?"rest day":scheduledFor(todayKey()).map(([,n])=>n).join(" + "),
         checkedOffToday:trainingToday().filter(([k])=>dd[k]).map(([,n])=>n),
         attendanceWeekPct:p.week, attendance30DayPct:p.month,
         missedThisWeek:missedThisWeek()};}catch(e){return null;}})() };

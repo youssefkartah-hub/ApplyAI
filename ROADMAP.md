@@ -34,8 +34,8 @@ Thai/BJJ, joint durability, proper recovery), not bodybuilding. Tracking is
 deliberately minimal: show up and check the box, exactly like prayers.
 
 - Weekly split planner (Mon Upper A + Muay Thai, Tue Lower Strength + BJJ, Wed
-  Recovery & Mobility, Thu Upper B + BJJ, Fri Muay Thai, Sat Lower Power +
-  Athletic Work, Sun Rest); today's sessions on Today as plain checkboxes.
+  Recovery & Mobility, Thu Upper B + BJJ, Fri Muay Thai then Lower Power +
+  Athletic Work, Sat & Sun Rest); today's sessions on Today as plain checkboxes.
 - Train tab: today's checkboxes, a week view marking every scheduled session as
   went / missed / upcoming, attendance performance (this week %, last 30 days %,
   sessions attended, missed-session list), and the full weekly plan with

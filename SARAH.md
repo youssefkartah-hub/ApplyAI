@@ -102,7 +102,7 @@ A big overall percentage with an animated bar, plus a motivating line that chang
 Four life-area cards, each with its own percentage and progress bar, glowing green when complete:
 
 - **🕌 Faith** — the five daily prayers (Fajr, Dhuhr, Asr, Maghrib, Isha) around a **circular tracker split into five equal segments**. Each prayer you check fills one segment with a cyan glow and adds 20% to the ring's center number; at five the whole ring turns green. Checked items get a satisfying strikethrough.
-- **🥋 Training** — today's sessions from the weekly plan (Mon Upper Body A + Muay Thai, Tue Lower Body Strength + BJJ, Wed Recovery & Mobility, Thu Upper Body B + BJJ, Fri Muay Thai, Sat Lower Body Power + Athletic Work, Sun Rest), plus anything training-related your calendar adds. Every session is a plain checkbox, exactly like prayers: check it once you've been, nothing else to log. Checking one off also completes its task in the planner. On rest days the card is excluded from the overall average so it never drags your score.
+- **🥋 Training** — today's sessions from the weekly plan (Mon Upper Body A + Muay Thai, Tue Lower Body Strength + BJJ, Wed Recovery & Mobility, Thu Upper Body B + BJJ, Fri Muay Thai then Lower Body Power + Athletic Work, Sat & Sun Rest), plus anything training-related your calendar adds. Every session is a plain checkbox, exactly like prayers: check it once you've been, nothing else to log. Checking one off also completes its task in the planner. On rest days the card is excluded from the overall average so it never drags your score.
 - **🧠 Mind** — Language lesson, one episode of Narcos.
 - **💵 Income** — a full money log (next section).
 
