@@ -1676,7 +1676,12 @@ function trainingToday(){
   // the scheduled lift or recovery session from the weekly program
   try{ const sp=todaySplit(); if(sp&&sp.lift) out.push(["lift",PROGRAM[sp.lift].name]); }catch(e){}
   TRAINING_DETECT.forEach(([key,re,label])=>{ if(evs.some(ev=>re.test(ev.title||""))) out.push([key,label]); });
-  // catch sessions that don't name the discipline, like "Training 6pm"
+  // combat from the weekly plan is always on the board, calendar or not
+  // (Mon Muay Thai, Tue BJJ, Thu BJJ, Fri Muay Thai)
+  try{ const sp=todaySplit();
+    if(sp&&sp.combat){ const key=/bjj/i.test(sp.combat)?"bjj":"muaythai";
+      if(!out.some(([k])=>k===key)) out.push([key,sp.combat+" session"]); } }catch(e){}
+  // catch calendar sessions that don't name the discipline, like "Training 6pm"
   if(evs.some(ev=>TRAINING_GENERIC.test(ev.title||"")&&!TRAINING_DETECT.some(([,re])=>re.test(ev.title||""))))
     out.push(["training","Training session"]);
   return out;
