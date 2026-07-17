@@ -1,4 +1,4 @@
-# S.A.R.A.H. 2.0 — Roadmap
+# SARAH 2.0 — Roadmap
 
 North star: not more pages, a smarter Sarah. An executive assistant that thinks ahead,
 learns patterns automatically, and gets more useful over time. JARVIS identity,
@@ -27,27 +27,24 @@ execute life more effectively?"
   refresh immediately on return. Usage telemetry retention extended to 90 days for
   pattern learning.
 
-## Phase 2 — AI Athletic Performance System ✅ (shipped)
+## Phase 2 — Training ✅ (shipped, simplified July 2026)
 
 Goal: complete athlete (lean muscle, visible abs, explosiveness for football/Muay
-Thai/BJJ, joint durability, proper recovery), not bodybuilding.
+Thai/BJJ, joint durability, proper recovery), not bodybuilding. Tracking is
+deliberately minimal: show up and check the box, exactly like prayers.
 
-- Weekly split planner (Mon Upper A + MT, Tue Lower Strength + BJJ, Wed Recovery &
-  Mobility, Thu Upper B + BJJ, Fri MT, Sat Lower Power/Athletic, Sun Rest); today's
-  session on Today; adapts when combat sessions move.
-- Workout library: every exercise with sets, rep ranges, notes; swap exercises within
-  equivalent movement patterns while keeping progression.
-- Logging: weight × reps per set; auto e1RM, PRs, weekly volume by muscle group.
-- Progressive overload: top-of-range across all sets → recommend next weight.
-- Fatigue management: combined load across lifting + combat + conditioning; warnings
-  ("six hard days in a row") and encouragement when recovery is good.
-- Deload every 6–8 weeks, automatic volume/intensity reduction with reasoning.
-- Athletic dashboard: bodyweight trend, strength progression, consistency, fatigue and
-  recovery estimates, combat/football session counts, volume by muscle group, streaks,
-  measurements, PRs — long-term graphs.
-- Injury prevention tracking (mobility, face pulls, rotator cuff, nordics, tibialis,
-  calves, stretching, foam rolling) with nudges when skipped.
-- AI coaching lines from real data ("pushing improving faster than pulling").
+- Weekly split planner (Mon Upper A + Muay Thai, Tue Lower Strength + BJJ, Wed
+  Recovery & Mobility, Thu Upper B + BJJ, Fri Muay Thai, Sat Lower Power +
+  Athletic Work, Sun Rest); today's sessions on Today as plain checkboxes.
+- Train tab: today's checkboxes, a week view marking every scheduled session as
+  went / missed / upcoming, attendance performance (this week %, last 30 days %,
+  sessions attended, missed-session list), and the full weekly plan with
+  exercise lists as a read-only reference.
+- The same attendance treatment for prayers (Faith) and languages (Mind) on the
+  Today page: Monday-to-Sunday dots plus weekly and 30-day percentages.
+- The earlier set-by-set logging system (e1RM, PRs, overload recommendations,
+  fatigue/recovery scores, deloads, bodyweight) was removed by design in July
+  2026: it was more than the training habit needed.
 
 ## Phase 3 — Finance ✅ (shipped)
 

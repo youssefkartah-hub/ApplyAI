@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>S.A.R.A.H. — Personal Command Center</title>
+<title>SARAH — Personal Command Center</title>
 <style>
   :root{
     --bg:#04070d; --panel:#0a111c; --panel2:#0e1826; --line:#15293c;
@@ -277,6 +277,16 @@
   .lchk.on{color:var(--txt)}
   .lchk.on .lbl{text-decoration:line-through;opacity:.55}
   .lchk input{width:15px;height:15px;accent-color:var(--offer);cursor:pointer}
+  .perfline{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap;
+    border-top:1px solid var(--line);padding-top:7px}
+  .wdots{display:flex;gap:3px}
+  .wd{width:16px;height:16px;border-radius:50%;font-size:9px;display:flex;align-items:center;
+    justify-content:center;border:1px solid var(--line);color:var(--muted)}
+  .wd.hit{background:rgba(52,211,153,.18);border-color:var(--offer);color:var(--offer)}
+  .wd.part{background:rgba(245,158,11,.15);border-color:var(--warn);color:var(--warn)}
+  .wd.miss{background:rgba(239,68,68,.12);border-color:var(--rejected);color:var(--rejected)}
+  .wd.rest{opacity:.35}
+  .wd.off{opacity:.55}
   .overallbar{height:9px;background:rgba(0,0,0,.35);border-radius:5px;overflow:hidden;margin-top:8px}
   .overallbar>span{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#22d3ee,#22c55e);
     transition:width .7s cubic-bezier(.22,1,.36,1)}
@@ -313,7 +323,7 @@
 <div class="wrap">
   <header>
     <div>
-      <h1 id="brand"><span class="reactor"></span> S.A.R.A.H. <span id="navCaret">▾</span></h1>
+      <h1 id="brand"><span class="reactor"></span> SARAH <span id="navCaret">▾</span></h1>
       <div class="sub">Personal command center · <span id="totalSub">0 applications</span> tracked live from Notion · hover the name for your menu</div>
     </div>
     <div class="headright">
@@ -470,19 +480,11 @@
 
     <div class="pane" data-pane="train" hidden>
       <div class="icard" id="trainToday" style="margin-bottom:14px"></div>
-      <div id="liftFormWrap"></div>
       <div class="charts">
-        <div class="icard" id="coachBox"></div>
-        <div class="icard" id="bwBox"></div>
+        <div class="icard" id="trainWeek"></div>
+        <div class="icard" id="trainPerf"></div>
       </div>
-      <div class="charts" style="margin-top:14px">
-        <div class="icard" id="strengthBox"></div>
-        <div class="icard" id="volumeBox"></div>
-      </div>
-      <div class="charts" style="margin-top:14px">
-        <div class="icard" id="prBox"></div>
-        <div class="icard" id="histBox"></div>
-      </div>
+      <div class="icard" id="trainPlan" style="margin-top:14px"></div>
     </div>
 
     <div class="pane" data-pane="kb" hidden>
@@ -1217,8 +1219,13 @@ function computePatterns(){
       say(`Goal "${g.title}" hasn't moved in ${Math.floor((now-last)/day)} days`,
         `Your goal "${esc(g.title)}" hasn't moved in over a week. Either recommit to it today or pause it deliberately.`);
   });
-  // 10. What the training numbers say (from the athletic system)
-  try{ trainInsights().slice(0,2).forEach(x=>say(x,x)); }catch(e){}
+  // 10. Training attendance against the weekly plan
+  try{ const tp=perfPair("training");
+    if(tp.week!=null&&tp.week<60) say("Training attendance is slipping this week",
+      `Training attendance is at ${tp.week}% this week. One session today turns that around.`);
+    else if(tp.month!=null&&tp.month>=85) say("Training attendance is strong",
+      `You've made ${tp.month}% of your training sessions over the last 30 days. That consistency is where results come from.`);
+  }catch(e){}
   // 10b. What the money says (from finance)
   try{ finInsights().slice(0,1).forEach(x=>say(x,x)); }catch(e){}
   // 11. Which resume version converts (needs real volume)
@@ -1305,7 +1312,8 @@ function monthStats(off){
   const apps=jobRows();
   s.apps=apps.filter(a=>a.rawDate&&inM(a.rawDate.slice(0,10))).length;
   s.interviews=apps.filter(a=>(a.status==="Interview Scheduled"||a.status==="Offer Received")&&a.updated&&inT(a.updated)).length;
-  s.liftSessions=(OS.athlete&&OS.athlete.logs||[]).filter(l=>inM(l.date)&&l.key!=="recovery").length;
+  const tDays=Object.keys(OS.daily||{}).filter(inM);
+  s.trainSessions=tDays.reduce((a,d)=>a+["lift","bjj","muaythai","training"].filter(k=>(OS.daily[d]||{})[k]).length,0);
   return s;
 }
 function buildMonthlyReview(){
@@ -1318,11 +1326,11 @@ function buildMonthlyReview(){
     ["Income","$"+a.income.toLocaleString(),"$"+b.income.toLocaleString(),""],
     ["Spending","$"+a.spend.toLocaleString(),"$"+b.spend.toLocaleString(),""],
     ["Applications sent",a.apps,b.apps,""],
-    ["Lifting sessions",a.liftSessions,b.liftSessions,""],
+    ["Training sessions",a.trainSessions,b.trainSessions,""],
   ];
   const deltas=[["tasks",a.tasksDone-b.tasksDone],["deep work",a.focusMins-b.focusMins],
     ["prayers",(a.prayerPct||0)-(b.prayerPct||0)],["income",a.income-b.income],
-    ["applications",a.apps-b.apps],["training",a.liftSessions-b.liftSessions]];
+    ["applications",a.apps-b.apps],["training",a.trainSessions-b.trainSessions]];
   const up=deltas.slice().sort((x,y)=>y[1]-x[1])[0], down=deltas.slice().sort((x,y)=>x[1]-y[1])[0];
   const trends={labels:[],tasks:[],focus:[],income:[]};
   for(let o=5;o>=0;o--){ const s=monthStats(o);
@@ -1335,7 +1343,7 @@ function reviewSpeech(){
     const r=buildMonthlyReview();
     return `Here's your month so far. ${r.a.tasksDone} tasks completed, ${Math.round(r.a.focusMins/60)} hours of deep work, `+
       `$${r.a.income.toLocaleString()} earned against $${r.a.spend.toLocaleString()} spent, ${r.a.apps} applications, `+
-      `and ${r.a.liftSessions} lifting sessions. Biggest improvement over last month: ${r.up[0]}. Weakest area: ${r.down[0]}.`;
+      `and ${r.a.trainSessions} training sessions. Biggest improvement over last month: ${r.up[0]}. Weakest area: ${r.down[0]}.`;
   }
   const r=buildWeeklyReview();
   return `Here's your week. ${r.a.tasksDone} tasks completed, ${Math.round(r.a.focusMins/60)} hours of deep work, `+
@@ -1360,7 +1368,7 @@ function renderReview(){
   if(mode==="month"){
     const r=buildMonthlyReview();
     const spark=(pts,label,fmt)=>`<div class="fn-row"><div class="fn-lbl" style="width:92px">${label}</div>
-      <div style="flex:1">${sparkSvg(pts,pts[pts.length-1]>=pts[0])}</div>
+      <div style="flex:1;height:34px">${sparkSvg(pts,pts[pts.length-1]>=pts[0]).replace("<svg ",'<svg style="width:100%;height:34px;display:block" ')}</div>
       <div class="fn-conv" style="width:64px">${fmt(pts[pts.length-1])}</div></div>`;
     box.innerHTML=`<h3>📊 Your month in review ${toggle}</h3>
       <div class="imetrics" style="margin-top:6px">${r.rows.map(([l,v,p,u])=>
@@ -1453,10 +1461,9 @@ function renderToday(){
   try{ const sp=todaySplit();
     if(sp.rest) brief.push(`Full rest day on the training plan. Recovery is training too.`);
     else{ const bits=[sp.lift?PROGRAM[sp.lift].name:null,sp.combat].filter(Boolean);
-      if(bits.length) brief.push(`Training today: <b>${bits.join(" plus ")}</b>${deloadActive()?" (deload week, keep it light)":""}.`); }
+      if(bits.length) brief.push(`Training today: <b>${bits.join(" plus ")}</b>.`); }
   }catch(e){}
   const appLine=[`You've sent <b>${appsToday}</b> of ${goal} applications today.`];
-  if(silent.length) appLine.push(`<b>${silent.length}</b> compan${silent.length>1?"ies have":"y has"} gone quiet and could use a nudge.`);
   if(interviews.length) appLine.push(`You have <b>${interviews.length}</b> interview${interviews.length>1?"s":""} in play, so make sure you're ready.`);
   brief.push(appLine.join(" "));
   if(overdue.length) brief.push(`<b>${overdue.length}</b> task${overdue.length>1?"s":""} slipped past the deadline. Knock out <b>${esc(overdue[0].title)}</b> first and the rest gets easier.`);
@@ -1774,7 +1781,8 @@ function renderDaily(){
     return `<div class="lifesec ${complete?"complete":""}">
       <div class="lhead"><span class="lname">${sec.icon} ${sec.name}</span><span class="lpct">${pct==null?"":complete?"Done ✓":pct+"%"}</span></div>
       ${pct!=null?`<div class="lifebar"><span style="width:${pct}%"></span></div>`:""}
-      ${body}</div>`;
+      ${body}
+      ${["faith","training","mind"].includes(sec.id)?perfLine(sec.id):""}</div>`;
   }).join("");
   const msg=overall>=100?"Perfect day. Every single category closed out. 💯"
     :overall>=75?"Almost there. Finish strong.":overall>=40?"Good momentum, keep it going."
@@ -1966,13 +1974,13 @@ $("focusStart").addEventListener("click",()=>{
   $("focusStart").disabled=true; $("focusStop").disabled=false;
   clearInterval(fTimer);
   fTimer=setInterval(()=>{ fLeft--; $("timerDisp").textContent=fmtT(Math.max(0,fLeft));
-    document.title=fLeft>0?`${fmtT(fLeft)} · focus`:"S.A.R.A.H.";
+    document.title=fLeft>0?`${fmtT(fLeft)} · focus`:"SARAH";
     if(fLeft<=0){ clearInterval(fTimer); $("focusStart").disabled=false; $("focusStop").disabled=true; focusDone(fTotal); } },1000);
 });
 $("focusStop").addEventListener("click",()=>{
   clearInterval(fTimer); const mins=Math.round((fTotal*60-fLeft)/60);
   $("focusStart").disabled=false; $("focusStop").disabled=true;
-  $("timerDisp").textContent=fmtT(+$("focusLen").value*60); document.title="S.A.R.A.H.";
+  $("timerDisp").textContent=fmtT(+$("focusLen").value*60); document.title="SARAH";
   if(mins>=5) focusDone(mins); else toast("Under 5 minutes, so I didn\'t log it");
 });
 $("themeBtn").addEventListener("click",()=>{
@@ -2069,25 +2077,10 @@ document.addEventListener("focusout",e=>{
 });
 
 /* ==================================================================
-   Athletic Performance System.
-   Goal: complete athlete. Lean muscle, explosiveness for football,
-   Muay Thai and BJJ, joint durability, real recovery. Not bodybuilding.
+   Training. One rule: show up. Every session is a simple checkbox,
+   the same as prayers and daily goals. Performance is attendance:
+   what you trained, what you missed, week and month percentages.
    ================================================================== */
-const EX_GROUP={"Bench Press":"chest","Dumbbell Bench Press":"chest","Machine Chest Press":"chest",
-  "Incline Dumbbell Press":"chest","Weighted Dips":"chest","Weighted Pull-ups":"back","Lat Pulldown":"back",
-  "Chest-Supported Row":"back","Barbell Row":"back","Dumbbell Row":"back","Overhead Press":"shoulders",
-  "Dumbbell Overhead Press":"shoulders","Face Pulls":"prehab","Rotator Cuff Circuit":"prehab",
-  "Nordic Curls":"prehab","Tibialis Raises":"prehab","Copenhagen Plank":"prehab",
-  "Incline Curls":"arms","Hanging Leg Raises":"core","Ab Wheel":"core","Back Squat":"quads",
-  "Front Squat":"quads","Bulgarian Split Squat":"quads","Leg Press":"quads","Romanian Deadlift":"hams",
-  "Hip Thrust":"hams","Trap Bar Deadlift":"hams","Standing Calf Raises":"calves","Box Jumps":"power",
-  "Trap Bar Jump":"power","Power Clean":"power","Broad Jumps":"power","Sled Push":"power","Hill Sprints":"power"};
-const EX_ALTS={"Bench Press":["Dumbbell Bench Press","Machine Chest Press"],
-  "Weighted Pull-ups":["Lat Pulldown"],"Chest-Supported Row":["Barbell Row","Dumbbell Row"],
-  "Barbell Row":["Chest-Supported Row","Dumbbell Row"],"Back Squat":["Front Squat","Leg Press"],
-  "Romanian Deadlift":["Trap Bar Deadlift","Hip Thrust"],"Overhead Press":["Dumbbell Overhead Press"],
-  "Weighted Dips":["Machine Chest Press","Dumbbell Bench Press"],"Trap Bar Jump":["Power Clean","Broad Jumps"],
-  "Sled Push":["Hill Sprints"]};
 const PROGRAM={
   upperA:{name:"Upper Body A",ex:[
     ["Bench Press","4×5–8","Heavy compound. Leave one or two reps in the tank."],
@@ -2104,7 +2097,7 @@ const PROGRAM={
     ["Nordic Curls","3×5–8","Prehab. Hamstring durability."],
     ["Tibialis Raises","3×15–20","Prehab. Shin and ankle resilience."],
     ["Standing Calf Raises","3×10–15","Pause at the stretch."]]},
-  recovery:{name:"Recovery & Mobility",check:true,ex:[
+  recovery:{name:"Recovery & Mobility",ex:[
     ["Foam Rolling","10 min","Quads, back, lats, calves."],
     ["Hip Mobility Flow","10 min","90/90, couch stretch, deep squat holds."],
     ["Shoulder Mobility","10 min","Band work and dead hangs."],
@@ -2118,7 +2111,7 @@ const PROGRAM={
     ["Incline Curls","3×10–12","Elbow health for grappling grips."],
     ["Face Pulls","3×15–20","Every upper day. Non-negotiable."],
     ["Ab Wheel","3×8–12","Brace, don't arch."]]},
-  power:{name:"Lower Power & Athletic",ex:[
+  power:{name:"Lower Body Power + Athletic Work",ex:[
     ["Box Jumps","5×3","Max intent, full recovery between sets."],
     ["Trap Bar Jump","5×3","Explosive triple extension."],
     ["Front Squat","3×3–5","Move the bar fast."],
@@ -2132,291 +2125,149 @@ const SPLIT=[
   {lift:"lowerStrength",combat:"BJJ"},           // Tuesday
   {lift:"recovery"},                             // Wednesday
   {lift:"upperB",combat:"BJJ"},                  // Thursday
-  {combat:"Muay Thai"},                          // Friday
+  {combat:"Muay Thai"},                          // Friday: off lifting, Muay Thai only
   {lift:"power"}];                               // Saturday
-function ath(){ if(!OS.athlete||Array.isArray(OS.athlete)) OS.athlete={logs:[],bodyweight:[],lastDeload:null,swaps:{}};
-  OS.athlete.logs=OS.athlete.logs||[]; OS.athlete.bodyweight=OS.athlete.bodyweight||[]; OS.athlete.swaps=OS.athlete.swaps||{};
-  return OS.athlete; }
-function exName(orig){ return ath().swaps[orig]||orig; }
 function todaySplit(){ return SPLIT[new Date().getDay()]; }
-function liftLoggedToday(){ return ath().logs.some(l=>l.date===todayKey()); }
-function e1rm(w,r){ return r>0?Math.round(w*(1+r/30)):0; }
-function parseTarget(t){ const m=String(t).match(/(\d+)×(\d+)(?:–(\d+))?/); if(!m) return null;
-  return {sets:+m[1],lo:+m[2],hi:+(m[3]||m[2])}; }
-function lastLogOf(name,before){ const logs=ath().logs;
-  for(let i=logs.length-1;i>=0;i--){ if(before&&logs[i].date>=before) continue;
-    const e=(logs[i].ex||[]).find(x=>x.name===name&&x.sets&&x.sets.length);
-    if(e) return {sets:e.sets,date:logs[i].date}; }
-  return null; }
-function isLowerEx(name){ return ["quads","hams","calves","power"].includes(EX_GROUP[name]||""); }
-function overloadRec(orig,target){
-  const name=exName(orig), t=parseTarget(target), last=lastLogOf(name);
-  if(!t||!last) return null;
-  const done=last.sets.filter(s=>+s.w>0&&+s.r>0);
-  if(done.length<t.sets) return null;
-  if(done.every(s=>+s.r>=t.hi)){
-    const w=Math.max(...done.map(s=>+s.w)), inc=isLowerEx(name)?10:5;
-    return {next:w+inc,msg:`All sets hit ${t.hi} last time. Go ${w+inc} lb today.`}; }
-  return null; }
-/* ---- fatigue, recovery, deload ---- */
-function combatOn(dateKey){ const d=OS.daily&&OS.daily[dateKey]||{};
-  return ["bjj","muaythai","training"].some(k=>d[k]); }
-function dkOffset(o){ const d=new Date(Date.now()-o*86400000);
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
-function trainedOn(dateKey){ return combatOn(dateKey)||ath().logs.some(l=>l.date===dateKey&&l.key!=="recovery"); }
-function consecutiveTrainingDays(){ let n=0; for(let o=trainedOn(todayKey())?0:1;o<21;o++){ if(trainedOn(dkOffset(o))) n++; else break; } return n; }
-function weekVolume(offset){ const from=dkOffset(7*(offset+1)), to=dkOffset(7*offset);
-  return ath().logs.filter(l=>l.date>from&&l.date<=to&&l.key!=="recovery")
-    .reduce((a,l)=>a+(l.ex||[]).reduce((x,e)=>x+(e.sets||[]).filter(s=>+s.r>0).length,0),0); }
-function sessions7(){ let n=0; for(let o=0;o<7;o++){ if(combatOn(dkOffset(o))) n++;
-    if(ath().logs.some(l=>l.date===dkOffset(o)&&l.key!=="recovery")) n++; } return n; }
-function recoveryDone(weeksBack){ const target=dkOffset; // any recovery log in that week
-  for(let o=7*weeksBack;o<7*(weeksBack+1);o++) if(ath().logs.some(l=>l.date===dkOffset(o)&&l.key==="recovery")) return true;
-  return false; }
-function recoveryScore(){
-  let s=100;
-  const consec=consecutiveTrainingDays(); if(consec>3) s-=8*(consec-3);
-  const n7=sessions7(); if(n7>6) s-=6*(n7-6);
-  const v0=weekVolume(0),vAvg=(weekVolume(1)+weekVolume(2)+weekVolume(3))/3;
-  if(vAvg>10&&v0>vAvg*1.4) s-=15;
-  if(!recoveryDone(0)&&n7>=4) s-=10;
-  return Math.max(20,Math.min(100,Math.round(s)));
-}
-function weeksSinceDeload(){
-  const a=ath(); const base=a.lastDeload?Date.parse(a.lastDeload):(a.logs[0]?Date.parse(a.logs[0].date):null);
-  return base==null?0:Math.floor((Date.now()-base)/(7*86400000));
-}
-function deloadDue(){ return weeksSinceDeload()>=6&&ath().logs.length>=12&&!deloadActive(); }
-function deloadActive(){ const a=ath();
-  return a.lastDeload&&(Date.now()-Date.parse(a.lastDeload))<7*86400000; }
-/* ---- coaching: rule-based lines from real numbers ---- */
-function bestE1rmInWindow(name,fromOff,toOff){
-  let best=0; ath().logs.forEach(l=>{ if(l.date>dkOffset(fromOff)&&l.date<=dkOffset(toOff)){
-    (l.ex||[]).forEach(e=>{ if(e.name===name)(e.sets||[]).forEach(s=>{ best=Math.max(best,e1rm(+s.w,+s.r)); }); }); } });
-  return best; }
-function trainInsights(){
-  const out=[], a=ath();
-  if(!a.logs.length) return out;
-  ["Back Squat","Bench Press","Weighted Pull-ups","Front Squat"].forEach(n=>{
-    const then=bestE1rmInWindow(n,84,42), now=bestE1rmInWindow(n,42,0);
-    if(then>50&&now>then+5) out.push(`You've added ${now-then} lb to your ${n.toLowerCase()} over the last two months.`);
-    else if(then>50&&now>0&&now<then-10) out.push(`Your ${n.toLowerCase()} has dropped ${then-now} lb from its two-month peak. Watch recovery and sleep.`);
-  });
-  const sets=g=>{ let n=0; a.logs.filter(l=>l.date>dkOffset(14)).forEach(l=>(l.ex||[]).forEach(e=>{
-    if((EX_GROUP[e.name]||"")===g) n+=(e.sets||[]).filter(s=>+s.r>0).length; })); return n; };
-  const push=sets("chest")+sets("shoulders"), pull=sets("back");
-  if(push+pull>20&&push>pull*1.35) out.push("Pushing volume is outrunning pulling. Balance it before your shoulders complain.");
-  if(push+pull>20&&pull>push*1.35) out.push("Pulling volume is well ahead of pushing. Fine for grappling, but keep pressing strength honest.");
-  const prehab=sets("prehab");
-  if(a.logs.filter(l=>l.date>dkOffset(14)).length>=4&&prehab<8)
-    out.push("Prevention work has slipped. Face pulls, nordics and tibialis raises are part of performance, not extras.");
-  if(!recoveryDone(0)&&!recoveryDone(1)) out.push("You've skipped two recovery sessions in a row. Durability is built on the easy days.");
-  if(deloadDue()) out.push(`You've been progressing for ${weeksSinceDeload()} weeks straight. A deload week now will buy the next two months of gains.`);
-  const rs=recoveryScore();
-  if(rs<60) out.push(`Recovery is becoming the limiting factor (score ${rs}). Cut accessory volume this week and protect sleep.`);
-  const consec=consecutiveTrainingDays();
-  if(consec>=6) out.push(`You've trained ${consec} days in a row. One full rest day will make you sharper, not softer.`);
+function dkFor(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+function dkOffset(o){ return dkFor(new Date(Date.now()-o*86400000)); }
+function splitFor(dk){ return SPLIT[new Date(dk+"T12:00:00").getDay()]; }
+function scheduledFor(dk){
+  const sp=splitFor(dk), out=[];
+  if(sp.lift) out.push(["lift",PROGRAM[sp.lift].name]);
+  if(sp.combat) out.push([/bjj/i.test(sp.combat)?"bjj":"muaythai",sp.combat]);
   return out;
 }
-/* ---- logging UI ---- */
-let liftDraft=null;
-function startLift(){
-  const sp=todaySplit(); if(!sp||!sp.lift) return;
-  const p=PROGRAM[sp.lift], dl=deloadActive();
-  liftDraft={key:sp.lift,name:p.name,check:!!p.check,deload:dl,ex:p.ex.map(([n,t,note])=>{
-    const name=exName(n), last=lastLogOf(name), tgt=parseTarget(t);
-    const nsets=liftDraftSets(tgt,dl);
-    return {orig:n,name,target:t,note,done:false,
-      last:last?last.sets.map(s=>`${s.w}×${s.r}`).join(", "):null,
-      rec:dl?null:overloadRec(n,t),
-      sets:Array.from({length:nsets},(_,i)=>({w:last&&last.sets[i]?last.sets[i].w:"",r:""}))};
-  })};
-  renderTrain(); }
-function liftDraftSets(tgt,dl){ const n=tgt?tgt.sets:3; return dl?Math.max(2,n-1):n; }
-function saveLift(){
-  if(!liftDraft) return;
-  const ex=liftDraft.ex.map((e,i)=>{
-    if(liftDraft.check) return {name:e.name,done:!!document.querySelector(`[data-exdone="${i}"]`)?.checked};
-    const sets=[...document.querySelectorAll(`[data-w^="${i}-"]`)].map((el,j)=>({
-      w:parseFloat(el.value)||0, r:parseFloat(document.querySelector(`[data-r="${i}-${j}"]`)?.value)||0
-    })).filter(s=>s.w>0||s.r>0);
-    return {name:e.name,target:e.target,sets};
-  }).filter(e=>e.done||(e.sets&&e.sets.length));
-  if(!ex.length){ toast("Nothing logged yet. Enter at least one set."); return; }
-  // PR detection before pushing
-  const prs=[];
-  ex.forEach(e=>(e.sets||[]).forEach(s=>{ const v=e1rm(s.w,s.r);
-    if(v>0&&v>bestE1rmInWindow(e.name,3650,0)) prs.push(`${e.name} ${v} lb e1RM`); }));
-  ath().logs.push({id:uid(),date:todayKey(),key:liftDraft.key,name:liftDraft.name,deload:liftDraft.deload,ex});
-  if(ath().logs.length>1000) ath().logs=ath().logs.slice(-1000);
-  checkDaily("lift");
-  liftDraft=null; osSave(); renderOS();
-  toast(prs.length?`Session saved. New PR: ${prs[0]} 🏆`:"Session saved. Strong work.");
+/* ---- attendance scoring, shared by training, prayers and languages ---- */
+const WEEK_NAMES=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+function weekDates(){ // Monday through Sunday of the current week
+  const now=new Date(), off=(now.getDay()+6)%7;
+  return Array.from({length:7},(_,i)=>dkFor(new Date(now.getFullYear(),now.getMonth(),now.getDate()-off+i)));
+}
+function dayScoreFor(kind,dk){
+  const d=(OS.daily||{})[dk]||{};
+  if(kind==="training"){
+    const sch=scheduledFor(dk); if(!sch.length) return null; // rest day, nothing owed
+    let done=sch.filter(([k])=>d[k]).length;
+    // a generic "training" check (from the calendar catch-all) still counts as showing up
+    if(d.training&&done<sch.length) done++;
+    return {done,total:sch.length};
+  }
+  const items=kind==="faith"?PRAYERS:mindItems();
+  if(!items.length) return null;
+  return {done:items.filter(([k])=>d[k]).length,total:items.length};
+}
+function attendPct(kind,days){
+  let done=0,total=0;
+  days.forEach(dk=>{ const s=dayScoreFor(kind,dk); if(s){ done+=s.done; total+=s.total; } });
+  return total?Math.round(100*done/total):null;
+}
+function perfPair(kind){
+  const tk=todayKey();
+  return {week:attendPct(kind,weekDates().filter(dk=>dk<=tk)),
+          month:attendPct(kind,Array.from({length:30},(_,i)=>dkOffset(i)))};
+}
+function weekDots(kind){
+  const tk=todayKey();
+  return `<div class="wdots">`+weekDates().map((dk,i)=>{
+    const s=dayScoreFor(kind,dk);
+    let cls;
+    if(dk>tk) cls="off";
+    else if(!s) cls="rest";
+    else if(s.done>=s.total) cls="hit";
+    else if(s.done>0) cls="part";
+    else cls=dk===tk?"off":"miss";
+    return `<span class="wd ${cls}" title="${WEEK_NAMES[i]}">${WEEK_NAMES[i][0]}</span>`;
+  }).join("")+`</div>`;
+}
+function perfLine(kind){
+  const p=perfPair(kind), f=v=>v==null?"—":v+"%";
+  return `<div class="perfline">${weekDots(kind)}<span class="muted" style="font-size:11px">This week <b>${f(p.week)}</b> · 30 days <b>${f(p.month)}</b></span></div>`;
+}
+function missedThisWeek(){
+  const tk=todayKey(), out=[];
+  weekDates().forEach((dk,i)=>{ if(dk>=tk) return;
+    const d=(OS.daily||{})[dk]||{};
+    let credit=d.training?1:0; // generic check covers one unnamed session
+    scheduledFor(dk).forEach(([k,label])=>{
+      if(d[k]) return;
+      if(credit>0){ credit--; return; }
+      out.push(`${WEEK_NAMES[i]} — ${label}`);
+    });
+  });
+  return out;
 }
 function trainingTodaySpeech(){
   const sp=todaySplit();
   if(sp.rest) return "Today is a full rest day. Recovery is part of the program.";
-  const bits=[sp.lift?PROGRAM[sp.lift].name:null,sp.combat].filter(Boolean);
-  let s=`Today is ${bits.join(" plus ")}.`;
-  if(sp.lift&&!liftLoggedToday()){
-    const first=PROGRAM[sp.lift].ex[0], rec=overloadRec(first[0],first[1]);
-    if(rec) s+=` ${exName(first[0])}: ${rec.msg}`;
-  }
-  if(deloadActive()) s+=" You're on a deload week, so keep everything deliberately light.";
+  const d=dayChecks(), items=trainingToday();
+  const done=items.filter(([k])=>d[k]).map(([,n])=>n), left=items.filter(([k])=>!d[k]).map(([,n])=>n);
+  let s=`Today is ${items.map(([,n])=>n).join(" plus ")}.`;
+  if(done.length) s+=` You've already checked off ${done.join(" and ")}.`;
+  s+=left.length?` Still to do: ${left.join(" and ")}.`:" Everything is checked off. Great day.";
   return s;
 }
 /* ---- Train tab rendering ---- */
 function renderTrain(){
   if(!$("trainToday")) return;
-  const sp=todaySplit(), a=ath(), dl=deloadActive();
-  const calCombat=todayCalEvents().filter(ev=>TRAINING_DETECT.some(([,re])=>re.test(ev.title||""))||TRAINING_GENERIC.test(ev.title||""));
-  let head;
-  if(sp.rest) head=`<div class="ht" style="font-size:18px;font-weight:700">Complete rest</div>
-    <div class="muted" style="font-size:13px;margin-top:4px">Nothing scheduled. Eat, sleep, and let the week's work land.</div>`;
-  else{
-    const parts=[sp.lift?`<b>${PROGRAM[sp.lift].name}</b>`:null,sp.combat?`<b>${sp.combat}</b>`:null].filter(Boolean);
-    let note="";
-    if(sp.combat&&!calCombat.length) note=`<div class="usage-note">${sp.combat} isn't on your calendar today. If it's off, this becomes a lifting-only day, so you can push a little harder.</div>`;
-    if(!sp.combat&&calCombat.length) note=`<div class="usage-note">Your calendar shows ${esc(calCombat[0].title)} today on top of the plan. Trim accessory volume to compensate.</div>`;
-    head=`<div class="ht" style="font-size:18px;font-weight:700">${parts.join(" + ")}</div>
-      ${dl?`<div style="color:var(--warn);font-size:12px;margin-top:3px">Deload week: one set fewer per exercise, weights about 10% down. Fatigue is the target, not effort.</div>`:""}
-      ${note}
-      <div style="margin-top:10px">${sp.lift?(liftLoggedToday()
-        ?`<span class="pill2" style="color:var(--offer)">✓ Session logged today</span>`
-        :`<button class="primary" data-start-lift>Start ${PROGRAM[sp.lift].check?"checklist":"logging"}</button>`):""}
-      ${deloadDue()?`<button data-start-deload style="margin-left:8px">Start deload week</button>`:""}</div>`;
-  }
-  const rs=recoveryScore();
-  $("trainToday").innerHTML=`<h3>🏋️ Today's session
-    <span style="float:right;text-transform:none;letter-spacing:0;font-size:12px">Recovery
-      <b style="color:${rs>=75?"var(--offer)":rs>=55?"var(--warn)":"var(--rejected)"}">${rs}</b> / 100</span></h3>${head}
-    <div class="usage-note">Week ${weeksSinceDeload()+1} since last deload · ${sessions7()} sessions in the last 7 days · ${consecutiveTrainingDays()} day streak</div>`;
-  renderLiftForm(); renderCoach(); renderBw(); renderStrength(); renderVolume(); renderPRs(); renderHist();
-}
-function renderLiftForm(){
-  const box=$("liftFormWrap"); if(!box) return;
-  if(!liftDraft){ box.innerHTML=""; return; }
-  const d=liftDraft;
-  box.innerHTML=`<div class="icard" id="liftForm" style="margin-bottom:14px"><h3>${d.name}${d.deload?" · deload":""}
-      <button class="primary" data-save-lift style="float:right;text-transform:none;letter-spacing:0">Save session</button>
-      <button data-cancel-lift style="float:right;margin-right:8px;text-transform:none;letter-spacing:0">Cancel</button></h3>
-    ${d.ex.map((e,i)=>{
-      const alts=EX_ALTS[e.orig];
-      const title=alts?`<select data-swap="${i}" style="font-weight:600;padding:3px 6px">
-          ${[e.orig,...alts].map(o=>`<option ${exName(e.orig)===o?"selected":""}>${o}</option>`).join("")}</select>`
-        :`<b>${e.name}</b>`;
-      if(d.check) return `<div class="trow"><input type="checkbox" data-exdone="${i}"/>
-        <div class="tt">${e.name} <span class="muted">· ${e.target}</span><div class="sub">${e.note}</div></div></div>`;
-      return `<div style="border-bottom:1px solid var(--line);padding:9px 2px">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-          <span>${title} <span class="muted">${e.target}</span></span>
-          ${e.rec?`<span class="pill2" style="color:var(--offer)">↑ ${e.rec.msg}</span>`:""}
-        </div>
-        <div class="muted" style="font-size:12px;margin:2px 0 6px">${e.note}${e.last?` · Last: ${e.last}`:" · First time, find a working weight"}</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          ${e.sets.map((s,j)=>`<span style="display:inline-flex;gap:3px;align-items:center">
-            <input data-w="${i}-${j}" type="number" inputmode="decimal" placeholder="lb" value="${s.w}" style="width:64px;padding:5px 6px"/>
-            <span class="muted">×</span>
-            <input data-r="${i}-${j}" type="number" inputmode="numeric" placeholder="reps" style="width:56px;padding:5px 6px"/></span>`).join("")}
-          <button class="rowbtn" data-add-set="${i}">+ set</button>
-        </div></div>`;
-    }).join("")}</div>`;
-}
-function renderCoach(){
-  const lines=trainInsights();
-  $("coachBox").innerHTML=`<h3>🎯 Coach's read</h3>`+(lines.length
-    ?`<ul class="obs">${lines.map(l=>`<li>${l}</li>`).join("")}</ul>`
-    :`<p class="muted">Log a few sessions and I'll start telling you what the numbers say.</p>`);
-}
-function renderBw(){
-  const a=ath(), bw=a.bodyweight;
-  const last=bw[bw.length-1];
-  const wkAgo=bw.filter(b=>b.date<=dkOffset(7)).slice(-1)[0];
-  const delta=last&&wkAgo?Math.round((last.lbs-wkAgo.lbs)*10)/10:null;
-  $("bwBox").innerHTML=`<h3>⚖️ Bodyweight</h3>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <div class="mp" style="font-size:22px;font-weight:700">${last?last.lbs+" lb":"—"}</div>
-      ${delta!=null?`<span class="mc ${delta<=0?"up":"down"}" style="font-size:12px;font-weight:600">${delta>0?"+":""}${delta} lb this week</span>`:""}
-      <span style="display:inline-flex;gap:6px;margin-left:auto">
-        <input data-bw-in type="number" inputmode="decimal" placeholder="Today's weight" style="width:120px;padding:6px 8px"/>
-        <button class="rowbtn" data-bw-add>Log</button></span></div>
-    ${bw.length>=3?sparkSvg(bw.slice(-30).map(b=>b.lbs),(bw[bw.length-1].lbs<=bw[0].lbs)):""}
-    <div class="usage-note">Lean and explosive beats heavy. The trend matters more than any single morning.</div>`;
-}
-function renderStrength(){
-  const lifts=["Bench Press","Back Squat","Weighted Pull-ups","Front Squat","Overhead Press","Weighted Dips"];
-  const rows=lifts.map(n=>{
-    const pts=[]; ath().logs.forEach(l=>{ const e=(l.ex||[]).find(x=>x.name===n);
-      if(e){ const b=Math.max(0,...(e.sets||[]).map(s=>e1rm(+s.w,+s.r))); if(b>0) pts.push(b); } });
-    if(pts.length<2) return "";
-    const cur=pts[pts.length-1];
-    return `<div class="fn-row"><div class="fn-lbl" style="width:130px">${n}</div>
-      <div style="flex:1">${sparkSvg(pts.slice(-20),pts[pts.length-1]>=pts[0])}</div>
-      <div class="fn-conv" style="width:70px">${cur} e1RM</div></div>`;
+  const sp=todaySplit(), d=dayChecks(), items=trainingToday(), tk=todayKey();
+  const head=sp.rest&&!items.length
+    ?`<div class="ht" style="font-size:18px;font-weight:700">Rest day</div>
+      <div class="muted" style="font-size:13px;margin-top:4px">Nothing scheduled. Eat, sleep, and let the week's work land.</div>`
+    :items.map(([k,n])=>lifeChk(k,n,d[k])).join("")+
+      `<div class="usage-note">Check a session off once you've been. Same as prayers, no logging.</div>`;
+  $("trainToday").innerHTML=`<h3>🏋️ Today's training</h3>${head}`;
+
+  // the week, day by day: went, missed, or still ahead
+  const rows=weekDates().map((dk,i)=>{
+    const sch=scheduledFor(dk), dd=(OS.daily||{})[dk]||{};
+    let credit=(dd.training&&sch.some(([k])=>!dd[k]))?1:0;
+    const cells=sch.length?sch.map(([k,label])=>{
+      let mark,color;
+      if(dd[k]){ mark="✓"; color="var(--offer)"; }
+      else if(credit>0&&dk<=tk){ credit--; mark="✓"; color="var(--offer)"; }
+      else if(dk<tk){ mark="✗"; color="var(--rejected)"; }
+      else if(dk===tk){ mark="•"; color="var(--warn)"; }
+      else { mark="•"; color="var(--muted)"; }
+      return `<span class="pill2" style="color:${color}">${mark} ${esc(label)}</span>`;
+    }).join(""):`<span class="muted" style="font-size:12px">Rest</span>`;
+    return `<div class="trow" style="${dk===tk?"background:rgba(34,211,238,.05);border-radius:8px":""}">
+      <div class="tt" style="flex:0 0 96px">${WEEK_NAMES[i]}${dk===tk?' <span class="muted" style="font-size:10px">today</span>':""}</div>
+      <div style="flex:1;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">${cells}</div></div>`;
   }).join("");
-  $("strengthBox").innerHTML=`<h3>📈 Strength progression</h3>`+(rows||`<p class="muted">Estimated one-rep maxes chart here once you've logged the same lift twice.</p>`);
+  $("trainWeek").innerHTML=`<h3>📅 This week</h3>${rows}
+    <div class="usage-note">✓ went · ✗ missed · • not yet. Rest days don't count against you.</div>`;
+
+  // performance: week %, 30-day %, sessions attended, and what slipped
+  const p=perfPair("training");
+  const done30=Array.from({length:30},(_,i)=>dkOffset(i))
+    .reduce((a,dk)=>{ const s=dayScoreFor("training",dk); return a+(s?s.done:0); },0);
+  const missed=missedThisWeek();
+  const col=v=>v==null?"var(--muted)":v>=80?"var(--offer)":v>=50?"var(--warn)":"var(--rejected)";
+  $("trainPerf").innerHTML=`<h3>📈 Performance</h3>
+    <div class="imetrics" style="margin-top:6px">
+      <div class="imetric"><div class="n" style="color:${col(p.week)}">${p.week==null?"—":p.week+"%"}</div><div class="l">this week</div></div>
+      <div class="imetric"><div class="n" style="color:${col(p.month)}">${p.month==null?"—":p.month+"%"}</div><div class="l">last 30 days</div></div>
+      <div class="imetric"><div class="n">${done30}</div><div class="l">sessions in 30 days</div></div>
+    </div>
+    ${missed.length
+      ?`<div class="areahead" style="margin-top:10px">Missed this week</div>`+
+        missed.map(m=>`<div class="trow"><div class="tt" style="color:var(--rejected)">✗ ${esc(m)}</div></div>`).join("")
+      :`<div class="usage-note" style="margin-top:10px">Nothing missed this week. Keep showing up.</div>`}`;
+
+  // the plan itself, read-only reference
+  const order=[1,2,3,4,5,6,0], todayDow=new Date().getDay();
+  $("trainPlan").innerHTML=`<h3>🗓️ The weekly plan</h3>`+order.map((g,idx)=>{
+    const spg=SPLIT[g], isToday=g===todayDow;
+    const label=spg.rest?"Rest":[spg.lift?PROGRAM[spg.lift].name:null,spg.combat].filter(Boolean).join(" + ");
+    const head=`<b style="${isToday?"color:var(--accent)":""}">${WEEK_NAMES[idx]}</b> <span class="muted">—</span> ${label}${isToday?' <span class="muted" style="font-size:10px">today</span>':""}`;
+    const ex=spg.lift?PROGRAM[spg.lift].ex:null;
+    return ex?`<details ${isToday?"open":""} style="border-bottom:1px solid var(--line);padding:7px 2px">
+        <summary style="cursor:pointer">${head}</summary>
+        ${ex.map(([n,t,note])=>`<div class="trow"><div class="tt">${n} <span class="muted">· ${t}</span><div class="sub">${note}</div></div></div>`).join("")}
+      </details>`
+      :`<div style="border-bottom:1px solid var(--line);padding:9px 2px">${head}</div>`;
+  }).join("")+`<div class="usage-note">Reference only. The one thing worth tracking is whether you showed up.</div>`;
 }
-function renderVolume(){
-  const groups=["chest","back","shoulders","quads","hams","arms","core","calves","power","prehab"];
-  const tgt={chest:10,back:12,shoulders:6,quads:8,hams:8,arms:4,core:6,calves:4,power:8,prehab:9};
-  const counts={};
-  ath().logs.filter(l=>l.date>dkOffset(7)).forEach(l=>(l.ex||[]).forEach(e=>{
-    const g=EX_GROUP[e.name]; if(g) counts[g]=(counts[g]||0)+(e.sets||[]).filter(s=>+s.r>0).length; }));
-  const max=Math.max(6,...Object.values(counts));
-  $("volumeBox").innerHTML=`<h3>🧱 Weekly volume by muscle group</h3>`+
-    groups.filter(g=>counts[g]||tgt[g]).map(g=>{
-      const v=counts[g]||0, below=v<(tgt[g]||0)*0.6;
-      return `<div class="fn-row"><div class="fn-lbl" style="width:84px;text-transform:capitalize">${g}</div>
-        <div class="fn-bar"><span style="width:${Math.round(100*v/max)}%${below?";background:linear-gradient(90deg,#f59e0b,#ef4444)":""}"></span><i>${v}</i></div>
-        <div class="fn-conv" style="width:52px">/ ${tgt[g]} sets</div></div>`; }).join("")+
-    `<div class="usage-note">Hard sets in the last 7 days against weekly targets. Amber means under target.</div>`;
-}
-function renderPRs(){
-  const best={};
-  ath().logs.forEach(l=>(l.ex||[]).forEach(e=>(e.sets||[]).forEach(s=>{
-    const v=e1rm(+s.w,+s.r); if(v>(best[e.name]?best[e.name].v:0)) best[e.name]={v,w:s.w,r:s.r,date:l.date}; })));
-  const rows=Object.entries(best).sort((a,b)=>b[1].v-a[1].v).slice(0,8);
-  $("prBox").innerHTML=`<h3>🏆 Personal records</h3>`+(rows.length
-    ?rows.map(([n,p])=>`<div class="trow"><div class="tt">${n}<div class="sub">${p.w} lb × ${p.r} on ${p.date}</div></div>
-       <span class="pill2">${p.v} e1RM</span></div>`).join("")
-    :`<p class="muted">Your best estimated one-rep maxes will collect here.</p>`);
-}
-function renderHist(){
-  const logs=ath().logs.slice(-8).reverse();
-  $("histBox").innerHTML=`<h3>📓 Recent sessions</h3>`+(logs.length
-    ?logs.map(l=>`<div class="trow"><div class="tt">${l.name}${l.deload?' <span class="muted">· deload</span>':""}
-        <div class="sub">${l.date} · ${(l.ex||[]).length} exercises · ${(l.ex||[]).reduce((a,e)=>a+(e.sets||[]).length,0)} sets</div></div></div>`).join("")
-    :`<p class="muted">No sessions logged yet. Today is a good day to start.</p>`);
-}
-document.addEventListener("click",e=>{
-  if(e.target.closest("[data-start-lift]")){ startLift(); return; }
-  if(e.target.closest("[data-cancel-lift]")){ liftDraft=null; renderTrain(); return; }
-  if(e.target.closest("[data-save-lift]")){ saveLift(); return; }
-  if(e.target.closest("[data-start-deload]")){ ath().lastDeload=todayKey(); osSave(); renderTrain();
-    toast("Deload week started. Lighter on purpose."); return; }
-  const as=e.target.closest("[data-add-set]"); if(as&&liftDraft){
-    const i=+as.dataset.addSet;
-    const vals=[...document.querySelectorAll(`[data-w^="${i}-"]`)].map((el,j)=>({w:el.value,r:document.querySelector(`[data-r="${i}-${j}"]`)?.value||""}));
-    liftDraft.ex[i].sets=vals.concat([{w:vals.length?vals[vals.length-1].w:"",r:""}]);
-    renderLiftForm(); return; }
-  const bw=e.target.closest("[data-bw-add]"); if(bw){
-    const inp=document.querySelector("[data-bw-in]"), v=parseFloat(inp&&inp.value);
-    if(!v||v<50){ toast("Enter a weight first"); return; }
-    ath().bodyweight=ath().bodyweight.filter(b=>b.date!==todayKey());
-    ath().bodyweight.push({date:todayKey(),lbs:Math.round(v*10)/10});
-    if(ath().bodyweight.length>730) ath().bodyweight=ath().bodyweight.slice(-730);
-    osSave(); renderTrain(); toast("Bodyweight logged."); return; }
-});
-document.addEventListener("change",e=>{
-  const sw=e.target.closest("[data-swap]"); if(sw&&liftDraft){
-    const i=+sw.dataset.swap, orig=liftDraft.ex[i].orig;
-    if(sw.value===orig) delete ath().swaps[orig]; else ath().swaps[orig]=sw.value;
-    osSave();
-    const name=exName(orig), last=lastLogOf(name);
-    Object.assign(liftDraft.ex[i],{name,last:last?last.sets.map(s=>`${s.w}×${s.r}`).join(", "):null,
-      rec:liftDraft.deload?null:overloadRec(orig,liftDraft.ex[i].target)});
-    renderLiftForm(); }
-});
 
 /* ==================================================================
    Knowledge base: upload documents, ask questions about them.
@@ -2842,11 +2693,6 @@ function localIntent(t){
   }
   const acted=[];
   // money first so "made 40" doesn't get eaten by other rules
-  const bwm=l.match(/(?:weigh(?:ed)?(?: in at)?|bodyweight(?: is)?)\D{0,6}?(\d{2,3}(?:\.\d+)?)/);
-  if(bwm){ const v=Math.round(parseFloat(bwm[1])*10)/10;
-    ath().bodyweight=ath().bodyweight.filter(b=>b.date!==todayKey());
-    ath().bodyweight.push({date:todayKey(),lbs:v});
-    acted.push(`bodyweight at ${v} pounds`); }
   const sm=l.match(/spent\D{0,10}?(\d+(?:\.\d+)?)(?:\s*(?:dollars?|bucks?))?(?:\s*(?:on|for)\s+([a-z ]{2,30}))?/);
   if(sm){ const cat=guessCat(sm[2]||"");
     logExpense(sm[1],cat,sm[2]||"");
@@ -2890,11 +2736,11 @@ function voiceState(){
     learnedPatterns:computePatterns().facts.slice(0,8),
     finance:{monthIncome:incomeInMonth(monthKey(0)),monthSpend:spendInMonth(monthKey(0)),
       netWorth:netWorth(),notes:finInsights()},
-    trainingPlan:(()=>{try{const sp=todaySplit();
+    trainingPlan:(()=>{try{const sp=todaySplit(), dd=dayChecks(), p=perfPair("training");
       return {today:sp.rest?"rest day":[sp.lift?PROGRAM[sp.lift].name:null,sp.combat].filter(Boolean).join(" + "),
-        liftLogged:liftLoggedToday(),recoveryScore:recoveryScore(),
-        weeksSinceDeload:weeksSinceDeload(),deloadActive:deloadActive(),
-        coachNotes:trainInsights().slice(0,3)};}catch(e){return null;}})() };
+        checkedOffToday:trainingToday().filter(([k])=>dd[k]).map(([,n])=>n),
+        attendanceWeekPct:p.week, attendance30DayPct:p.month,
+        missedThisWeek:missedThisWeek()};}catch(e){return null;}})() };
 }
 const AI_ACTIONS={
   check_prayer:a=>{ if(PRAYERS.some(([k])=>k===a.key)) checkDaily(a.key); },
@@ -2971,7 +2817,7 @@ $("micBtn").addEventListener("click",()=>{
 (function bootSeq(){
   const el=$("boot");
   if(sessionStorage.getItem("sarahBooted")){ el.remove(); return; }
-  const lines=["S.A.R.A.H.","Your applications","Your calendar","Your priorities","Your markets",
+  const lines=["SARAH","Your applications","Your calendar","Your priorities","Your markets",
     `${new Date().getHours()<12?"Good morning":new Date().getHours()<18?"Good afternoon":"Good evening"}, Youssef. Let's get after it.`];
   const log=$("bootlog"); let i=0;
   const next=()=>{ if(i>=lines.length){

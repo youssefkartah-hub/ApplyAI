@@ -1,4 +1,4 @@
-# S.A.R.A.H. — Personal Command Center
+# SARAH — Personal Command Center
 
 **The complete guide to everything the app does.**
 
@@ -32,7 +32,7 @@ The whole interface is a JARVIS-style HUD: deep navy background with a faint cya
 
 ## 3. The header
 
-- **S.A.R.A.H. ▾** — hover over the name (or click it) and the navigation menu slides down: Assistant (Today, Goals, Planner, Inbox), Career (Job Insights, Applications, Calendar, Interviews·CRM), Life (Projects, Habits, Focus). It closes when you pick a destination, move away, or press Escape.
+- **SARAH ▾** — hover over the name (or click it) and the navigation menu slides down: Assistant (Today, Goals, Planner, Inbox), Career (Job Insights, Applications, Calendar, Interviews·CRM), Life (Projects, Habits, Focus). It closes when you pick a destination, move away, or press Escape.
 - **Ask anything bar** (top right) — one input for everything. See section 5.
 - **Live clock**, a **connection dot** (green = Notion feed live, red = offline), **day %** (your overall daily completion), when data last refreshed, an auto-refresh interval picker (30s / 60s / 5m), **Refresh**, **Export CSV**, **🎤 Talk**, and the theme toggle.
 
@@ -102,7 +102,7 @@ A big overall percentage with an animated bar, plus a motivating line that chang
 Four life-area cards, each with its own percentage and progress bar, glowing green when complete:
 
 - **🕌 Faith** — the five daily prayers (Fajr, Dhuhr, Asr, Maghrib, Isha) around a **circular tracker split into five equal segments**. Each prayer you check fills one segment with a cyan glow and adds 20% to the ring's center number; at five the whole ring turns green. Checked items get a satisfying strikethrough.
-- **🥋 Training** — synced from your calendar automatically. If BJJ or Muay Thai is scheduled today it appears here by name; sessions titled generically ("Training", "Sparring", "Grappling", "Wrestling", "Kickboxing", "Boxing") appear as "Training session". Checking one off also completes its task in the planner. On days with nothing scheduled the card says "Rest day. No sessions on the calendar." and is excluded from the overall average so it never drags your score.
+- **🥋 Training** — today's sessions from the weekly plan (Mon Upper Body A + Muay Thai, Tue Lower Body Strength + BJJ, Wed Recovery & Mobility, Thu Upper Body B + BJJ, Fri Muay Thai, Sat Lower Body Power + Athletic Work, Sun Rest), plus anything training-related your calendar adds. Every session is a plain checkbox, exactly like prayers: check it once you've been, nothing else to log. Checking one off also completes its task in the planner. On rest days the card is excluded from the overall average so it never drags your score.
 - **🧠 Mind** — Language lesson, one episode of Narcos.
 - **💵 Income** — a full money log (next section).
 
@@ -276,10 +276,12 @@ Since this guide was written, five major phases shipped (full detail in ROADMAP.
   zero setup — and weaves two observations into every daily rundown.
 - **Weekly and monthly reviews**: automatic on Sundays or on demand ("review" /
   "monthly review"), with deltas, six-month trend graphs, suggestions, and voice.
-- **🏋️ Train**: a complete athletic performance system — weekly split with combat
-  integration, full workout library with prehab, session logging, automatic
-  progressive-overload recommendations, e1RM and PR tracking, fatigue and
-  recovery scoring, deload management, and an athlete dashboard.
+- **🏋️ Train**: attendance, not logging. Today's sessions as simple checkboxes,
+  a week view showing every scheduled session as went / missed / upcoming, a
+  performance card with this-week and 30-day attendance percentages plus a list
+  of missed sessions, and the full weekly plan with the exercise lists as a
+  read-only reference. Faith and Mind get the same treatment on the Today page:
+  week dots plus weekly and 30-day percentages for prayers and languages.
 - **💰 Finance**: expenses with budgets, savings goals, net worth with
   live-valued crypto holdings, six-month trends; markets mirrored in; voice
   expense logging.
