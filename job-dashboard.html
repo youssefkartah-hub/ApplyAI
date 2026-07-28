@@ -490,6 +490,7 @@
         <div class="icard" id="trainWeek"></div>
         <div class="icard" id="trainPerf"></div>
       </div>
+      <div class="icard" id="bjjPath" style="margin-top:14px"></div>
       <div class="icard" id="trainPlan" style="margin-top:14px"></div>
     </div>
 
@@ -1886,7 +1887,7 @@ function renderGoals(){
 let heroItem=null, currentTab="today";
 const PANE_R={today:[renderToday],inbox:[renderAreas,renderInbox],planner:[renderPlanner],
   habits:[renderHabits],focus:[renderFocusStats],crm:[renderCRM],
-  proj:[renderProjects],goals:[renderGoals],train:[renderTrain],fin:[renderFin],kb:[renderKB]};
+  proj:[renderProjects],goals:[renderGoals],train:[renderTrain,renderBjj],fin:[renderFin],kb:[renderKB]};
 function renderOS(){ try{
   // Only rebuild what's on screen: the Today pane rerenders when visible,
   // other tabs get their own renderers, and the header day % stays fresh
@@ -2321,6 +2322,83 @@ document.addEventListener("click",e=>{
     const d=OS.daily[dk]=OS.daily[dk]||{};
     if(d[key]) delete d[key]; else d[key]=true;
     osSave(); renderOS(); return; }
+});
+
+/* ==================================================================
+   BJJ skill path: a 10-week journey, one skill a week. Each skill is a
+   set of concrete techniques you check off once you can hit them live
+   in rolling. Master all ten and you're done. Local, checkable, like
+   everything else.
+   ================================================================== */
+const BJJ_SKILLS=[
+  {name:"Closed Guard",icon:"🛡️",items:["Submission #1","Submission #2","Submission #3","Closed guard sweep"]},
+  {name:"Guard Passing",icon:"🚪",items:["Guard pass #1","Guard pass #2"]},
+  {name:"Side Control",icon:"⬇️",items:["Submission #1","Submission #2","Submission #3","Side control escape #1","Side control escape #2"]},
+  {name:"Mount",icon:"🔝",items:["Submission #1","Submission #2","Submission #3","Mount escape #1","Mount escape #2"]},
+  {name:"Back Control",icon:"🎒",items:["Submission #1","Submission #2","Submission #3","Rear mount escape #1","Rear mount escape #2"]},
+  {name:"Open Guard",icon:"🕸️",items:["Open guard sweep","Butterfly guard sweep"]},
+  {name:"Half Guard",icon:"🌓",items:["Half guard sweep #1","Half guard sweep #2"]},
+  {name:"Standing",icon:"🤼",items:["Takedown #1","Takedown #2","Judo throw"]},
+  {name:"Straight Ankle Locks",icon:"🦶",items:["Straight ankle lock #1","Straight ankle lock #2"]},
+  {name:"Submission Defenses",icon:"🧱",items:["Armbar defense","Kimura defense","Triangle defense","Guillotine defense"]},
+];
+function bjj(){ if(!OS.bjj||typeof OS.bjj!=="object"||Array.isArray(OS.bjj)) OS.bjj={done:{},start:null};
+  OS.bjj.done=OS.bjj.done||{}; return OS.bjj; }
+function bjjSkillDone(si){ return BJJ_SKILLS[si].items.every((_,ii)=>bjj().done[si+"-"+ii]); }
+function bjjMastered(){ return BJJ_SKILLS.filter((_,si)=>bjjSkillDone(si)).length; }
+function bjjWeek(){ const s=bjj().start; if(!s) return null;
+  const days=Math.floor((Date.now()-new Date(s+"T00:00:00"))/86400000);
+  return Math.min(10,Math.max(1,Math.floor(days/7)+1)); }
+function bjjChk(si,ii,label,on){
+  return `<label class="lchk ${on?"on":""}"><input type="checkbox" data-bjj="${si}-${ii}" ${on?"checked":""}/>
+    <span class="lbl">${esc(label)}</span></label>`;
+}
+function renderBjj(){
+  const box=$("bjjPath"); if(!box) return;
+  const b=bjj();
+  const total=BJJ_SKILLS.reduce((a,s)=>a+s.items.length,0);
+  const done=BJJ_SKILLS.reduce((a,s,si)=>a+s.items.filter((_,ii)=>b.done[si+"-"+ii]).length,0);
+  const pct=Math.round(100*done/total), mastered=bjjMastered();
+  const focus=BJJ_SKILLS.findIndex((_,si)=>!bjjSkillDone(si)); // -1 once all mastered
+  const week=bjjWeek();
+  const rows=BJJ_SKILLS.map((s,si)=>{
+    const dn=s.items.filter((_,ii)=>b.done[si+"-"+ii]).length, tot=s.items.length, ok=dn>=tot;
+    const isFocus=si===focus;
+    return `<details ${isFocus?"open":""} style="border-bottom:1px solid var(--line);padding:8px 2px">
+      <summary style="cursor:pointer;display:flex;align-items:center;gap:8px">
+        <span style="flex:0 0 58px;font-size:11px;color:var(--muted)">Week ${si+1}</span>
+        <span style="flex:1"><b style="${isFocus?"color:var(--accent)":ok?"color:var(--offer)":""}">${s.icon} ${s.name}</b>${isFocus&&!ok?' <span class="muted" style="font-size:10px">focus</span>':""}</span>
+        <span class="pill2" style="${ok?"color:var(--offer)":""}">${ok?"✓ mastered":dn+" / "+tot}</span>
+      </summary>
+      <div style="margin:6px 0 2px 58px">${s.items.map((it,ii)=>bjjChk(si,ii,it,b.done[si+"-"+ii])).join("")}</div>
+    </details>`;
+  }).join("");
+  const intro=mastered===10
+    ?`<div class="usage-note" style="color:var(--offer)">All ten skills mastered. That's the whole path. 🏆</div>`
+    :week==null
+      ?`<div style="margin-top:8px"><button class="primary" data-bjj-start style="text-transform:none;letter-spacing:0">Start the 10-week path</button>
+         <span class="muted" style="font-size:12px;margin-left:6px">One skill a week. Check a technique off once you can land it live in rolling.</span></div>`
+      :focus>=0
+        ?`<div class="usage-note">This week's focus: <b>${BJJ_SKILLS[focus].icon} ${BJJ_SKILLS[focus].name}</b>. Check a technique off once you can hit it live in rolling.</div>`:"";
+  box.innerHTML=`<h3>🥋 BJJ skill path${week!=null?`<button class="rowbtn" data-bjj-reset style="float:right;text-transform:none;letter-spacing:0">Reset</button>`:""}</h3>
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:2px 0 6px">
+      <div style="font-size:22px;font-weight:700;color:${mastered===10?"var(--offer)":"var(--txt)"}">${pct}%</div>
+      <div class="muted" style="font-size:12px">${done} of ${total} techniques · <b>${mastered}</b> of 10 skills mastered${week!=null?` · week ${week} of 10`:""}</div>
+    </div>
+    <div class="overallbar"><span style="width:${pct}%"></span></div>
+    ${intro}
+    <div style="margin-top:6px">${rows}</div>`;
+}
+document.addEventListener("click",e=>{
+  const bx=e.target.closest("input[data-bjj]"); if(bx){
+    const b=bjj(); if(bx.checked) b.done[bx.dataset.bjj]=true; else delete b.done[bx.dataset.bjj];
+    if(!b.start&&bx.checked) b.start=todayKey();
+    osSave(); renderOS(); return; }
+  if(e.target.closest("[data-bjj-start]")){ bjj().start=todayKey(); osSave(); renderOS();
+    toast("10-week BJJ path started. One skill a week. 🥋"); return; }
+  if(e.target.closest("[data-bjj-reset]")){
+    if(confirm("Reset your BJJ skill path? This clears every checked technique.")){
+      OS.bjj={done:{},start:null}; osSave(); renderOS(); } return; }
 });
 
 /* ==================================================================

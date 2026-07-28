@@ -282,6 +282,12 @@ Since this guide was written, five major phases shipped (full detail in ROADMAP.
   of missed sessions, and the full weekly plan with the exercise lists as a
   read-only reference. Faith and Mind get the same treatment on the Today page:
   week dots plus weekly and 30-day percentages for prayers and languages.
+  The Train tab also carries a **BJJ skill path**: a 10-week curriculum, one
+  skill a week (Closed Guard through Submission Defenses), each with its
+  techniques as checkboxes you tick once you can hit them live. A skill turns
+  "mastered" when all its techniques are checked; the card tracks overall
+  percentage, skills mastered out of ten, the current week, and highlights the
+  next unmastered skill as this week's focus.
 - **💰 Finance**: expenses with budgets, savings goals, net worth with
   live-valued crypto holdings, six-month trends; markets mirrored in; voice
   expense logging.

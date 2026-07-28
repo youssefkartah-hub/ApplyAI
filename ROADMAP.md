@@ -42,6 +42,12 @@ deliberately minimal: show up and check the box, exactly like prayers.
   exercise lists as a read-only reference.
 - The same attendance treatment for prayers (Faith) and languages (Mind) on the
   Today page: Monday-to-Sunday dots plus weekly and 30-day percentages.
+- BJJ skill path: a 10-week curriculum on the Train tab, one skill per week
+  (Closed Guard, Guard Passing, Side Control, Mount, Back Control, Open Guard,
+  Half Guard, Standing, Straight Ankle Locks, Submission Defenses), each with its
+  concrete techniques as checkboxes. A skill is "mastered" when all its
+  techniques are checked; the card tracks overall percentage, skills mastered,
+  and the current week, auto-highlighting the next unmastered skill as the focus.
 - The earlier set-by-set logging system (e1RM, PRs, overload recommendations,
   fatigue/recovery scores, deloads, bodyweight) was removed by design in July
   2026: it was more than the training habit needed.
