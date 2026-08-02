@@ -141,3 +141,9 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Ride-code dispenser — contains live promo codes, must NEVER be committed
+lyft-dispenser.html
+*-dispenser.html
+codes*.txt
+codes*.json

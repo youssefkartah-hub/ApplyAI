@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FF00BF">
+<meta name="robots" content="noindex, nofollow">
+<title>Your ride code</title>
+<style>
+  :root{
+    --bg:#0d0a0c; --panel:#181419; --panel2:#211b22; --line:#332a34;
+    --txt:#f7f5f7; --muted:#a89fa8;
+    --green:#1fb877; --brand:#ff00bf;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; min-height:100%}
+  body{
+    background:var(--bg); color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex; flex-direction:column; min-height:100vh;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  button{font-family:inherit; cursor:pointer; border:none}
+  .hidden{display:none !important}
+
+  main{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:30px 22px; gap:18px}
+  .kicker{color:var(--muted); font-size:14px}
+  h1{margin:0; font-size:23px; font-weight:800}
+
+  .code{
+    font-family:ui-monospace,Menlo,Consolas,monospace; font-size:clamp(30px,9vw,44px); font-weight:800;
+    letter-spacing:4px; background:var(--panel); border:2px solid var(--brand);
+    padding:22px 16px; border-radius:18px; width:100%; max-width:420px; word-break:break-all;
+    cursor:pointer; user-select:all; -webkit-user-select:all; transition:background .15s, border-color .15s, transform .08s;
+  }
+  .code:active{transform:scale(.985)}
+  .code.copied{background:rgba(31,184,119,.16); border-color:var(--green)}
+  .taphint{font-size:12.5px; color:var(--muted); margin-top:-8px}
+
+  .btn{
+    width:100%; max-width:420px; padding:17px 18px; border-radius:16px; font-size:16.5px; font-weight:700;
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    background:var(--panel2); color:var(--txt); border:1px solid var(--line);
+    text-decoration:none; transition:transform .06s, filter .15s;
+  }
+  .btn:active{transform:scale(.98)}
+  .btn.go{background:var(--green); color:#03110b; border:none}
+
+  .steps{
+    text-align:left; max-width:420px; width:100%; color:var(--muted); font-size:14px; line-height:1.6;
+    background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:16px 18px;
+  }
+  .steps ol{margin:8px 0 0; padding-left:20px}
+  .steps b{color:var(--txt)}
+
+  .empty{max-width:420px; color:var(--muted); font-size:15px; line-height:1.6}
+  .empty h1{margin-bottom:10px}
+
+  footer{padding:18px; text-align:center; color:var(--muted); font-size:12px}
+  .toast{
+    position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
+    background:var(--green); color:#03110b; font-weight:700; padding:12px 20px; border-radius:12px;
+    opacity:0; transition:.25s; z-index:20; box-shadow:0 10px 30px rgba(0,0,0,.45); font-size:15px;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<main>
+  <!-- Shown only when a code arrives in the scanned link -->
+  <div id="has" class="hidden">
+    <div class="kicker">🎁 Your free Lyft ride code</div>
+    <h1 style="margin-top:10px">Here's your code</h1>
+    <div class="code" id="code" style="margin-top:18px">—</div>
+    <div class="taphint" style="margin-top:10px">Tap the code to copy it</div>
+    <button class="btn go" id="copyBtn" style="margin-top:16px">Copy code</button>
+    <a class="btn" href="https://www.lyft.com/" target="_blank" rel="noopener" style="margin-top:10px">Open Lyft</a>
+    <div class="steps" style="margin-top:18px">
+      How to use it:
+      <ol>
+        <li>Tap <b>Copy code</b> above.</li>
+        <li>Open the <b>Lyft</b> app and tap your <b>profile</b> (top-left).</li>
+        <li>Tap <b>Promos</b> → <b>Add promo code</b>.</li>
+        <li><b>Paste</b> the code and tap <b>Add</b>. Enjoy your ride! 🚗</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Shown to anyone who opens this page directly -->
+  <div id="none" class="empty hidden">
+    <h1>Nothing to show here</h1>
+    <p>This page only displays a ride code when you scan the QR code shown to you in person.</p>
+    <p>Please ask a member of staff to show you the QR code.</p>
+  </div>
+</main>
+
+<footer>One code per customer • Codes are single-use</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+/* This page contains NO codes. It only displays the single code handed to it in
+   the link fragment (#c=...). Fragments are never sent to the web server, so the
+   code stays on the customer's own phone. */
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+
+  function toast(msg){
+    var t=$("toast"); t.textContent=msg; t.classList.add("show");
+    clearTimeout(toast._t); toast._t=setTimeout(function(){ t.classList.remove("show"); },1700);
+  }
+  function legacyCopy(text){
+    var ta=document.createElement("textarea"); ta.value=text;
+    ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try{ document.execCommand("copy"); }catch(e){}
+    document.body.removeChild(ta);
+  }
+  function markCopied(){
+    $("code").classList.add("copied");
+    $("copyBtn").textContent="✓ Copied — paste it in the Lyft app";
+  }
+  function copy(text){
+    function done(){ toast("Code copied!"); markCopied(); }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, function(){ legacyCopy(text); done(); });
+    } else { legacyCopy(text); done(); }
+  }
+
+  var m = (location.hash||"").match(/[#&]c=([A-Za-z0-9]{4,20})/);
+  if(!m){ $("none").classList.remove("hidden"); return; }
+
+  var code = m[1].toUpperCase();
+  $("has").classList.remove("hidden");
+  $("code").textContent = code;
+  document.title = "Your code: " + code;
+
+  $("copyBtn").addEventListener("click", function(){ copy(code); });
+  $("code").addEventListener("click", function(){ copy(code); });
+
+  // Best-effort: put it on the clipboard the moment the page opens.
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(code).then(markCopied, function(){});
+  }
+})();
+</script>
+</body>
+</html>
