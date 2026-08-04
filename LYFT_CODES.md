@@ -5,21 +5,40 @@ Two pieces, deliberately kept apart so the codes never reach the internet.
 | | What it is | Where it lives | Contains codes? |
 |---|---|---|---|
 | **Claim page** (`index.html`) | What the customer's phone opens after scanning | Public, on GitHub Pages | **No — none at all** |
-| **Dispenser** (`lyft-dispenser.html`) | The staff tool that hands out codes | Your counter device only | Yes — all 1,400 |
+| **Dispenser** (`lyft-dispenser.html`) | The staff tool that hands out codes | Your counter device only | **No — you load your own** |
+| **Your code list** | The codes themselves | This browser's local storage, on your device | Yes |
+
+Neither file that changes hands ever contains a code. You load your list once,
+on your own machine, and it is stored only in that browser — never uploaded,
+never written back into the file. So the dispenser file is safe to copy, email
+or back up.
+
+## Loading your codes (first run)
+
+Open the dispenser and it asks for your list. Either:
+
+- **Choose my code list…** — pick a `.txt` or `.csv` file, or
+- **Or paste the codes instead** — paste them straight in.
+
+One code per line is ideal, but numbered lists (`1  EXAMPLE01`), commas, blank
+lines and stray spaces are all handled. Duplicates are removed automatically.
+
+To swap in a new batch later: **Manage → ⬆ Load / replace code list**. Codes
+already given out stay marked as given.
 
 ## Why this is safe
 
 The claim page holds no code list. It only displays the single code passed to it
-in the link fragment (`…/#c=ABC123XYZ`). Two properties make that safe:
+in the link fragment (`…/#c=EXAMPLE01`). Two properties make that safe:
 
 - **Anyone opening the page directly sees nothing** — just "Nothing to show here".
   There is no list to scrape, because the list isn't there.
 - **Fragments are never sent to the web server.** Everything after `#` stays in
   the visitor's own browser, so GitHub never receives or logs a single code.
 
-The dispenser file — the one with all 1,400 codes — is never committed to this
-repository and is never hosted. It sits on your device. `.gitignore` blocks it
-from being committed by accident.
+The dispenser file contains no codes either — your list lives only in that
+browser's local storage. Neither file is ever committed to this repository, and
+`.gitignore` plus a pre-commit hook block a code from being committed by accident.
 
 ## Day-to-day use
 
@@ -82,6 +101,11 @@ If that browser's data is cleared, you lose track and could hand out duplicates.
 
 **Once a week, tap Manage → Backup all** and keep the file. Restoring takes seconds.
 
+The backup contains your code list as well as the used history, so restoring on a
+new device brings everything back in one step. **Treat that backup file as
+sensitive** — unlike the dispenser, it does contain your codes. Keep it off
+shared drives and out of email.
+
 ## Manage panel
 
 - Search any code, see whether it's Available or Given
@@ -92,5 +116,6 @@ If that browser's data is cleared, you lose track and could hand out duplicates.
 
 ## If you get a new batch of codes
 
-Send the new list over and it gets rebuilt into a fresh dispenser file. Nothing
-about the public claim page changes.
+Do it yourself, and don't send the list anywhere: **Manage → ⬆ Load / replace
+code list**, pick the new file, done. Codes already given out stay marked as
+given, and nothing about the public claim page changes.
