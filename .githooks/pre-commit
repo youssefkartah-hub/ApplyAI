@@ -1,0 +1,13 @@
+#!/bin/sh
+# Refuse any commit that contains a 9-character promo-code-shaped token in a
+# context that looks like real code data. Cheap insurance against leaking a
+# live code into this public repository again.
+if git diff --cached -U0 | grep -E '^\+' | grep -qE '\b[0-9][A-Z0-9]{8}\b|\b[A-Z]{1}[A-Z0-9]{8}\b' ; then
+  if git diff --cached -U0 | grep -E '^\+' | grep -vE 'EXAMPLE|PLACEHOLDER' | grep -qE '\b[0-9A-Z]{9}\b'; then
+    echo "pre-commit: a 9-character code-shaped token is being committed."
+    echo "If it is a real promo code, remove it. If it is a placeholder, name it EXAMPLE*."
+    git diff --cached -U0 | grep -E '^\+' | grep -oE '\b[0-9A-Z]{9}\b' | sort -u | head
+    exit 1
+  fi
+fi
+exit 0

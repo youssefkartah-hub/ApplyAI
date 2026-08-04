@@ -40,10 +40,40 @@ even when the dispenser device has no internet.
 Tap **⬇ Download used codes (spreadsheet)**. You get a CSV of every code handed
 out:
 
-| # | Code | Date claimed | Time claimed | Timestamp (ISO) |
+| # | Code | Date claimed | Time claimed | Timestamp (UTC) |
 |---|------|--------------|--------------|-----------------|
+| 1 | EXAMPLE01 | 08/02/2026 | 4:11:20 AM EDT | 2026-08-02T08:11:20.247Z |
+
+(`EXAMPLE01` is a placeholder — never put a real code in this file.)
 
 It opens directly in Excel, Google Sheets, or Numbers.
+
+**Times are recorded in State College, PA local time** (`America/New_York`), not
+in whatever time zone the dispensing device happens to be set to — so the record
+is right even if you use a travel laptop or a tablet with a wrong clock. Daylight
+saving is handled automatically, and the time column is labelled **EDT** or
+**EST** so a row is never ambiguous. The final column keeps the exact UTC instant
+for precise sorting.
+
+## Usage calendar (📅 in the top bar)
+
+A month grid showing how many codes went out each day, with a **Week** column on
+the right for weekly totals and a running total for the month at the top.
+
+- **Tap any highlighted day** — see every code given out that day with its exact
+  time.
+- **Tap a week total** — same, for that whole week.
+- **Tap the month box** — same, for the whole month.
+- Each of those views has a **⬇ Download these** button, so you can pull a
+  spreadsheet for just that day, week, or month.
+- **‹ ›** move between months; **Today** jumps back to the current one.
+
+Days are grouped by **State College (Eastern) date**, so a code handed out at
+11:30pm files under that day — not the next one, which is what would happen if
+the app used UTC.
+
+Nothing extra is being recorded for this: the calendar reads the same history the
+spreadsheet does, so it already covers every code you have ever dispensed.
 
 ## Back up your used-codes list
 
