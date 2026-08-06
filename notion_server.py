@@ -25,6 +25,7 @@ import socketserver
 import sys
 import os
 import json
+import re
 import time
 import webbrowser
 import threading
@@ -762,6 +763,389 @@ def resume_delete():
     return {"ok": True}
 
 
+# ---- Local analyzer: no API key, no network, no cost. -------------
+# Rules and keyword matching rather than judgement: it reads the posting
+# for stated requirements, checks them against the resume, and scores the
+# overlap. Honest about what it cannot know.
+SKILLS = {
+    "software": {
+        "Python": ["python"], "MATLAB": ["matlab"], "Simulink": ["simulink"],
+        "C++": [r"c\+\+"], "C#": [r"c#"], "Java": ["java"], "JavaScript": ["javascript", "js"],
+        "SQL": ["sql"], "R": [r"\br\b"], "LabVIEW": ["labview"], "Git": ["git", "github", "version control"],
+        "Linux": ["linux", "unix"], "Excel": ["excel", "spreadsheet"], "VBA": ["vba"],
+        "SolidWorks": ["solidworks", "solid works"], "CATIA": ["catia"], "Siemens NX": [r"\bnx\b", "siemens nx", "unigraphics"],
+        "Creo": ["creo", "pro/e", "proe"], "AutoCAD": ["autocad"], "Fusion 360": ["fusion 360"],
+        "Inventor": ["autodesk inventor"], "ANSYS": ["ansys"], "ANSYS Fluent": ["fluent"],
+        "Abaqus": ["abaqus"], "NASTRAN": ["nastran", "patran"], "COMSOL": ["comsol"],
+        "Star-CCM+": [r"star-?ccm", "starccm"], "OpenFOAM": ["openfoam"], "Femap": ["femap"],
+        "Altair HyperMesh": ["hypermesh", "hyperworks"], "Blender": ["blender"],
+        "Tableau": ["tableau"], "Power BI": ["power bi", "powerbi"],
+        "AWS": [r"\baws\b", "amazon web services"], "Docker": ["docker"], "MS Project": ["ms project", "microsoft project"],
+        "Jira": ["jira"], "TensorFlow": ["tensorflow"], "PyTorch": ["pytorch"],
+        "NumPy": ["numpy"], "Pandas": ["pandas"], "SciPy": ["scipy"],
+    },
+    "skill": {
+        "CFD": ["cfd", "computational fluid dynamics"],
+        "FEA": ["fea", "finite element", "finite element analysis"],
+        "CAD": [r"\bcad\b", "computer aided design", "computer-aided design"],
+        "GD&T": [r"gd&t", "geometric dimensioning"],
+        "DFM": ["design for manufactur", r"\bdfm\b"],
+        "Thermodynamics": ["thermodynamic"], "Heat Transfer": ["heat transfer"],
+        "Fluid Mechanics": ["fluid mechanic", "fluid dynamics"],
+        "Aerodynamics": ["aerodynamic"], "Propulsion": ["propulsion", "rocket engine", "jet engine"],
+        "Structural Analysis": ["structural analysis", "structural design", "stress analysis",
+                                "structural simulation", "structural", "load case"],
+        "Composites": ["composite", "layup", "laminate"],
+        "Controls": ["control system", "control theory", "guidance", "gnc"],
+        "Orbital Mechanics": ["orbital mechanic", "astrodynamic"],
+        "Machining": ["machining", "cnc", "lathe", "mill"],
+        "3D Printing": ["3d print", "additive manufactur"],
+        "Welding": ["welding", "brazing"],
+        "Testing": ["test campaign", "hot fire", "wind tunnel", "static fire", "test stand"],
+        "Data Analysis": ["data analysis", "data reduction", "data analytics",
+                          "post processing", "postprocessing", "reduced the data"],
+        "Machine Learning": ["machine learning", "deep learning", "neural network"],
+        "Systems Engineering": ["systems engineering", "requirements management"],
+        "Project Management": ["project management", "scrum", "agile"],
+        "Technical Writing": ["technical writing", "documentation", "technical report"],
+        "Root Cause Analysis": ["root cause", "failure analysis", "fmea"],
+        "Tolerance Analysis": ["tolerance analysis", "tolerance stack"],
+        "Instrumentation": ["instrument", "sensor", "data acquisition", "daq"],
+        "Simulation": ["simulation", "modeling and simulation"],
+        "Manufacturing": ["manufacturing", "production", "assembly"],
+        "Quality": ["quality assurance", "quality control", "as9100", "iso 9001"],
+        "Leadership": ["lead a team", "leadership", "mentor", "team lead"],
+        "Communication": ["communication skills", "present findings", "cross-functional"],
+    },
+}
+STOP = set("""a an and are as at be but by for from has have how in into is it its of on or that the their there these this to was were what when where which who will with your you our we us they them than then so such can may might must should would could each other both all any more most some only own same too very just also about above after again against because been before being below between during few further here having he she his her him do does did doing down out off over under once no not nor own s t don now able across upon within without per via etc ability strong excellent good work working works job role position candidate applicant experience experienced years year including include includes required require requires requirement requirements preferred prefer qualifications skills knowledge understanding familiar familiarity proficiency proficient demonstrated ideal plus must-have nice-to-have responsibilities duties team teams company opportunity opportunities employment employee employer applicants candidates apply application""".split())
+
+
+def _txt(s):
+    return re.sub(r"\s+", " ", (s or "").lower())
+
+
+def _find(text, aliases):
+    for a in aliases:
+        if a.startswith(("\\", "(", "[")) or "\\" in a:   # already a pattern
+            try:
+                if re.search(a, text):
+                    return True
+            except re.error:
+                pass
+            continue
+        # single words match their inflections: "instrument" also finds "instrumented"
+        pat = r"\b" + re.escape(a) + (r"\w*" if (len(a) >= 5 and " " not in a) else r"\b")
+        if re.search(pat, text):
+            return True
+    return False
+
+
+# using a tool proves the discipline, even when the resume never names it
+IMPLIES = {
+    "CAD": ["SolidWorks", "CATIA", "Siemens NX", "Creo", "AutoCAD", "Fusion 360", "Inventor"],
+    "CFD": ["ANSYS Fluent", "Star-CCM+", "OpenFOAM"],
+    "FEA": ["Abaqus", "NASTRAN", "Femap", "Altair HyperMesh"],
+    "Simulation": ["ANSYS", "Abaqus", "COMSOL", "Simulink", "OpenFOAM"],
+    "Data Analysis": ["Pandas", "NumPy", "SciPy", "Tableau", "Power BI"],
+    "Machine Learning": ["TensorFlow", "PyTorch"],
+}
+
+
+def _skills_in(text):
+    found = {"software": set(), "skill": set()}
+    for kind, table in SKILLS.items():
+        for name, aliases in table.items():
+            if _find(text, aliases):
+                found[kind].add(name)
+    for discipline, tools in IMPLIES.items():
+        if discipline not in found["skill"] and any(t in found["software"] for t in tools):
+            found["skill"].add(discipline)
+    return found
+
+
+def _terms(text, top=40):
+    """Significant single words and two-word phrases in the posting."""
+    words = [w.strip(".,;:()/-") for w in re.findall(r"[a-z][a-z0-9+#/.-]{2,}", text)]
+    words = [w for w in words if w and w not in STOP and len(w) > 2 and not w.endswith(".")]
+    counts = {}
+    for w in words:
+        counts[w] = counts.get(w, 0) + 1
+    for i in range(len(words) - 1):
+        bg = f"{words[i]} {words[i+1]}"
+        counts[bg] = counts.get(bg, 0) + 1.6      # phrases carry more meaning
+    ranked = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
+    return [t for t, c in ranked if c >= 2][:top]
+
+
+def _req_lines(jd_raw):
+    """Requirement-looking lines from the posting."""
+    out = []
+    for ln in re.split(r"[\n\r]+|(?<=[.;])\s{2,}", jd_raw):
+        s = ln.strip(" \t•-–*·●o")
+        if not (18 <= len(s) <= 200):
+            continue
+        low = s.lower()
+        if re.search(r"experience (with|in)|ability to|knowledge of|proficien|familiar|"
+                     r"degree in|pursuing|coursework|background in|skills? in|"
+                     r"understanding of|demonstrated|required|must have|hands.on", low):
+            out.append(s)
+    seen, uniq = set(), []
+    for s in out:
+        k = s.lower()[:60]
+        if k not in seen:
+            seen.add(k)
+            uniq.append(s)
+    return uniq[:7]
+
+
+def _best_resume_line(req, resume_raw):
+    """Which resume line best answers this requirement, and how strongly."""
+    rt = [w for w in re.findall(r"[a-z][a-z0-9+#/.-]{2,}", req.lower()) if w not in STOP]
+    if not rt:
+        return None, 0.0
+    best, score = None, 0.0
+    for ln in re.split(r"[\n\r]+", resume_raw):
+        s = ln.strip(" \t•-–*·●")
+        if len(s) < 15:
+            continue
+        lw = set(re.findall(r"[a-z][a-z0-9+#/.-]{2,}", s.lower()))
+        hit = sum(1 for w in set(rt) if w in lw)
+        sc = hit / max(1, len(set(rt)))
+        if sc > score:
+            best, score = s, sc
+    return best, score
+
+
+def _gpa(text):
+    m = re.search(r"gpa[^0-9]{0,15}(\d\.\d{1,2})", text) or re.search(r"(\d\.\d{1,2})\s*/\s*4\.0", text)
+    return float(m.group(1)) if m else None
+
+
+def local_analyze(resume_raw, jd_raw):
+    r, j = _txt(resume_raw), _txt(jd_raw)
+    rs, js = _skills_in(r), _skills_in(j)
+    want_sw, want_sk = js["software"], js["skill"]
+    have_sw, have_sk = rs["software"], rs["skill"]
+    strong = sorted((want_sw & have_sw) | (want_sk & have_sk))
+    missing = sorted((want_sw - have_sw) | (want_sk - have_sk))
+    extra = sorted((have_sw | have_sk) - (want_sw | want_sk))[:8]
+
+    # ---- eligibility, read straight from the posting's own words ----
+    eli, flags = [], []
+    def add(status, item, detail):
+        eli.append({"status": status, "item": item, "detail": detail})
+
+    jd_gpa, r_gpa = _gpa(j), _gpa(r)
+    if jd_gpa:
+        if r_gpa is None:
+            add("concern", "GPA requirement",
+                f"The posting asks for a {jd_gpa} GPA. No GPA was found on your resume, so add it if it clears the bar.")
+        elif r_gpa >= jd_gpa:
+            add("match", "GPA requirement", f"Your {r_gpa} clears the {jd_gpa} minimum stated in the posting.")
+        else:
+            add("dealbreaker", "GPA requirement", f"The posting requires {jd_gpa}; your resume shows {r_gpa}.")
+            flags.append(f"Minimum GPA of {jd_gpa} stated, above the {r_gpa} on your resume.")
+    else:
+        add("match", "GPA requirement", "No GPA requirement stated in the posting.")
+
+    if re.search(r"u\.?s\.? citizen|citizenship (is )?required|must be a citizen", j):
+        add("dealbreaker", "Citizenship", "The posting states U.S. citizenship is required.")
+        flags.append("Requires U.S. citizenship.")
+    if re.search(r"security clearance|secret clearance|ts/sci|dod clearance", j):
+        add("dealbreaker" if re.search(r"active .{0,20}clearance|clearance (is )?required", j) else "concern",
+            "Security clearance", "The posting mentions a security clearance.")
+        flags.append("Security clearance required or expected.")
+    if re.search(r"(not|unable to|cannot|will not|do not) .{0,20}sponsor|no sponsorship|without sponsorship", j):
+        add("dealbreaker", "Visa sponsorship", "The posting states sponsorship is not available.")
+        flags.append("No visa sponsorship available.")
+    elif re.search(r"sponsor", j):
+        add("match", "Visa sponsorship", "The posting mentions sponsorship, so it appears to be available.")
+    else:
+        add("concern", "Visa sponsorship",
+            "Sponsorship is not mentioned either way. Confirm before you spend time on this one.")
+
+    if re.search(r"authorized to work|work authorization", j):
+        add("concern", "Work authorization", "The posting asks for existing work authorization. Check that you qualify.")
+    for deg, label in ((r"ph\.?d|doctorate", "PhD"), (r"master'?s|\bm\.?s\.?\b", "Master's"),
+                       (r"bachelor'?s|\bb\.?s\.?\b|undergraduate", "Bachelor's")):
+        if re.search(deg, j):
+            have = bool(re.search(deg, r)) or (label == "Bachelor's" and re.search(r"bachelor|b\.?s\.?|university|college", r))
+            if label in ("PhD", "Master's") and re.search(r"preferred|a plus|nice to have", j):
+                add("concern", f"{label} preferred", f"A {label} is preferred but not required.")
+                flags.append(f"{label} preferred.")
+            else:
+                add("match" if have else "concern", f"{label} degree",
+                    f"The posting asks for a {label}." + ("" if have else " Your resume does not clearly show one."))
+            break
+    yrs = re.search(r"(\d+)\+?\s*(?:-\s*\d+\s*)?years?(?: of)?(?: relevant| related| professional)? experience", j)
+    if yrs:
+        n = int(yrs.group(1))
+        if n >= 3:
+            add("concern", "Years of experience",
+                f"The posting asks for {n}+ years of experience, which is a stretch for a student profile.")
+            flags.append(f"{n}+ years of experience requested.")
+        else:
+            add("match", "Years of experience", f"{n} year(s) of experience requested, which is realistic.")
+    for pat, msg in ((r"(\d{1,2})\s?%\s?travel|travel up to", "Travel is expected in this role."),
+                     (r"weekend|nights and weekends|shift work", "Weekend or shift work mentioned."),
+                     (r"on-?site|in office|relocat", "On-site or relocation expectations."),
+                     (r"unpaid", "The posting mentions an unpaid arrangement.")):
+        if re.search(pat, j):
+            flags.append(msg)
+
+    dealbreakers = [e for e in eli if e["status"] == "dealbreaker"]
+    concerns = [e for e in eli if e["status"] == "concern"]
+
+    # ---- ATS keywords ----
+    terms = _terms(j)
+    matched_kw = [t for t in terms if _find(r, [t])]
+    missing_kw = [t for t in terms if t not in matched_kw][:12]
+    ats_cov = len(matched_kw) / max(1, len(terms))
+
+    rewrites = []
+    for generic, better in (("simulation", "Finite Element Analysis (FEA)"), ("modeling", "CAD modeling"),
+                            ("testing", "test campaign execution"), ("analysis", "structural analysis"),
+                            ("programming", "Python scripting"), ("designed", "designed and validated")):
+        if generic in r and any(generic in m for m in missing_kw + list(missing)):
+            continue
+    for m in list(missing)[:4]:
+        rewrites.append({"current": f"(not currently on your resume) {m}",
+                         "suggested": f"Name {m} explicitly if you have genuinely used it"})
+    for kw in missing_kw[:3]:
+        rewrites.append({"current": f"(missing keyword) {kw}",
+                         "suggested": f"Work the exact phrase \"{kw}\" into a bullet where it is true"})
+
+    # ---- experience, requirement by requirement ----
+    experience = []
+    reqs = _req_lines(jd_raw)
+    xp_scores = []
+    for req in reqs:
+        line, sc = _best_resume_line(req, resume_raw)
+        xp_scores.append(sc)
+        strength = ("Excellent Match" if sc >= .5 else "Good Match" if sc >= .32
+                    else "Partial Match" if sc >= .16 else "No Match")
+        experience.append({"jobWants": req[:160],
+                           "resumeMatch": (line[:160] if line and sc >= .16 else "Nothing on your resume clearly answers this"),
+                           "strength": strength})
+    xp_ratio = (sum(xp_scores) / len(xp_scores)) if xp_scores else 0.0
+
+    # ---- scores ----
+    sk_ratio = (len(strong) / max(1, len(want_sw | want_sk))) if (want_sw | want_sk) else 0.6
+    sw_ratio = (len(want_sw & have_sw) / max(1, len(want_sw))) if want_sw else 0.7
+    eli_score = max(0, 25 - 12 * len(dealbreakers) - 2 * len(concerns))
+    proj_ratio = 0.75 if re.search(r"project", r) else 0.4
+    scores = [
+        ("Eligibility", eli_score, 25,
+         "Read from the requirements stated in the posting."),
+        ("Skills Match", round(20 * sk_ratio), 20,
+         f"{len(strong)} of {len(want_sw | want_sk) or '—'} named skills appear on your resume."),
+        ("Experience Match", round(15 * min(1, xp_ratio * 2.2)), 15,
+         f"{sum(1 for s in xp_scores if s >= .32)} of {len(reqs) or 0} stated requirements have a clear answer."),
+        ("Software Match", round(10 * sw_ratio), 10,
+         f"{len(want_sw & have_sw)} of {len(want_sw) or '—'} tools named in the posting are on your resume."),
+        ("Project Match", round(10 * min(1, proj_ratio + sk_ratio * .3)), 10,
+         "Based on your project section and its overlap with the posting."),
+        ("ATS Keyword Match", round(10 * ats_cov), 10,
+         f"{len(matched_kw)} of {len(terms)} frequent terms from the posting appear on your resume."),
+        ("Career Value", 3, 5, "Not assessable without knowing the company. Judge this one yourself."),
+        ("Interview Probability", 0, 5, ""),
+    ]
+    base = sum(s for _, s, _, _ in scores[:6])
+    ip = 4 if (base >= 60 and not dealbreakers) else 3 if base >= 45 else 2 if base >= 30 else 1
+    scores[7] = ("Interview Probability", ip, 5, "Estimated from how much of the posting your resume already answers.")
+    total = sum(s for _, s, _, _ in scores)
+    if dealbreakers:
+        total = min(total, 45)
+
+    rec = "SKIP" if dealbreakers or total < 45 else "APPLY_NOW" if total >= 72 else "APPLY_IF_TIME"
+    prob = "High" if ip >= 4 and not dealbreakers else "Medium" if ip == 3 else "Low"
+
+    # ---- what tailoring could realistically recover ----
+    recoverable = 0
+    changes = []
+    if missing_kw:
+        gain = min(10 - round(10 * ats_cov), len(missing_kw))
+        if gain > 0:
+            recoverable += gain
+            changes.append(f"Work these exact phrases from the posting into bullets where they are true: "
+                           f"{', '.join(missing_kw[:6])} (+{gain} ATS points).")
+    weak_reqs = [e for e in experience if e["strength"] in ("Partial Match", "No Match")]
+    if weak_reqs:
+        gain = min(5, len(weak_reqs) * 2)
+        recoverable += gain
+        changes.append(f"Add or sharpen a bullet for {len(weak_reqs)} requirement(s) the posting names that your "
+                       f"resume does not clearly answer (+{gain} points).")
+    if extra:
+        changes.append(f"You list {', '.join(extra[:4])}, which this posting never asks for. "
+                       "Cut or shrink those lines to make room for what it does ask for.")
+    if concerns and not dealbreakers:
+        changes.append("Confirm the unclear eligibility points above before investing time in this application.")
+    if not changes:
+        changes.append("Nothing obvious left to change for this posting.")
+    after = min(97, total + recoverable) if not dealbreakers else total
+
+    partial = [{"skill": s, "note": "The posting asks for this and a related term appears on your resume."}
+               for s in sorted((want_sw | want_sk) - set(strong) - set(missing))][:6]
+
+    v = "a strong fit" if rec == "APPLY_NOW" else "worth a look if you have time" if rec == "APPLY_IF_TIME" else "a poor fit"
+    summary = (
+        f"On a keyword and requirements basis this posting looks like {v}. "
+        f"{len(strong)} of the {len(want_sw | want_sk)} skills it names appear on your resume"
+        f"{', and ' + str(len(matched_kw)) + ' of its ' + str(len(terms)) + ' most frequent terms do too' if terms else ''}. "
+        + (f"There {'is' if len(dealbreakers) == 1 else 'are'} {len(dealbreakers)} stated requirement"
+           f"{'' if len(dealbreakers) == 1 else 's'} you do not appear to meet, which is why this is marked skip. "
+           if dealbreakers else "")
+        + (f"{len(concerns)} point{'s' if len(concerns) != 1 else ''} to verify before applying. " if concerns else "")
+        + "This is a local analysis: it checks what the posting literally asks for against what your resume literally says."
+    )
+
+    return {
+        "source": "local",
+        "sourceNote": ("Local analysis: no API key used, nothing sent anywhere, no cost. It reads the "
+                       "posting's stated requirements and keywords and checks them against your resume. "
+                       "It cannot judge how good your experience is, weigh a company, or write anything."),
+        "recommendation": rec, "overallScore": int(total), "summary": summary,
+        "breakdown": [{"category": c, "score": int(s), "max": m, "note": n} for c, s, m, n in scores],
+        "eligibility": eli,
+        "skillsStrong": strong, "skillsPartial": partial, "skillsMissing": missing,
+        "experience": experience,
+        "atsMatched": matched_kw[:18], "atsMissing": missing_kw, "atsRewrites": rewrites[:6],
+        "atsImprovement": (f"Keyword coverage is {round(100*ats_cov)}%. Adding the missing phrases where they are "
+                           f"genuinely true would bring it close to {min(95, round(100*ats_cov)+25)}%."),
+        "improvements": changes[:6],
+        "redFlags": flags,
+        "careerValue": [{"label": l, "rating": 3} for l in
+                        ("Resume Value", "Learning Opportunity", "Networking", "Prestige",
+                         "Future Career Impact", "Overall Career Value")],
+        "careerValueNote": ("Career value needs judgement about the company and the team, which a local "
+                            "keyword analysis cannot supply. These are neutral placeholders: rate this one yourself."),
+        "interviewProbability": prob,
+        "interviewExplanation": (
+            f"Your resume already answers {sum(1 for s in xp_scores if s >= .32)} of the "
+            f"{len(reqs)} requirements the posting states, and "
+            + ("no stated requirement rules you out. " if not dealbreakers
+               else "at least one stated requirement appears to rule you out. ")
+            + "This is a rough estimate from overlap, not a prediction."),
+        "applicationTime": "20-40 min" if rec != "SKIP" else "not recommended",
+        "tailoringNeeded": "Heavy" if total < 60 else "Moderate" if total < 78 else "Light",
+        "expectedReturn": "High" if rec == "APPLY_NOW" else "Medium" if rec == "APPLY_IF_TIME" else "Low",
+        "effortRecommendation": (
+            "Worth tailoring before you send it: the fit is there and the gap is mostly wording."
+            if rec == "APPLY_NOW" else
+            "Only worth it if your queue is empty; the gaps are real but closable."
+            if rec == "APPLY_IF_TIME" else
+            "Spend the time on a posting you actually qualify for."),
+        "confidence": max(35, min(80, 40 + len(terms) + (10 if reqs else 0))),
+        "confidenceNote": ("Confidence in a local analysis is capped: it matches words and stated rules, "
+                           "and a longer, more specific posting gives it more to work with. "
+                           "It never judges the quality of your experience."),
+        "currentMatch": int(total), "matchAfterTailoring": int(after),
+        "tailoringChanges": changes[:6],
+        "jobTitle": "", "company": "",
+    }
+
+
 MATCH_SCHEMA = {
     "type": "object", "additionalProperties": False,
     "properties": {
@@ -874,9 +1258,13 @@ def resume_analyze(payload):
         return {"error": "no_jd",
                 "message": "Paste the full job description so the analysis has something to work with."}
     key = anthropic_key()
-    if not key:
-        return {"error": "no_ai",
-                "message": "This analysis needs an Anthropic API key in anthropic_key.txt."}
+    # Local is the default and always works. AI only runs when asked for and paid for.
+    if payload.get("mode") != "ai" or not key:
+        out = local_analyze(rtext, jd)
+        if payload.get("mode") == "ai" and not key:
+            out["sourceNote"] = ("No Anthropic API key found, so this ran locally instead. "
+                                 + out["sourceNote"])
+        return out
     try:
         import anthropic
         client = anthropic.Anthropic(api_key=key)
@@ -887,9 +1275,16 @@ def resume_analyze(payload):
             output_config={"format": {"type": "json_schema", "schema": MATCH_SCHEMA}},
         )
         text = next(b.text for b in resp.content if getattr(b, "type", "") == "text")
-        return json.loads(text)
+        out = json.loads(text)
+        out["source"] = "ai"
+        out["sourceNote"] = ("Reviewed by Claude against the full posting, so the reasoning weighs "
+                             "your actual experience rather than only matching words.")
+        return out
     except Exception as e:
-        return {"error": "ai", "message": str(e)[:200]}
+        # a failed AI call should never cost you the analysis
+        out = local_analyze(rtext, jd)
+        out["sourceNote"] = f"The AI call failed ({str(e)[:90]}), so this ran locally. " + out["sourceNote"]
+        return out
 
 
 MATCH_ACTIONS = {
@@ -1037,7 +1432,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self._send_json({"docs": kb_load()})
             return
         if path == "/api/resume":
-            self._send_json({"resume": resume_meta()})
+            self._send_json({"resume": resume_meta(), "ai": bool(anthropic_key())})
             return
         if path == "/api/resume/file":
             # the one stored resume, streamed inline so the app can preview it

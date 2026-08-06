@@ -298,8 +298,14 @@ Since this guide was written, five major phases shipped (full detail in ROADMAP.
   experience comparison, ATS keywords with suggested rewrites, resume
   improvements, red flags, career value, interview probability, effort estimate,
   a confidence score, and your expected match after tailoring alongside the exact
-  edits that get you there. Six one-click actions cover rewriting the resume,
-  a cover letter, keyword optimization, recruiter outreach, interview prep and
+  edits that get you there. It runs in two modes: **⚡ Local** is the default and
+  needs no API key, no network and no money — it reads the requirements the
+  posting actually states and checks them against your resume, giving you the
+  eligibility check, skills, ATS keywords, experience comparison and tailoring
+  advice for free. **✨ AI review** is opt-in per analysis and adds Claude's
+  judgement about the quality of your experience for a few cents. Six one-click
+  actions (these do need a key) cover rewriting the resume, a cover letter,
+  keyword optimization, recruiter outreach, interview prep and
   explaining the posting. Only the resume is stored: job descriptions and
   analyses live in the page for that session and are erased when you dismiss
   them, so export or copy anything worth keeping.

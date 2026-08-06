@@ -2453,13 +2453,14 @@ document.addEventListener("click",e=>{
    this variable only: nothing about a job is ever saved to disk or to
    personal_data.json, and dismissing the analysis erases it.
    ================================================================== */
-const M={resume:undefined,jd:"",an:null,busy:false,act:null,actBusy:"",err:""};
+const M={resume:undefined,ai:false,mode:"local",jd:"",an:null,busy:false,act:null,actBusy:"",err:""};
 const MATCH_ACTIONS=[["rewrite","📝 Rewrite resume for this job"],["cover","✉️ Generate cover letter"],
   ["keywords","🔑 Optimize resume keywords"],["outreach","🤝 Recruiter outreach message"],
   ["interview","🎤 Prepare interview questions"],["explain","💡 Explain job description"]];
 function matchClear(){ M.jd=""; M.an=null; M.act=null; M.err=""; renderMatch(); }
 async function resumeRefresh(){
-  try{ const j=await fetch("/api/resume",{cache:"no-store"}).then(r=>r.json()); M.resume=j.resume||null; }
+  try{ const j=await fetch("/api/resume",{cache:"no-store"}).then(r=>r.json());
+    M.resume=j.resume||null; M.ai=!!j.ai; }
   catch(e){ M.resume=null; }
   renderMatch();
 }
@@ -2484,7 +2485,7 @@ async function runAnalysis(){
   M.jd=jd; M.busy=true; M.err=""; M.an=null; renderMatch();
   let j;
   try{ j=await fetch("/api/resume/analyze",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({jd})}).then(r=>r.json()); }
+      body:JSON.stringify({jd,mode:M.mode})}).then(r=>r.json()); }
   catch(e){ j={error:"net",message:"Couldn't reach the app server."}; }
   M.busy=false;
   if(j&&j.error){ M.err=j.message||"That didn't work."; }
@@ -2594,14 +2595,24 @@ function renderMatchInput(){
       <div class="usage-note">This analysis is only in this page. Copy or export it before you dismiss it, because nothing is saved.</div>`;
     return;
   }
+  const chip=(m,label,sub)=>`<button class="rowbtn" data-m-mode="${m}" style="text-transform:none;letter-spacing:0;
+      ${M.mode===m?"border-color:var(--accent);color:var(--txt)":""}">${label}
+      <span class="muted" style="font-size:10.5px">${sub}</span></button>`;
   box.innerHTML=`<h3>🎯 Analyze a job</h3>
     <textarea data-jd rows="9" placeholder="Paste the complete job description here..."
       style="width:100%;padding:12px;font-size:13px;line-height:1.55;resize:vertical"></textarea>
-    <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:7px;margin-top:9px;flex-wrap:wrap">
+      ${chip("local","⚡ Local","free · instant")}
+      ${chip("ai","✨ AI review",M.ai?"uses your key":"needs a key")}
+      <span style="flex:1"></span>
       <button class="primary" data-m-run ${M.resume?"":"disabled"}>Analyze Job</button>
-      ${M.resume?"":`<span class="muted" style="font-size:12px">Upload a resume above first.</span>`}
-      ${M.err?`<span style="color:var(--rejected);font-size:12px">${esc(M.err)}</span>`:""}
-    </div>`;
+    </div>
+    ${M.resume?"":`<div class="muted" style="font-size:12px;margin-top:7px">Upload a resume above first.</div>`}
+    ${M.err?`<div style="color:var(--rejected);font-size:12px;margin-top:7px">${esc(M.err)}</div>`:""}
+    <div class="usage-note">${M.mode==="local"
+      ?"Local runs entirely on this machine: it reads what the posting asks for and checks it against your resume. No key, no cost, nothing leaves your laptop."
+      :(M.ai?"Claude reads the full posting and weighs your actual experience, not just the words. Costs a few cents per analysis."
+            :"No API key found, so this will fall back to the local analysis.")}</div>`;
 }
 function renderMatchOut(){
   const box=$("matchOut"); if(!box) return;
@@ -2614,7 +2625,13 @@ function renderMatchOut(){
   const strengthCls=s=>/Excellent/.test(s)?"ok":/Good/.test(s)?"ok":/Partial/.test(s)?"warn":"bad";
   const lift=(a.matchAfterTailoring||0)-(a.currentMatch||0);
 
+  const srcLocal=a.source!=="ai";
   const verdict=`<div class="icard" style="margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <span class="tagpill ${srcLocal?"":"ok"}">${srcLocal?"⚡ Local analysis":"✨ Reviewed by Claude"}</span>
+      <span class="muted" style="font-size:11.5px;flex:1;min-width:200px">${esc(a.sourceNote||"")}</span>
+      ${srcLocal&&M.ai?`<button class="rowbtn" data-m-upgrade style="text-transform:none;letter-spacing:0">Run the AI review →</button>`:""}
+    </div>
     <div class="verdict">
       <span class="vbadge ${v[0]}">${v[1]}</span>
       <div><div class="vscore">${a.overallScore}<small> / 100</small></div>
@@ -2703,8 +2720,10 @@ function renderMatchOut(){
 
   const actName=(MATCH_ACTIONS.find(x=>x[0]===(M.act&&M.act.kind))||[])[1]||"";
   const actions=`<div class="icard" style="margin-top:14px"><h3>⚡ AI actions</h3>
+    ${M.ai?"":`<p class="muted" style="font-size:12.5px;margin:4px 0 8px">Writing a cover letter or rewriting your
+       resume needs an Anthropic API key in <b>anthropic_key.txt</b>. Everything above works without one.</p>`}
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
-      ${MATCH_ACTIONS.map(([k,label])=>`<button class="rowbtn" data-m-act="${k}" ${M.actBusy?"disabled":""}
+      ${MATCH_ACTIONS.map(([k,label])=>`<button class="rowbtn" data-m-act="${k}" ${M.actBusy||!M.ai?"disabled":""}
         style="text-transform:none;letter-spacing:0">${M.actBusy===k?`<span class="spin"></span> Working…`:label}</button>`).join("")}
     </div>
     ${M.act?`<div style="display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap">
@@ -2744,7 +2763,15 @@ document.addEventListener("click",e=>{
       fetch("/api/resume/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"})
         .then(()=>{ M.resume=null; renderMatch(); toast("Resume removed."); });
     return; }
+  const md=e.target.closest("[data-m-mode]"); if(md){ M.mode=md.dataset.mMode; renderMatch(); return; }
   if(e.target.closest("[data-m-run]")){ runAnalysis(); return; }
+  if(e.target.closest("[data-m-upgrade]")){   // re-run the same posting through Claude
+    M.mode="ai"; const jd=M.jd; M.busy=true; M.an=null; renderMatch();
+    fetch("/api/resume/analyze",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({jd,mode:"ai"})}).then(r=>r.json()).then(j=>{
+        M.busy=false; if(j&&j.error){ M.err=j.message||""; } else M.an=j; renderMatch();
+      }).catch(()=>{ M.busy=false; M.err="Couldn't reach the app server."; renderMatch(); });
+    return; }
   if(e.target.closest("[data-m-again]")){ matchClear();
     setTimeout(()=>{ const t=document.querySelector("[data-jd]"); if(t) t.focus(); },60); return; }
   if(e.target.closest("[data-m-done]")){ matchClear(); window.scrollTo({top:0,behavior:"smooth"}); return; }

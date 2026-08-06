@@ -101,8 +101,17 @@ deliberately minimal: show up and check the box, exactly like prayers.
   with concrete rewrites, resume improvements, red flags, career-value ratings,
   interview probability, application effort, a confidence percentage, and the
   expected match after tailoring with the exact changes that produce it.
-- Six one-click AI actions: rewrite resume for this job, cover letter, keyword
-  optimization, recruiter outreach, interview prep, explain the job description.
+- **Two engines, local by default.** ⚡ Local runs entirely on your machine with
+  no API key and no cost: it reads the posting's stated requirements (degree,
+  GPA, citizenship, clearance, sponsorship, years of experience), extracts its
+  skills and frequent terms, and checks all of it against your resume, crediting
+  disciplines implied by tools (SolidWorks proves CAD, ANSYS Fluent proves CFD).
+  ✨ AI review is opt-in per analysis and sends the pair to Claude for judgement
+  about experience quality. A failed or unconfigured AI call falls back to the
+  local analysis rather than failing.
+- Six one-click AI actions (key required): rewrite resume for this job, cover
+  letter, keyword optimization, recruiter outreach, interview prep, explain the
+  job description.
 - Privacy by construction: only the resume is persisted. Job descriptions,
   analyses and AI action output exist in the open page and the request only —
   never written to disk, never in personal_data.json, and erased from memory by
