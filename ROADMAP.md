@@ -89,6 +89,26 @@ deliberately minimal: show up and check the box, exactly like prayers.
   measured in tracked hours; Train owns physical performance; Finance owns money.
   Everything surfaces on Today, which remains the center of the app.
 
+## Phase 6 — Resume Match Analyzer ✅ (shipped)
+
+- 🎯 Resume Match tab. One resume is stored (PDF/DOCX, uploaded, replaceable,
+  previewable, removable); text is extracted locally the same way the knowledge
+  base does it. Paste any job description, hit Analyze Job, and Claude returns a
+  structured recruiter-grade review: APPLY NOW / APPLY IF YOU HAVE TIME / SKIP
+  with an overall score, an eight-category score breakdown, eligibility checks
+  (matches, concerns, deal breakers), strong/partial/missing skills, a
+  requirement-by-requirement experience comparison, ATS matched/missing keywords
+  with concrete rewrites, resume improvements, red flags, career-value ratings,
+  interview probability, application effort, a confidence percentage, and the
+  expected match after tailoring with the exact changes that produce it.
+- Six one-click AI actions: rewrite resume for this job, cover letter, keyword
+  optimization, recruiter outreach, interview prep, explain the job description.
+- Privacy by construction: only the resume is persisted. Job descriptions,
+  analyses and AI action output exist in the open page and the request only —
+  never written to disk, never in personal_data.json, and erased from memory by
+  "Analyze another job" or "Done". Export to PDF or copy to clipboard first if
+  you want to keep one.
+
 ## Later ideas (unscheduled)
 
 - Journal, spaced-repetition flashcards, richer language stats, deeper knowledge

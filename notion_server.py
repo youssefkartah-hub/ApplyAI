@@ -678,6 +678,276 @@ def kb_ask(payload):
                 "message": str(e)[:120]}
 
 
+# ==================================================================
+# Resume Match Analyzer.
+# One resume is stored (replaceable). Job descriptions and analyses are
+# never written to disk: they live in the request and the open page only.
+# ==================================================================
+RESUME_DIR = os.path.join(DIRECTORY, "resume")
+RESUME_META = os.path.join(RESUME_DIR, "meta.json")
+RESUME_MAX = 10_000_000        # 10 MB
+RESUME_MAX_TEXT = 60_000       # chars of resume text sent to the model
+JD_MAX_TEXT = 30_000
+_resume_lock = threading.Lock()
+
+
+def resume_meta():
+    try:
+        with open(RESUME_META) as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def resume_text():
+    m = resume_meta()
+    if not m:
+        return ""
+    try:
+        with open(os.path.join(RESUME_DIR, "resume.txt"), encoding="utf-8") as f:
+            return f.read()
+    except Exception:
+        return ""
+
+
+def resume_upload(payload):
+    import base64
+    name = os.path.basename(str(payload.get("name", "resume"))).strip() or "resume"
+    ext = name.lower().rsplit(".", 1)[-1] if "." in name else ""
+    if ext not in ("pdf", "docx", "doc", "txt", "md"):
+        return {"error": "bad_type", "message": "Upload a PDF or DOCX resume."}
+    try:
+        raw = base64.b64decode(payload.get("data", ""))
+    except Exception:
+        return {"error": "bad_data", "message": "That file could not be read."}
+    if not raw:
+        return {"error": "empty", "message": "That file is empty."}
+    if len(raw) > RESUME_MAX:
+        return {"error": "too_big", "message": "Resumes up to 10 MB."}
+    text = kb_extract(name, raw)[:RESUME_MAX_TEXT].strip()
+    with _resume_lock:
+        os.makedirs(RESUME_DIR, exist_ok=True)
+        # only one resume is ever kept: clear the old file first
+        for fn in os.listdir(RESUME_DIR):
+            if fn.startswith("resume."):
+                try:
+                    os.remove(os.path.join(RESUME_DIR, fn))
+                except Exception:
+                    pass
+        with open(os.path.join(RESUME_DIR, f"resume.{ext}"), "wb") as f:
+            f.write(raw)
+        with open(os.path.join(RESUME_DIR, "resume.txt"), "w", encoding="utf-8") as f:
+            f.write(text)
+        meta = {"name": name, "kind": ext, "size": len(raw), "chars": len(text),
+                "added": time.strftime("%Y-%m-%d %H:%M")}
+        tmp = RESUME_META + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(meta, f)
+        os.replace(tmp, RESUME_META)
+    note = None
+    if not text:
+        note = ("Stored, but no text could be read from it. For PDFs run: "
+                "pip3 install pypdf, then upload again.") if ext == "pdf" else \
+               "Stored, but no readable text was found in that file."
+    return {"ok": True, "resume": meta, "note": note}
+
+
+def resume_delete():
+    with _resume_lock:
+        for fn in (os.listdir(RESUME_DIR) if os.path.isdir(RESUME_DIR) else []):
+            try:
+                os.remove(os.path.join(RESUME_DIR, fn))
+            except Exception:
+                pass
+    return {"ok": True}
+
+
+MATCH_SCHEMA = {
+    "type": "object", "additionalProperties": False,
+    "properties": {
+        "recommendation": {"type": "string", "enum": ["APPLY_NOW", "APPLY_IF_TIME", "SKIP"]},
+        "overallScore": {"type": "integer"},
+        "summary": {"type": "string"},
+        "breakdown": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {"category": {"type": "string"}, "score": {"type": "number"},
+                           "max": {"type": "number"}, "note": {"type": "string"}},
+            "required": ["category", "score", "max", "note"]}},
+        "eligibility": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {"status": {"type": "string", "enum": ["match", "concern", "dealbreaker"]},
+                           "item": {"type": "string"}, "detail": {"type": "string"}},
+            "required": ["status", "item", "detail"]}},
+        "skillsStrong": {"type": "array", "items": {"type": "string"}},
+        "skillsPartial": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {"skill": {"type": "string"}, "note": {"type": "string"}},
+            "required": ["skill", "note"]}},
+        "skillsMissing": {"type": "array", "items": {"type": "string"}},
+        "experience": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {"jobWants": {"type": "string"}, "resumeMatch": {"type": "string"},
+                           "strength": {"type": "string",
+                                        "enum": ["Excellent Match", "Good Match", "Partial Match", "No Match"]}},
+            "required": ["jobWants", "resumeMatch", "strength"]}},
+        "atsMatched": {"type": "array", "items": {"type": "string"}},
+        "atsMissing": {"type": "array", "items": {"type": "string"}},
+        "atsRewrites": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {"current": {"type": "string"}, "suggested": {"type": "string"}},
+            "required": ["current", "suggested"]}},
+        "atsImprovement": {"type": "string"},
+        "improvements": {"type": "array", "items": {"type": "string"}},
+        "redFlags": {"type": "array", "items": {"type": "string"}},
+        "careerValue": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {"label": {"type": "string"}, "rating": {"type": "integer"}},
+            "required": ["label", "rating"]}},
+        "careerValueNote": {"type": "string"},
+        "interviewProbability": {"type": "string", "enum": ["High", "Medium", "Low"]},
+        "interviewExplanation": {"type": "string"},
+        "applicationTime": {"type": "string"},
+        "tailoringNeeded": {"type": "string"},
+        "expectedReturn": {"type": "string"},
+        "effortRecommendation": {"type": "string"},
+        "confidence": {"type": "integer"},
+        "confidenceNote": {"type": "string"},
+        "currentMatch": {"type": "integer"},
+        "matchAfterTailoring": {"type": "integer"},
+        "tailoringChanges": {"type": "array", "items": {"type": "string"}},
+        "jobTitle": {"type": "string"},
+        "company": {"type": "string"},
+    },
+    "required": ["recommendation", "overallScore", "summary", "breakdown", "eligibility",
+                 "skillsStrong", "skillsPartial", "skillsMissing", "experience",
+                 "atsMatched", "atsMissing", "atsRewrites", "atsImprovement",
+                 "improvements", "redFlags", "careerValue", "careerValueNote",
+                 "interviewProbability", "interviewExplanation", "applicationTime",
+                 "tailoringNeeded", "expectedReturn", "effortRecommendation",
+                 "confidence", "confidenceNote", "currentMatch", "matchAfterTailoring",
+                 "tailoringChanges", "jobTitle", "company"],
+}
+
+MATCH_PROMPT = (
+    "You are a seasoned technical recruiter and career coach reviewing one "
+    "candidate's resume against one job description. Be specific, honest and "
+    "useful: the candidate is deciding whether this application is worth their "
+    "time, and how to improve it before submitting.\n\n"
+    "Rules:\n"
+    "- Ground every claim in the actual resume and job description text. Never "
+    "invent experience, skills, schools or employers the resume does not show.\n"
+    "- If the job description omits something (sponsorship, clearance, GPA), say "
+    "it is unstated rather than assuming.\n"
+    "- Scores must be consistent with the evidence and with each other; "
+    "overallScore should reflect the breakdown, and breakdown scores must never "
+    "exceed their max.\n"
+    "- breakdown must contain exactly these eight categories, in this order, with "
+    "these maxima: Eligibility (25), Skills Match (20), Experience Match (15), "
+    "Software Match (10), Project Match (10), ATS Keyword Match (10), "
+    "Career Value (5), Interview Probability (5).\n"
+    "- careerValue must contain exactly these labels, each rated 1 to 5: "
+    "Resume Value, Learning Opportunity, Networking, Prestige, Future Career "
+    "Impact, Overall Career Value.\n"
+    "- Recommendation: APPLY_NOW when it is a strong, eligible fit; "
+    "APPLY_IF_TIME when it is plausible but needs real tailoring or has gaps; "
+    "SKIP when a hard requirement rules the candidate out or the fit is poor.\n"
+    "- Deal breakers are only hard, stated disqualifiers (for example citizenship "
+    "or clearance the candidate cannot hold). Preferences are concerns, not deal "
+    "breakers.\n"
+    "- currentMatch should equal overallScore. matchAfterTailoring is the "
+    "realistic score after the listed changes; never promise a perfect score, and "
+    "tailoring cannot fix a hard eligibility deal breaker.\n"
+    "- confidence reflects how complete and specific the job description is, not "
+    "how good the candidate is.\n"
+    "- Never guarantee an interview or an outcome.\n"
+    "- Write in plain, direct prose. No markdown, no bullets inside string fields."
+)
+
+
+def resume_analyze(payload):
+    rtext = resume_text()
+    if not rtext:
+        return {"error": "no_resume",
+                "message": "Upload a resume first so there is something to compare."}
+    jd = str(payload.get("jd", "")).strip()[:JD_MAX_TEXT]
+    if len(jd) < 40:
+        return {"error": "no_jd",
+                "message": "Paste the full job description so the analysis has something to work with."}
+    key = anthropic_key()
+    if not key:
+        return {"error": "no_ai",
+                "message": "This analysis needs an Anthropic API key in anthropic_key.txt."}
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=key)
+        resp = client.messages.create(
+            model="claude-sonnet-5", max_tokens=6000, system=MATCH_PROMPT,
+            messages=[{"role": "user", "content":
+                       f"RESUME:\n{rtext}\n\n---\n\nJOB DESCRIPTION:\n{jd}"}],
+            output_config={"format": {"type": "json_schema", "schema": MATCH_SCHEMA}},
+        )
+        text = next(b.text for b in resp.content if getattr(b, "type", "") == "text")
+        return json.loads(text)
+    except Exception as e:
+        return {"error": "ai", "message": str(e)[:200]}
+
+
+MATCH_ACTIONS = {
+    "rewrite": ("Rewrite this candidate's resume for this specific job. Keep every "
+                "fact true to the original resume: you may reorder, reword, "
+                "re-emphasise and cut, but never invent experience. Return the "
+                "full rewritten resume as clean plain text."),
+    "cover": ("Write a cover letter for this candidate for this job. Specific, "
+              "confident, no cliches, about 250 to 320 words, grounded only in "
+              "the real resume. Plain text, ready to send."),
+    "keywords": ("List the concrete keyword and phrasing edits that would raise "
+                 "this resume's ATS score for this job. For each: the current "
+                 "wording, the suggested wording, and where it appears. Plain text."),
+    "outreach": ("Write a short LinkedIn or email outreach message from this "
+                 "candidate to a recruiter or engineer at this company about this "
+                 "role. Under 120 words, specific, not needy. Plain text."),
+    "interview": ("Write the interview questions this candidate should expect for "
+                  "this specific role, grouped into technical, behavioural and "
+                  "role-specific. For the hardest few, add a one-line note on what "
+                  "a strong answer covers, drawing on the candidate's real "
+                  "experience. Plain text."),
+    "explain": ("Explain this job description in plain language: what the team "
+                "actually does, what the day to day looks like, what they are "
+                "really screening for, and which requirements are hard versus "
+                "soft. Plain text."),
+}
+
+
+def resume_action(payload):
+    kind = str(payload.get("kind", ""))
+    if kind not in MATCH_ACTIONS:
+        return {"error": "bad_action"}
+    rtext = resume_text()
+    if not rtext:
+        return {"error": "no_resume", "message": "Upload a resume first."}
+    jd = str(payload.get("jd", "")).strip()[:JD_MAX_TEXT]
+    if len(jd) < 40:
+        return {"error": "no_jd", "message": "Paste the job description first."}
+    key = anthropic_key()
+    if not key:
+        return {"error": "no_ai",
+                "message": "This needs an Anthropic API key in anthropic_key.txt."}
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=key)
+        resp = client.messages.create(
+            model="claude-sonnet-5", max_tokens=3000,
+            system=("You are a seasoned technical recruiter and career coach helping "
+                    "one candidate with one specific job. Ground everything in the "
+                    "real resume; never invent experience. " + MATCH_ACTIONS[kind]),
+            messages=[{"role": "user", "content":
+                       f"RESUME:\n{rtext}\n\n---\n\nJOB DESCRIPTION:\n{jd}"}])
+        text = next((b.text for b in resp.content if getattr(b, "type", "") == "text"), "")
+        return {"text": text}
+    except Exception as e:
+        return {"error": "ai", "message": str(e)[:200]}
+
+
 _mkt_cache = {"at": 0, "data": None}
 
 
@@ -766,8 +1036,34 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if path == "/api/kb/list":
             self._send_json({"docs": kb_load()})
             return
-        # the document library is private: never serve it over HTTP
+        if path == "/api/resume":
+            self._send_json({"resume": resume_meta()})
+            return
+        if path == "/api/resume/file":
+            # the one stored resume, streamed inline so the app can preview it
+            m = resume_meta()
+            fp = os.path.join(RESUME_DIR, f"resume.{m['kind']}") if m else None
+            if not m or not fp or not os.path.exists(fp):
+                self.send_error(404, "No resume stored")
+                return
+            ctype = {"pdf": "application/pdf",
+                     "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                     "doc": "application/msword", "txt": "text/plain",
+                     "md": "text/plain"}.get(m["kind"], "application/octet-stream")
+            with open(fp, "rb") as f:
+                data = f.read()
+            self.send_response(200)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Content-Disposition", f'inline; filename="{m["name"]}"')
+            self.end_headers()
+            self.wfile.write(data)
+            return
+        # private folders: never served as static files
         if path == "/knowledge" or path.startswith("/knowledge/"):
+            self.send_error(404, "Not found")
+            return
+        if path == "/resume" or path.startswith("/resume/"):
             self.send_error(404, "Not found")
             return
         if path == "/api/store":
@@ -800,6 +1096,27 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self._send_json(kb_delete(str(payload.get("id", ""))))
             else:
                 self._send_json(kb_ask(payload))
+            return
+        if path.startswith("/api/resume/"):
+            length = int(self.headers.get("Content-Length", 0))
+            if length <= 0 or length > 20_000_000:
+                self.send_error(413, "Bad size")
+                return
+            try:
+                payload = json.loads(self.rfile.read(length).decode("utf-8"))
+            except Exception as e:
+                self.send_error(400, f"Bad request: {e}")
+                return
+            if path == "/api/resume/upload":
+                self._send_json(resume_upload(payload))
+            elif path == "/api/resume/delete":
+                self._send_json(resume_delete())
+            elif path == "/api/resume/analyze":
+                self._send_json(resume_analyze(payload))
+            elif path == "/api/resume/action":
+                self._send_json(resume_action(payload))
+            else:
+                self.send_error(404, "Not found")
             return
         if path == "/api/assistant":
             length = int(self.headers.get("Content-Length", 0))

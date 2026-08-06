@@ -292,6 +292,44 @@
   .pill2[data-tgl-sess]{cursor:pointer}
   .pill2[data-tgl-sess]:hover{border-color:var(--accent)}
   .fixbox{margin-top:7px;padding:8px 9px;border:1px dashed var(--line);border-radius:9px}
+  /* ---- Resume Match Analyzer ---- */
+  .verdict{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:16px 18px;border-radius:14px;
+    border:1px solid var(--line);background:linear-gradient(135deg,rgba(34,211,238,.07),transparent)}
+  .vbadge{font-size:19px;font-weight:800;letter-spacing:.06em;padding:12px 20px;border-radius:12px;white-space:nowrap}
+  .vbadge.go{color:#052e16;background:linear-gradient(135deg,#34d399,#22c55e)}
+  .vbadge.maybe{color:#3b2606;background:linear-gradient(135deg,#fbbf24,#f59e0b)}
+  .vbadge.skip{color:#3f0a0a;background:linear-gradient(135deg,#f87171,#ef4444)}
+  .vscore{font-size:44px;font-weight:800;line-height:1}
+  .vscore small{font-size:15px;font-weight:600;color:var(--muted)}
+  .mrow{display:flex;align-items:center;gap:10px;margin:8px 0}
+  .mrow .ml{width:150px;font-size:12.5px;color:var(--muted);flex:0 0 150px}
+  .mbar{flex:1;height:9px;border-radius:6px;background:rgba(0,0,0,.35);overflow:hidden;min-width:60px}
+  .mbar>span{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#22d3ee,#22c55e);
+    transition:width .7s cubic-bezier(.2,.9,.2,1)}
+  .mbar.warn>span{background:linear-gradient(90deg,#fbbf24,#f59e0b)}
+  .mbar.bad>span{background:linear-gradient(90deg,#f87171,#ef4444)}
+  .mval{width:64px;text-align:right;font-size:12.5px;font-weight:700}
+  .chiplist{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .tagpill{font-size:11.5px;padding:4px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+  .tagpill.ok{color:var(--offer);border-color:rgba(52,211,153,.45);background:rgba(52,211,153,.08)}
+  .tagpill.warn{color:var(--warn);border-color:rgba(245,158,11,.45);background:rgba(245,158,11,.08)}
+  .tagpill.bad{color:var(--rejected);border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.08)}
+  .eli{display:flex;gap:9px;align-items:flex-start;padding:7px 2px;border-bottom:1px solid var(--line)}
+  .eli b{font-size:13px}
+  .xp{display:flex;gap:10px;align-items:center;padding:8px 2px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .xp .want{flex:1 1 200px;font-size:13px}
+  .xp .got{flex:1 1 200px;font-size:12.5px;color:var(--muted)}
+  .stars{letter-spacing:2px;color:var(--warn)}
+  .liftbox{display:flex;align-items:center;justify-content:center;gap:22px;flex-wrap:wrap;padding:14px}
+  .liftnum{text-align:center}
+  .liftnum .n{font-size:40px;font-weight:800;line-height:1}
+  .liftnum .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .liftarrow{font-size:26px;color:var(--accent)}
+  .spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(34,211,238,.25);
+    border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;vertical-align:-3px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .aiout{white-space:pre-wrap;font-size:13px;line-height:1.6;max-height:460px;overflow:auto;
+    background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:10px}
   button:disabled{opacity:.35;cursor:default}
   .overallbar{height:9px;background:rgba(0,0,0,.35);border-radius:5px;overflow:hidden;margin-top:8px}
   .overallbar>span{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#22d3ee,#22c55e);
@@ -382,6 +420,7 @@
       <button class="tab" data-tab="apps">📋 Applications</button>
       <button class="tab" data-tab="calendar">🗓 Calendar</button>
       <button class="tab" data-tab="crm">🎤 Interviews·CRM</button>
+      <button class="tab" data-tab="match">🎯 Resume Match</button>
       <div class="navlbl">Life</div>
       <button class="tab" data-tab="train">🏋️ Train</button>
       <button class="tab" data-tab="fin">💰 Finance</button>
@@ -492,6 +531,12 @@
       </div>
       <div class="icard" id="bjjPath" style="margin-top:14px"></div>
       <div class="icard" id="trainPlan" style="margin-top:14px"></div>
+    </div>
+
+    <div class="pane" data-pane="match" hidden>
+      <div class="icard" id="resumeMgr" style="margin-bottom:14px"></div>
+      <div class="icard" id="matchInput" style="margin-bottom:14px"></div>
+      <div id="matchOut"></div>
     </div>
 
     <div class="pane" data-pane="kb" hidden>
@@ -1887,7 +1932,8 @@ function renderGoals(){
 let heroItem=null, currentTab="today";
 const PANE_R={today:[renderToday],inbox:[renderAreas,renderInbox],planner:[renderPlanner],
   habits:[renderHabits],focus:[renderFocusStats],crm:[renderCRM],
-  proj:[renderProjects],goals:[renderGoals],train:[renderTrain,renderBjj],fin:[renderFin],kb:[renderKB]};
+  proj:[renderProjects],goals:[renderGoals],train:[renderTrain,renderBjj],fin:[renderFin],
+  kb:[renderKB],match:[renderMatch]};
 function renderOS(){ try{
   // Only rebuild what's on screen: the Today pane rerenders when visible,
   // other tabs get their own renderers, and the header day % stays fresh
@@ -2399,6 +2445,322 @@ document.addEventListener("click",e=>{
   if(e.target.closest("[data-bjj-reset]")){
     if(confirm("Reset your BJJ skill path? This clears every checked technique.")){
       OS.bjj={done:{},start:null}; osSave(); renderOS(); } return; }
+});
+
+/* ==================================================================
+   Resume Match Analyzer. One stored resume, compared against any job
+   description you paste. The job description and the analysis live in
+   this variable only: nothing about a job is ever saved to disk or to
+   personal_data.json, and dismissing the analysis erases it.
+   ================================================================== */
+const M={resume:undefined,jd:"",an:null,busy:false,act:null,actBusy:"",err:""};
+const MATCH_ACTIONS=[["rewrite","📝 Rewrite resume for this job"],["cover","✉️ Generate cover letter"],
+  ["keywords","🔑 Optimize resume keywords"],["outreach","🤝 Recruiter outreach message"],
+  ["interview","🎤 Prepare interview questions"],["explain","💡 Explain job description"]];
+function matchClear(){ M.jd=""; M.an=null; M.act=null; M.err=""; renderMatch(); }
+async function resumeRefresh(){
+  try{ const j=await fetch("/api/resume",{cache:"no-store"}).then(r=>r.json()); M.resume=j.resume||null; }
+  catch(e){ M.resume=null; }
+  renderMatch();
+}
+async function resumeUpload(file){
+  if(!file) return;
+  if(file.size>10*1048576){ toast("Resumes up to 10 MB."); return; }
+  toast(`Reading ${file.name}…`);
+  const b64=await new Promise(res=>{ const r=new FileReader();
+    r.onload=()=>res(String(r.result).split(",")[1]||""); r.readAsDataURL(file); });
+  try{
+    const j=await fetch("/api/resume/upload",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({name:file.name,data:b64})}).then(r=>r.json());
+    if(j.error){ toast(j.message||"Upload failed"); return; }
+    M.resume=j.resume; toast(j.note?j.note:`${file.name} stored as your resume.`);
+  }catch(e){ toast("Upload failed. Is the app server running?"); }
+  renderMatch();
+}
+async function runAnalysis(){
+  const ta=document.querySelector("[data-jd]");
+  const jd=ta?ta.value.trim():"";
+  if(jd.length<40){ toast("Paste the full job description first."); return; }
+  M.jd=jd; M.busy=true; M.err=""; M.an=null; renderMatch();
+  let j;
+  try{ j=await fetch("/api/resume/analyze",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({jd})}).then(r=>r.json()); }
+  catch(e){ j={error:"net",message:"Couldn't reach the app server."}; }
+  M.busy=false;
+  if(j&&j.error){ M.err=j.message||"That didn't work."; }
+  else M.an=j;
+  renderMatch();
+  if(M.an) setTimeout(()=>{ const el=$("matchOut"); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); },80);
+}
+async function runMatchAction(kind){
+  if(!M.jd||M.actBusy) return;
+  M.actBusy=kind; M.act=null; renderMatch();
+  let j;
+  try{ j=await fetch("/api/resume/action",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({kind,jd:M.jd})}).then(r=>r.json()); }
+  catch(e){ j={error:"net",message:"Couldn't reach the app server."}; }
+  M.actBusy="";
+  M.act={kind,text:j&&j.text||"",error:j&&j.error?(j.message||"That didn't work."):""};
+  renderMatch();
+}
+function matchPlainText(){
+  const a=M.an; if(!a) return "";
+  const L=[], V={APPLY_NOW:"APPLY NOW",APPLY_IF_TIME:"APPLY IF YOU HAVE TIME",SKIP:"SKIP"};
+  L.push(`RESUME MATCH ANALYSIS${a.jobTitle?` — ${a.jobTitle}`:""}${a.company?` at ${a.company}`:""}`);
+  L.push(`Recommendation: ${V[a.recommendation]||a.recommendation}`);
+  L.push(`Overall match: ${a.overallScore} / 100`);
+  L.push(``,a.summary,``,`SCORE BREAKDOWN`);
+  (a.breakdown||[]).forEach(b=>L.push(`  ${b.category}: ${b.score} / ${b.max}${b.note?` — ${b.note}`:""}`));
+  L.push(``,`ELIGIBILITY`);
+  (a.eligibility||[]).forEach(e=>L.push(`  [${e.status}] ${e.item}: ${e.detail}`));
+  L.push(``,`SKILLS`);
+  L.push(`  Strong: ${(a.skillsStrong||[]).join(", ")||"—"}`);
+  L.push(`  Partial: ${(a.skillsPartial||[]).map(s=>`${s.skill} (${s.note})`).join("; ")||"—"}`);
+  L.push(`  Missing: ${(a.skillsMissing||[]).join(", ")||"—"}`);
+  L.push(``,`EXPERIENCE`);
+  (a.experience||[]).forEach(x=>L.push(`  Job wants: ${x.jobWants}\n    Resume: ${x.resumeMatch} [${x.strength}]`));
+  L.push(``,`ATS KEYWORDS`);
+  L.push(`  Matched: ${(a.atsMatched||[]).join(", ")||"—"}`);
+  L.push(`  Missing: ${(a.atsMissing||[]).join(", ")||"—"}`);
+  (a.atsRewrites||[]).forEach(r=>L.push(`  "${r.current}" -> "${r.suggested}"`));
+  if(a.atsImprovement) L.push(`  ${a.atsImprovement}`);
+  L.push(``,`RESUME IMPROVEMENTS`);
+  (a.improvements||[]).forEach(s=>L.push(`  - ${s}`));
+  if((a.redFlags||[]).length){ L.push(``,`RED FLAGS`); a.redFlags.forEach(s=>L.push(`  ! ${s}`)); }
+  L.push(``,`CAREER VALUE`);
+  (a.careerValue||[]).forEach(c=>L.push(`  ${c.label}: ${c.rating} / 5`));
+  if(a.careerValueNote) L.push(`  ${a.careerValueNote}`);
+  L.push(``,`INTERVIEW PROBABILITY: ${a.interviewProbability}`,`  ${a.interviewExplanation}`);
+  L.push(``,`APPLICATION EFFORT`);
+  L.push(`  Time: ${a.applicationTime}`,`  Tailoring: ${a.tailoringNeeded}`,`  Expected return: ${a.expectedReturn}`);
+  L.push(`  ${a.effortRecommendation}`);
+  L.push(``,`EXPECTED MATCH AFTER TAILORING: ${a.currentMatch}% -> ${a.matchAfterTailoring}%`);
+  (a.tailoringChanges||[]).forEach(s=>L.push(`  - ${s}`));
+  L.push(``,`Confidence: ${a.confidence}% — ${a.confidenceNote}`);
+  return L.join("\n");
+}
+function matchExportPdf(){
+  const a=M.an; if(!a) return;
+  const w=window.open("","_blank"); if(!w){ toast("Allow pop-ups to export."); return; }
+  w.document.write(`<html><head><title>Resume match${a.jobTitle?` — ${esc(a.jobTitle)}`:""}</title>
+    <style>body{font:13px/1.6 -apple-system,Segoe UI,sans-serif;color:#111;max-width:820px;margin:36px auto;padding:0 22px;white-space:pre-wrap}
+      h1{font-size:19px;margin:0 0 14px}</style></head><body>
+    <h1>Resume Match Analysis</h1>${esc(matchPlainText())}</body></html>`);
+  w.document.close(); setTimeout(()=>{ w.focus(); w.print(); },260);
+}
+function barCls(p){ return p>=80?"":p>=50?"warn":"bad"; }
+function renderResumeMgr(){
+  const box=$("resumeMgr"); if(!box) return;
+  if(M.resume===undefined){ box.innerHTML=`<h3>📄 Your resume</h3><p class="muted">Loading…</p>`; resumeRefresh(); return; }
+  const r=M.resume;
+  box.innerHTML=`<h3>📄 Your resume</h3>`+(r
+    ?`<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:15px;font-weight:700">${esc(r.name)}</div>
+          <div class="muted" style="font-size:12px">${(r.kind||"").toUpperCase()} · ${Math.max(1,Math.round(r.size/1024))} KB ·
+            ${r.chars?`${r.chars.toLocaleString()} characters read`:`<span style="color:var(--warn)">no text could be read</span>`} ·
+            added ${esc(r.added||"")}</div></div>
+        <a class="rowbtn" href="/api/resume/file" target="_blank" rel="noopener"
+           style="text-decoration:none;text-transform:none;letter-spacing:0">👁 Preview</a>
+        <button class="rowbtn" data-res-pick style="text-transform:none;letter-spacing:0">Replace</button>
+        <button class="rowbtn" data-res-del style="text-transform:none;letter-spacing:0">Remove</button>
+      </div>`
+    :`<p class="muted" style="font-size:13px;margin:4px 0 10px">Upload the resume you send to employers. It's stored on this machine and reused for every analysis.</p>
+      <button class="primary" data-res-pick>Upload resume (PDF or DOCX)</button>`)+
+    `<input type="file" data-res-file accept=".pdf,.docx,.doc,.txt,.md" hidden/>
+     <div class="usage-note">Only your resume is kept. Job descriptions and analyses are never saved.</div>`;
+}
+function renderMatchInput(){
+  const box=$("matchInput"); if(!box) return;
+  if(M.busy){
+    box.innerHTML=`<h3>🎯 Analyze a job</h3>
+      <div style="display:flex;align-items:center;gap:11px;padding:16px 4px">
+        <span class="spin"></span>
+        <div><div style="font-weight:600">Comparing your resume against this job…</div>
+        <div class="muted" style="font-size:12px">Reading the requirements, scoring the fit, and working out what to change.</div></div>
+      </div>`;
+    return;
+  }
+  if(M.an){
+    const a=M.an;
+    box.innerHTML=`<h3>🎯 Analyzed${a.jobTitle?`: ${esc(a.jobTitle)}`:""}${a.company?` <span class="muted" style="text-transform:none;letter-spacing:0">at ${esc(a.company)}</span>`:""}</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+        <button class="primary" data-m-again>Analyze another job</button>
+        <button class="rowbtn" data-m-done style="text-transform:none;letter-spacing:0">Done</button>
+        <span style="flex:1"></span>
+        <button class="rowbtn" data-m-copy style="text-transform:none;letter-spacing:0">📋 Copy</button>
+        <button class="rowbtn" data-m-pdf style="text-transform:none;letter-spacing:0">⬇ Export PDF</button>
+      </div>
+      <div class="usage-note">This analysis is only in this page. Copy or export it before you dismiss it, because nothing is saved.</div>`;
+    return;
+  }
+  box.innerHTML=`<h3>🎯 Analyze a job</h3>
+    <textarea data-jd rows="9" placeholder="Paste the complete job description here..."
+      style="width:100%;padding:12px;font-size:13px;line-height:1.55;resize:vertical"></textarea>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap">
+      <button class="primary" data-m-run ${M.resume?"":"disabled"}>Analyze Job</button>
+      ${M.resume?"":`<span class="muted" style="font-size:12px">Upload a resume above first.</span>`}
+      ${M.err?`<span style="color:var(--rejected);font-size:12px">${esc(M.err)}</span>`:""}
+    </div>`;
+}
+function renderMatchOut(){
+  const box=$("matchOut"); if(!box) return;
+  const a=M.an;
+  if(!a){ box.innerHTML=""; return; }
+  const V={APPLY_NOW:["go","🟢 APPLY NOW"],APPLY_IF_TIME:["maybe","🟡 APPLY IF YOU HAVE TIME"],SKIP:["skip","🔴 SKIP"]};
+  const v=V[a.recommendation]||["maybe",a.recommendation];
+  const sIcon={match:"✅",concern:"⚠️",dealbreaker:"❌"};
+  const sCls={match:"ok",concern:"warn",dealbreaker:"bad"};
+  const strengthCls=s=>/Excellent/.test(s)?"ok":/Good/.test(s)?"ok":/Partial/.test(s)?"warn":"bad";
+  const lift=(a.matchAfterTailoring||0)-(a.currentMatch||0);
+
+  const verdict=`<div class="icard" style="margin-bottom:14px">
+    <div class="verdict">
+      <span class="vbadge ${v[0]}">${v[1]}</span>
+      <div><div class="vscore">${a.overallScore}<small> / 100</small></div>
+        <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em">Overall match score</div></div>
+      <div style="flex:1;min-width:240px;font-size:13.5px;line-height:1.6">${esc(a.summary)}</div>
+    </div></div>`;
+
+  const breakdown=`<div class="icard"><h3>📊 Score breakdown</h3>
+    ${(a.breakdown||[]).map(b=>{ const p=Math.round(100*(+b.score||0)/(+b.max||1));
+      return `<div class="mrow"><div class="ml">${esc(b.category)}</div>
+        <div class="mbar ${barCls(p)}"><span style="width:${p}%"></span></div>
+        <div class="mval">${b.score} / ${b.max}</div></div>
+        ${b.note?`<div class="muted" style="font-size:11.5px;margin:-4px 0 8px 160px">${esc(b.note)}</div>`:""}`;
+    }).join("")}</div>`;
+
+  const eligibility=`<div class="icard"><h3>🪪 Eligibility check</h3>
+    ${(a.eligibility||[]).map(e=>`<div class="eli"><span>${sIcon[e.status]||"•"}</span>
+      <div><b>${esc(e.item)}</b><div class="muted" style="font-size:12px">${esc(e.detail)}</div></div></div>`).join("")
+      ||`<p class="muted">Nothing specific stated.</p>`}</div>`;
+
+  const skills=`<div class="icard"><h3>🧩 Skills match</h3>
+    <div class="areahead">Strong matches</div>
+    <div class="chiplist">${(a.skillsStrong||[]).map(s=>`<span class="tagpill ok">${esc(s)}</span>`).join("")||`<span class="muted" style="font-size:12px">None found.</span>`}</div>
+    <div class="areahead" style="margin-top:12px">Partial matches</div>
+    ${(a.skillsPartial||[]).map(s=>`<div style="padding:5px 2px;border-bottom:1px solid var(--line)">
+       <span class="tagpill warn">${esc(s.skill)}</span>
+       <span class="muted" style="font-size:12px;margin-left:7px">${esc(s.note)}</span></div>`).join("")
+      ||`<div class="muted" style="font-size:12px">None.</div>`}
+    <div class="areahead" style="margin-top:12px">Missing skills</div>
+    <div class="chiplist">${(a.skillsMissing||[]).map(s=>`<span class="tagpill bad">${esc(s)}</span>`).join("")||`<span class="muted" style="font-size:12px">Nothing important missing.</span>`}</div></div>`;
+
+  const experience=`<div class="icard"><h3>💼 Experience comparison</h3>
+    ${(a.experience||[]).map(x=>`<div class="xp">
+      <div class="want"><span class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em">Job wants</span><br>${esc(x.jobWants)}</div>
+      <div class="got"><span class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em">Your resume</span><br>${esc(x.resumeMatch)}</div>
+      <span class="tagpill ${strengthCls(x.strength)}">${esc(x.strength)}</span></div>`).join("")
+      ||`<p class="muted">No specific requirements found.</p>`}</div>`;
+
+  const ats=`<div class="icard"><h3>🤖 ATS keyword analysis</h3>
+    <div class="areahead">Matched keywords</div>
+    <div class="chiplist">${(a.atsMatched||[]).map(s=>`<span class="tagpill ok">${esc(s)}</span>`).join("")||`<span class="muted" style="font-size:12px">None.</span>`}</div>
+    <div class="areahead" style="margin-top:12px">Missing keywords</div>
+    <div class="chiplist">${(a.atsMissing||[]).map(s=>`<span class="tagpill bad">${esc(s)}</span>`).join("")||`<span class="muted" style="font-size:12px">None.</span>`}</div>
+    ${(a.atsRewrites||[]).length?`<div class="areahead" style="margin-top:12px">Suggested wording</div>`+
+      a.atsRewrites.map(r=>`<div style="padding:7px 2px;border-bottom:1px solid var(--line);font-size:12.5px">
+        <span class="muted">${esc(r.current)}</span> <span style="color:var(--accent)">→</span> <b>${esc(r.suggested)}</b></div>`).join(""):""}
+    ${a.atsImprovement?`<div class="usage-note">${esc(a.atsImprovement)}</div>`:""}</div>`;
+
+  const improvements=`<div class="icard"><h3>✏️ Resume improvements</h3>
+    <ul class="obs">${(a.improvements||[]).map(s=>`<li>${esc(s)}</li>`).join("")||`<li>Nothing to change.</li>`}</ul></div>`;
+
+  const redFlags=(a.redFlags||[]).length?`<div class="icard"><h3>🚩 Red flags</h3>
+    ${a.redFlags.map(s=>`<div class="trow"><div class="tt" style="color:var(--rejected)">${esc(s)}</div></div>`).join("")}</div>`:"";
+
+  const stars=n=>"★".repeat(Math.max(0,Math.min(5,n)))+"☆".repeat(Math.max(0,5-Math.max(0,Math.min(5,n))));
+  const career=`<div class="icard"><h3>📈 Career value</h3>
+    ${(a.careerValue||[]).map(c=>`<div class="mrow"><div class="ml">${esc(c.label)}</div>
+      <div style="flex:1" class="stars">${stars(c.rating)}</div>
+      <div class="mval">${c.rating} / 5</div></div>`).join("")}
+    ${a.careerValueNote?`<div class="usage-note">${esc(a.careerValueNote)}</div>`:""}</div>`;
+
+  const probCls={High:"ok",Medium:"warn",Low:"bad"}[a.interviewProbability]||"warn";
+  const prob=`<div class="icard"><h3>🎤 Interview probability</h3>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span class="tagpill ${probCls}" style="font-size:14px;padding:7px 16px">${esc(a.interviewProbability)}</span>
+      <div style="flex:1;min-width:200px;font-size:13px;line-height:1.6">${esc(a.interviewExplanation)}</div></div>
+    <div class="usage-note">An estimate from your fit and how competitive the role looks, not a prediction.</div></div>`;
+
+  const effort=`<div class="icard"><h3>⏱ Application effort</h3>
+    <div class="imetrics" style="margin-top:4px">
+      <div class="imetric"><div class="n" style="font-size:16px">${esc(a.applicationTime)}</div><div class="l">application time</div></div>
+      <div class="imetric"><div class="n" style="font-size:16px">${esc(a.tailoringNeeded)}</div><div class="l">tailoring needed</div></div>
+      <div class="imetric"><div class="n" style="font-size:16px">${esc(a.expectedReturn)}</div><div class="l">expected return</div></div>
+    </div>
+    <div style="font-size:13px;line-height:1.6;margin-top:8px">${esc(a.effortRecommendation)}</div></div>`;
+
+  const tailor=`<div class="icard" style="margin-top:14px"><h3>🚀 Expected match after tailoring</h3>
+    <div class="liftbox">
+      <div class="liftnum"><div class="n">${a.currentMatch}%</div><div class="l">current match</div></div>
+      <div class="liftarrow">→</div>
+      <div class="liftnum"><div class="n" style="color:var(--offer)">${a.matchAfterTailoring}%</div><div class="l">after tailoring</div></div>
+      ${lift>0?`<div class="tagpill ok" style="font-size:13px">+${lift} points</div>`:""}
+    </div>
+    <div class="areahead">What produces that improvement</div>
+    <ul class="obs">${(a.tailoringChanges||[]).map(s=>`<li>${esc(s)}</li>`).join("")||`<li>Nothing further to gain.</li>`}</ul></div>`;
+
+  const actName=(MATCH_ACTIONS.find(x=>x[0]===(M.act&&M.act.kind))||[])[1]||"";
+  const actions=`<div class="icard" style="margin-top:14px"><h3>⚡ AI actions</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+      ${MATCH_ACTIONS.map(([k,label])=>`<button class="rowbtn" data-m-act="${k}" ${M.actBusy?"disabled":""}
+        style="text-transform:none;letter-spacing:0">${M.actBusy===k?`<span class="spin"></span> Working…`:label}</button>`).join("")}
+    </div>
+    ${M.act?`<div style="display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <b style="font-size:13px">${esc(actName)}</b><span style="flex:1"></span>
+        <button class="rowbtn" data-m-actcopy style="text-transform:none;letter-spacing:0">📋 Copy</button>
+        <button class="rowbtn" data-m-actclose style="text-transform:none;letter-spacing:0">Close</button></div>
+      ${M.act.error?`<div style="color:var(--rejected);font-size:12.5px;margin-top:8px">${esc(M.act.error)}</div>`
+        :`<div class="aiout">${esc(M.act.text)}</div>`}`:""}
+    <div class="usage-note">Generated fresh each time from your stored resume and this job description. Nothing here is saved.</div></div>`;
+
+  const confidence=`<div class="icard" style="margin-top:14px"><h3>🎚 Confidence</h3>
+    <div class="mrow"><div class="ml">Analysis confidence</div>
+      <div class="mbar ${barCls(a.confidence)}"><span style="width:${a.confidence}%"></span></div>
+      <div class="mval">${a.confidence}%</div></div>
+    <div class="muted" style="font-size:12.5px">${esc(a.confidenceNote)}</div>
+    <div class="usage-note">Confidence reflects how complete and specific the job description is, not how strong you are.</div></div>`;
+
+  box.innerHTML=verdict+
+    `<div class="charts">${breakdown}${eligibility}</div>`+
+    `<div class="charts" style="margin-top:14px">${skills}${experience}</div>`+
+    `<div class="charts" style="margin-top:14px">${ats}${improvements}</div>`+
+    (redFlags?`<div class="charts" style="margin-top:14px">${redFlags}${career}</div>`
+             :`<div class="charts" style="margin-top:14px">${career}${prob}</div>`)+
+    (redFlags?`<div class="charts" style="margin-top:14px">${prob}${effort}</div>`
+             :`<div class="charts" style="margin-top:14px">${effort}</div>`)+
+    tailor+actions+confidence+
+    `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 4px">
+      <button class="primary" data-m-again>Analyze another job</button>
+      <button class="rowbtn" data-m-done style="text-transform:none;letter-spacing:0">Done</button>
+    </div>`;
+}
+function renderMatch(){ renderResumeMgr(); renderMatchInput(); renderMatchOut(); }
+document.addEventListener("click",e=>{
+  if(e.target.closest("[data-res-pick]")){ const f=document.querySelector("[data-res-file]"); if(f) f.click(); return; }
+  if(e.target.closest("[data-res-del]")){
+    if(confirm("Remove your stored resume?"))
+      fetch("/api/resume/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"})
+        .then(()=>{ M.resume=null; renderMatch(); toast("Resume removed."); });
+    return; }
+  if(e.target.closest("[data-m-run]")){ runAnalysis(); return; }
+  if(e.target.closest("[data-m-again]")){ matchClear();
+    setTimeout(()=>{ const t=document.querySelector("[data-jd]"); if(t) t.focus(); },60); return; }
+  if(e.target.closest("[data-m-done]")){ matchClear(); window.scrollTo({top:0,behavior:"smooth"}); return; }
+  if(e.target.closest("[data-m-copy]")){ const t=matchPlainText();
+    if(navigator.clipboard) navigator.clipboard.writeText(t).then(()=>toast("Analysis copied")).catch(()=>toast("Copy failed"));
+    return; }
+  if(e.target.closest("[data-m-pdf]")){ matchExportPdf(); return; }
+  const act=e.target.closest("[data-m-act]"); if(act){ runMatchAction(act.dataset.mAct); return; }
+  if(e.target.closest("[data-m-actcopy]")){ const t=M.act&&M.act.text||"";
+    if(navigator.clipboard) navigator.clipboard.writeText(t).then(()=>toast("Copied")).catch(()=>toast("Copy failed"));
+    return; }
+  if(e.target.closest("[data-m-actclose]")){ M.act=null; renderMatch(); return; }
+});
+document.addEventListener("change",e=>{
+  const f=e.target.closest("[data-res-file]");
+  if(f&&f.files&&f.files[0]){ resumeUpload(f.files[0]); f.value=""; }
 });
 
 /* ==================================================================

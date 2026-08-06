@@ -291,6 +291,18 @@ Since this guide was written, five major phases shipped (full detail in ROADMAP.
 - **💰 Finance**: expenses with budgets, savings goals, net worth with
   live-valued crypto holdings, six-month trends; markets mirrored in; voice
   expense logging.
+- **🎯 Resume Match**: upload your resume once, then paste any job description
+  and get a recruiter-style read on whether to apply. APPLY NOW / APPLY IF YOU
+  HAVE TIME / SKIP with an overall score, an eight-category breakdown,
+  eligibility checks, strong/partial/missing skills, a requirement-by-requirement
+  experience comparison, ATS keywords with suggested rewrites, resume
+  improvements, red flags, career value, interview probability, effort estimate,
+  a confidence score, and your expected match after tailoring alongside the exact
+  edits that get you there. Six one-click actions cover rewriting the resume,
+  a cover letter, keyword optimization, recruiter outreach, interview prep and
+  explaining the posting. Only the resume is stored: job descriptions and
+  analyses live in the page for that session and are erased when you dismiss
+  them, so export or copy anything worth keeping.
 - **📚 Docs**: a private document library. Upload PDFs, Word docs, notes and
   slides; ask questions about them in the tab or by voice; everything stays on
   your machine and only matching excerpts reach Claude.
