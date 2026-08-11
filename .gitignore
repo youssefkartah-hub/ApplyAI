@@ -141,3 +141,29 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# --- Job Dashboard (Python backend) ---
+# Secrets — NEVER commit these
+credentials.json
+token.json
+client_secret*.json
+notion_token.txt
+notion_config.json
+
+# Local sync state and user data
+.sync_state.json
+data.json
+overrides.json
+personal_data.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+token_calendar.json
+elevenlabs_key.txt
+anthropic_key.txt
+knowledge/
+resume/
