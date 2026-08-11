@@ -99,10 +99,11 @@ Live tiles for **Bitcoin**, **Solana** (7-day area graphs, 24-hour change) and t
 
 A big overall percentage with an animated bar, plus a motivating line that changes with progress ("Fresh slate. Pick one and get started." → "Almost there. Finish strong." → "Perfect day. Every single category closed out. 💯"). The overall number is the average of every category active today and also appears in the header as **day %**.
 
-Four life-area cards, each with its own percentage and progress bar, glowing green when complete:
+Five life-area cards, each with its own percentage and progress bar, glowing green when complete:
 
 - **🕌 Faith** — the five daily prayers (Fajr, Dhuhr, Asr, Maghrib, Isha) around a **circular tracker split into five equal segments**. Each prayer you check fills one segment with a cyan glow and adds 20% to the ring's center number; at five the whole ring turns green. Checked items get a satisfying strikethrough.
 - **🥋 Training** — today's sessions from the weekly plan (Mon Upper Body A + Muay Thai, Tue Lower Body Strength + BJJ, Wed Recovery & Mobility, Thu Upper Body B + BJJ, Fri Muay Thai then Lower Body Power + Athletic Work, Sat & Sun Rest), plus anything training-related your calendar adds. Every session is a plain checkbox, exactly like prayers: check it once you've been, nothing else to log. Checking one off also completes its task in the planner. On rest days the card is excluded from the overall average so it never drags your score.
+- **🧴 Body** — two daily non-negotiables: creatine (5 g) and your nightly skincare routine. Plain checkboxes with the same Monday-to-Sunday dots and weekly / 30-day percentages as prayers, so a missed streak is obvious at a glance. Say "took my creatine" or "did my skincare" and Sarah checks them off.
 - **🧠 Mind** — Language lesson, one episode of Narcos.
 - **💵 Income** — a full money log (next section).
 

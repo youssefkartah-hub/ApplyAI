@@ -1750,11 +1750,13 @@ function mindItems(){
   if(Array.isArray(s)&&s.length) return s;
   return [["lesson","Language lesson"],["immersion","Immersion: one episode or podcast in your target language"]];
 }
+const BODY=[["creatine","Creatine · 5 g"],["skincare","Skincare · night routine"]];
 function lifeSections(){
   return [
     {id:"faith",name:"Faith",icon:"🕌",ring:true,items:PRAYERS},
     {id:"training",name:"Training",icon:"🥋",cal:true,items:trainingToday(),
       rest:"Rest day. No sessions on the calendar."},
+    {id:"body",name:"Body",icon:"🧴",items:BODY},
     {id:"mind",name:"Mind",icon:"🧠",items:mindItems()},
     {id:"income",name:"Income",icon:"💵",money:true,items:[]},
   ];
@@ -1781,6 +1783,8 @@ function dailyLeftBits(){
   const pl=PRAYERS.filter(([k])=>!dd[k]).map(([,n])=>n);
   if(pl.length) bits.push(pl.length===5?"all five prayers":`${pl.length} prayer${pl.length>1?"s":""} (${pl.join(", ")})`);
   trainingToday().filter(([k])=>!dd[k]).forEach(([,n])=>bits.push(n));
+  if(!dd.creatine) bits.push("your creatine");
+  if(!dd.skincare) bits.push("your skincare");
   mindItems().forEach(([k,n])=>{ if(!dd[k]) bits.push(n.toLowerCase().startsWith("language")?"your language lesson":n.toLowerCase()); });
   const incLeft=Math.max(0,INCOME_GOAL-incomeToday());
   if(incLeft>0) bits.push(`$${incLeft.toLocaleString()} more to hit your income goal`);
@@ -1831,7 +1835,7 @@ function renderDaily(){
       <div class="lhead"><span class="lname">${sec.icon} ${sec.name}</span><span class="lpct">${pct==null?"":complete?"Done ✓":pct+"%"}</span></div>
       ${pct!=null?`<div class="lifebar"><span style="width:${pct}%"></span></div>`:""}
       ${body}
-      ${["faith","training","mind"].includes(sec.id)?perfLine(sec.id):""}</div>`;
+      ${["faith","training","body","mind"].includes(sec.id)?perfLine(sec.id):""}</div>`;
   }).join("");
   const msg=overall>=100?"Perfect day. Every single category closed out. 💯"
     :overall>=75?"Almost there. Finish strong.":overall>=40?"Good momentum, keep it going."
@@ -2207,7 +2211,7 @@ function dayScoreFor(kind,dk){
     if(d.training&&done<sch.length) done++;
     return {done,total:sch.length};
   }
-  const items=kind==="faith"?PRAYERS:mindItems();
+  const items=kind==="faith"?PRAYERS:kind==="body"?BODY:mindItems();
   if(!items.length) return null;
   return {done:items.filter(([k])=>d[k]).length,total:items.length};
 }
@@ -2239,7 +2243,7 @@ function weekDots(kind){
 let dayFix=null; // {kind, dk}
 function fixDayEditor(kind){
   const dk=dayFix.dk, d=(OS.daily||{})[dk]||{};
-  const items=kind==="training"?scheduledFor(dk):(kind==="faith"?PRAYERS:mindItems());
+  const items=kind==="training"?scheduledFor(dk):kind==="faith"?PRAYERS:kind==="body"?BODY:mindItems();
   const label=new Date(dk+"T12:00:00").toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
   const canFwd=dk<todayKey();
   return `<div class="fixbox">
@@ -3229,6 +3233,8 @@ function localIntent(t){
   if(/(muay ?thai|my tie|moy tai)/.test(l)){ checkDaily("muaythai"); markTrainingTask("muaythai"); acted.push("Muay Thai"); }
   if(/\btrain(ed|ing)?\b|sparring|grappling|wrestling/.test(l)&&!/(bjj|jiu|jujitsu|muay|my tie)/.test(l)){
     checkDaily("training"); markTrainingTask("training"); acted.push("training"); }
+  if(/creatine|creatin/.test(l)){ checkDaily("creatine"); acted.push("your creatine"); }
+  if(/skin ?care|face wash|washed my face|moisturi[sz]/.test(l)){ checkDaily("skincare"); acted.push("your skincare"); }
   if(/(language lesson|my lesson|duolingo)/.test(l)){ checkDaily("lesson"); acted.push("your lesson"); }
   if(/(narcos|episode|podcast|immersion)/.test(l)&&/watch(ed)?|did|done|finish|listen/.test(l)){
     const k=mindItems()[1]?mindItems()[1][0]:"immersion"; checkDaily(k); acted.push("your immersion time"); }
@@ -3246,6 +3252,7 @@ function voiceState(){
   return { prayersLeft:PRAYERS.filter(([k])=>!dd[k]).map(([,n])=>n),
     trainingLeft:trainingToday().filter(([k])=>!dd[k]).map(([,n])=>n),
     mindLeft:mindItems().filter(([k])=>!dd[k]).map(([,n])=>n),
+    bodyLeft:BODY.filter(([k])=>!dd[k]).map(([,n])=>n),
     incomeToday:incomeToday(), incomeGoal:INCOME_GOAL, incomeAllTime:incomeTotal(),
     appsToday:all.filter(isToday).length, appsGoal:Object.values(TARGETS).reduce((a,b)=>a+b,0),
     interviewsInPlay:all.filter(a=>a.status==="Interview Scheduled").map(a=>a.company).slice(0,5),
@@ -3266,6 +3273,7 @@ function voiceState(){
 const AI_ACTIONS={
   check_prayer:a=>{ if(PRAYERS.some(([k])=>k===a.key)) checkDaily(a.key); },
   check_training:a=>{ if(["bjj","muaythai","training","lift"].includes(a.key)){ checkDaily(a.key); markTrainingTask(a.key); } },
+  check_body:a=>{ if(BODY.some(([k])=>k===a.key)) checkDaily(a.key); },
   check_mind:a=>{ const keys=mindItems().map(([k])=>k);
     if(keys.includes(a.key)) checkDaily(a.key);
     else if(a.key==="narcos") checkDaily(keys[1]||"immersion"); },

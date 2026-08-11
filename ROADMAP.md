@@ -118,6 +118,14 @@ deliberately minimal: show up and check the box, exactly like prayers.
   "Analyze another job" or "Done". Export to PDF or copy to clipboard first if
   you want to keep one.
 
+## Phase 7 — Body basics ✅ (shipped)
+
+- A 🧴 Body card on Today: creatine (5 g daily) and the nightly skincare
+  routine as plain checkboxes, carrying the same Monday-to-Sunday dots, weekly and
+  30-day percentages, and past-day editing as prayers and training. Both feed the
+  overall day percentage and the daily rundown, both are voice-checkable offline
+  ("took my creatine", "did my skincare"), and Claude gains a check_body action.
+
 ## Later ideas (unscheduled)
 
 - Journal, spaced-repetition flashcards, richer language stats, deeper knowledge
