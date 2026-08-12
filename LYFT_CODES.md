@@ -48,7 +48,33 @@ browser's local storage. Neither file is ever committed to this repository, and
 3. The customer scans the QR. Their phone opens the claim page showing **just
    that one code**, already copied to their clipboard, with a big **Copy code**
    button and the steps to add it in the Lyft app.
-4. The code is marked used automatically — the same one never comes out twice.
+4. Tap **✓ I gave this out** or **✗ I didn't**. That's what actually records it.
+
+## The three states
+
+Nothing is recorded as given until you confirm it, so the records match what
+really happened at the counter rather than what you tapped.
+
+| State | Icon | Meaning |
+|---|---|---|
+| **Not given out** | ○ | Still in the pool, will be dispensed later |
+| **Pending** | ⏳ | Shown to a customer, waiting on your confirmation |
+| **Given out** | ✓ | Confirmed and recorded, with a timestamp |
+
+- **✓ I gave this out** — records it and returns to the ready screen for the next
+  customer. This is the moment the timestamp is taken.
+- **✗ I didn't** — the customer walked off, the scan failed, they changed their
+  mind. The code goes straight back into the pool and will come out again.
+
+If you walk away without confirming, the code stays **Pending** and an amber
+banner appears on the main screen — tap **Review** to resolve it. Pending codes
+are never handed out again in the meantime, so no one gets a duplicate.
+
+In **Manage**, the chips **All / ○ Not given out / ⏳ Pending / ✓ Given out**
+filter the list, and every code carries its status icon. You can change any
+code's state by hand from there too.
+
+Only confirmed codes appear in the spreadsheet and the calendar.
 
 The dispenser already knows the claim page address, so there is nothing to
 configure. It works offline too: the QR still points at the public claim page
@@ -108,8 +134,8 @@ shared drives and out of email.
 
 ## Manage panel
 
-- Search any code, see whether it's Available or Given
-- Mark given / restore individual codes
+- Search and filter by status: All, Not given out, Pending, Given out
+- Change any individual code between given, pending and not given
 - Download spreadsheet, backup, restore, reset
 - **Customer link** — only needed if you ever move the claim page to a different
   address; the dispenser ships pointing at the right one already.
