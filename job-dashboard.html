@@ -648,8 +648,22 @@ function normStatus(s){ s=(s||"").trim(); if(STATUS_META[s]) return s; const l=s
   if(l.includes("withdraw")) return "Withdrawn";
   return "Applied"; }
 
-function rowKey(a){ return (a.company+"|"+(a.position||"")).toLowerCase(); }
-function ov(a){ return overrides[rowKey(a)]||{}; }
+// Identity: prefer Notion's page id. The old key was company|position, which
+// meant every application to the same role shared one saved edit — archiving
+// one of them hid all of them.
+function legacyKey(a){ return ((a.company||"")+"|"+(a.position||"")).toLowerCase(); }
+function rowKey(a){ return a.id||legacyKey(a); }
+let legacyCount={};
+function countLegacyKeys(){ legacyCount={};
+  rowsData.forEach(a=>{ const k=legacyKey(a); legacyCount[k]=(legacyCount[k]||0)+1; }); }
+function ov(a){
+  const byId=a.id?overrides[a.id]:null;
+  if(byId) return byId;
+  // An edit saved under the old key is only safe to apply when exactly one
+  // application owns that key. Otherwise it would hide real applications.
+  const lk=legacyKey(a);
+  return (legacyCount[lk]===1&&overrides[lk])?overrides[lk]:{};
+}
 function eff(a){ const o=ov(a);
   return {...a, company:o.company??a.company, position:o.position??a.position,
     country:o.country??a.country, status:o.status??a.status, note:o.note??a.note,
@@ -666,10 +680,12 @@ async function loadData(flash){
     const j=await res.json();
     if(j.error){ showSetup(j); setConnected(false); return; }
     rowsData=(j.applications||[]).map(a=>({
+      id:a.id||"",
       company:a.company||"Unknown", position:a.position||"", location:"",
       country:normCountry(a.country), status:normStatus(a.status), note:a.note||"",
       date:a.date?Date.parse(a.date):null, rawDate:a.date||"",
       updated:a.updated?Date.parse(a.updated):null }));
+    countLegacyKeys();
     lastLoad=Date.now(); setConnected(true);
     $("setup").style.display="none"; $("main").style.display="grid";
     if(flash) flashDot();
@@ -718,7 +734,11 @@ function render(){
     {n:c("Rejected"),l:"Rejected",cls:"rejected"},{n:rate+"%",l:"Response rate",cls:""},
     {n:fu,l:"Need follow-up",cls:fu?"rejected":""},
   ].map(s=>`<div class="stat ${s.cls}"><div class="n">${s.n}</div><div class="l">${s.l}</div></div>`).join("");
-  $("totalSub").textContent=`${all.length} application${all.length!==1?"s":""}`;
+  // say out loud when rows are being hidden, so a stray archive can never
+  // quietly shrink the tracker again
+  const hidden=rowsData.length-all.length;
+  $("totalSub").textContent=`${all.length} application${all.length!==1?"s":""}`+
+    (hidden>0?` (+${hidden} archived)`:"");
 
   const todays=all.filter(isToday);
   $("targetsBox").innerHTML=`<h3>Daily goal by region · today (${todayStr()}) · resets each day</h3><div class="tgrid">`+Object.keys(TARGETS).map(k=>{
@@ -1005,7 +1025,10 @@ $("tbody").addEventListener("click",e=>{
     tr.querySelectorAll("[data-f]").forEach(el=>{ patch[el.dataset.f]=el.type==="checkbox"?el.checked:el.value; });
     saveOverride(save.dataset.save,patch); editing=null; toast("Saved"); render(); return; }
   const reset=e.target.closest("[data-reset]");
-  if(reset){ delete overrides[reset.dataset.reset]; localStorage.setItem("jd_overrides",JSON.stringify(overrides));
+  if(reset){ const k=reset.dataset.reset; delete overrides[k];
+    // also drop any edit still saved under the old company|position key
+    const row=rowsData.find(x=>rowKey(x)===k); if(row) delete overrides[legacyKey(row)];
+    localStorage.setItem("jd_overrides",JSON.stringify(overrides));
     editing=null; toast("Reset"); render(); }
 });
 $("calBox").addEventListener("click",e=>{

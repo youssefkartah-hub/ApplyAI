@@ -112,6 +112,10 @@ def normalize(page):
         date_val = (appdate["date"] or {}).get("start", "") or ""
 
     return {
+        # Notion's own page id: the only stable identity an application has.
+        # Without it the dashboard had to guess by company+position, so two
+        # applications to the same role shared one identity.
+        "id": page.get("id", ""),
         "company": company or "Unknown",
         "position": _plain(position.get("rich_text")) if position else "",
         "location": "",
