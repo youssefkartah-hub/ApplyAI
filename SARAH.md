@@ -2,7 +2,7 @@
 
 **The complete guide to everything the app does.**
 
-Sarah is a personal operating system that runs entirely on your Mac. She tracks your job search live from Notion, syncs your day from Google Calendar, manages your faith, training, learning and income goals, watches the markets, and talks to you out loud like a real assistant. One Python file is the server, one HTML file is the entire interface, and all your data stays on your machine.
+Sarah is a personal operating system that runs entirely on your Mac. It is built on one rule: **you only ever score yourself on inputs you control, never on outcomes.** Customers, belts and money are lagging results; your job is to hit the daily numbers and let the results arrive on their own schedule. Sarah tracks those numbers, your job search (live from Notion), your calendar (both ways), your money (from Rocket Money), and talks to you out loud like a real assistant. One Python file is the server, one HTML file is the entire interface, and all your data stays on your machine.
 
 ---
 
@@ -12,9 +12,9 @@ Sarah is a personal operating system that runs entirely on your Mac. She tracks 
 |---|---|
 | `notion_server.py` | The local server. Serves the app at `localhost:8000`, talks to Notion, Google Calendar, ElevenLabs, Anthropic, CoinGecko and Yahoo Finance on your behalf, and saves your data. |
 | `job-dashboard.html` | The entire app: interface, logic, styling. Opens in your browser. |
-| `personal_data.json` | Your life data: tasks, habits, prayers, income log, goals, projects, everything. Saved automatically within half a second of any change. |
+| `personal_data.json` | Your life data: lead measures, tasks, prayers, outreach, reviews, income, imported spending, everything. Saved automatically within half a second of any change. |
 | `start.command` | Double-click launcher. Starts the server and opens the app. |
-| Key files | `notion_token.txt`, `credentials.json` + `token_calendar.json`, `elevenlabs_key.txt`, `anthropic_key.txt`. All gitignored, never served over HTTP. |
+| Key files | `notion_token.txt`, `credentials.json` + `token_calendar.json` (+ `.sarah_calendar.json`), `elevenlabs_key.txt`, `anthropic_key.txt`. All gitignored, never served over HTTP. |
 
 Nothing is hosted in the cloud. Closing the terminal stops the app; nothing is ever lost, because every change is written to disk immediately (with a second copy in the browser's local storage as backup).
 
@@ -32,132 +32,104 @@ The whole interface is a JARVIS-style HUD: deep navy background with a faint cya
 
 ## 3. The header
 
-- **SARAH ▾** — hover over the name (or click it) and the navigation menu slides down: Assistant (Today, Goals, Planner, Inbox), Career (Job Insights, Applications, Calendar, Interviews·CRM), Life (Projects, Habits, Focus). It closes when you pick a destination, move away, or press Escape.
-- **Ask anything bar** (top right) — one input for everything. See section 5.
-- **Live clock**, a **connection dot** (green = Notion feed live, red = offline), **day %** (your overall daily completion), when data last refreshed, an auto-refresh interval picker (30s / 60s / 5m), **Refresh**, **Export CSV**, **🎤 Talk**, and the theme toggle.
+- **SARAH ▾** — hover over the name (or click it) and the navigation menu slides down: System (Today, Scoreboard, Goals, Docs), Career (Job Insights, Applications, Calendar, Interviews·CRM, Resume Match), Life (Train, Finance, Projects). It closes when you pick a destination, move away, or press Escape.
+- **Command bar** (top right) — one input for everything. See section 5.
+- **Live clock**, a **connection dot** (green = Notion feed live, red = offline), **day %** (today's lead measures), when data last refreshed, an auto-refresh interval picker (30s / 60s / 5m), **Refresh**, **Export CSV**, **🎤 Talk**, and the theme toggle.
 
-**Keyboard shortcuts:** `Cmd+K` focuses the ask bar. Keys `1–8` jump between tabs (1 Today, 2 Planner, 3 Inbox, 4 Habits, 5 Focus, 6 Job Insights, 7 Calendar, 8 Applications). `C` opens quick capture, `N` starts a new task, `F` opens Focus. `Escape` closes menus and popups.
+**Keyboard shortcuts:** `Cmd+K` focuses the command bar. Keys `1–8` jump between tabs (1 Today, 2 Scoreboard, 3 Job Insights, 4 Applications, 5 Calendar, 6 Interviews·CRM, 7 Train, 8 Finance). `N` jumps to a new task. `Escape` closes menus and popups.
 
 ---
 
 ## 4. Talking to Sarah (the voice assistant)
 
-Click **🎤 Talk** and speak. Chrome transcribes you, Sarah figures out what you meant, updates the app, and answers out loud in the ElevenLabs **Elise** voice. A small bubble in the corner shows the exchange in text. After she answers, she listens again automatically — a real back-and-forth conversation. The button becomes 🔴 Stop while a conversation is live; click it or stay silent to end.
+Click **🎤 Talk** and speak. Chrome transcribes you, Sarah figures out what you meant, updates the app, and answers out loud in the ElevenLabs **Elise** voice. A small bubble in the corner shows the exchange in text. After she answers, she listens again automatically — a real back-and-forth conversation.
 
 **Two brains, in order:**
 
-1. **Claude (when `anthropic_key.txt` is present).** Everything you say goes to Claude Sonnet with a full snapshot of your day — prayers left, training scheduled, income progress, applications sent, interviews in play, companies gone quiet, focus minutes, habits, today's calendar, top tasks — plus the last 8 exchanges of conversation memory. She can hold an open conversation: interview advice, planning, motivation, anything. When you report something done, Claude emits structured actions the app applies instantly: check a prayer, check training, check a lesson, log income, add a task, complete an existing task by name.
-2. **Pattern matching (always available, no key).** Built-in understanding for the common phrases: "I prayed fajr and dhuhr" (or "all five"), "just finished BJJ" / "muay thai" / "I trained", "I made 45 dollars", "I did my lesson", "watched narcos", "remind me to email the recruiter", "what do I still need to do?", "how much have I made?", "read my rundown".
+1. **Claude (when `anthropic_key.txt` is present).** Everything you say goes to Claude with a snapshot of your day and your system — today's lead measures, this week's numbers, the venture and its 90-day lock, training, tasks, applications, money — plus recent conversation memory. She knows your rules and holds you to them: if you start talking about polishing a product instead of contacting people, she'll name it. When you report something done, she applies it: prayers, Quran, sales study, sleep, training, outreach and replies, the call home, a social evening, income, expenses, tasks.
+2. **Pattern matching (always available, no key).** Understands the common phrases: "I prayed fajr and dhuhr" (or "all five"), "read Quran", "sent 15 DMs", "got 3 replies", "studied sales", "slept 8 hours", "called my parents", "went out with friends", "just finished BJJ", "took my creatine", "made 45 dollars", "spent 12 on lunch", "later: drone mapping idea", "remind me to email the recruiter tomorrow at 3pm", and questions like "what's left?", "how many conversations today?", "what do my subscriptions cost?".
 
-Anything she checks off also completes the matching calendar task, so your planner, progress bars and overall percentage all move in real time while she's confirming it out loud.
-
-**The "Read it to me" button** on the daily rundown speaks the whole briefing. If ElevenLabs is unreachable or out of credits, it falls back to the built-in browser voice and tells you why via a small toast.
+**The "Read it to me" button** on the rundown speaks it. If ElevenLabs is unreachable it falls back to the browser's built-in voice.
 
 ---
 
-## 5. The ask-anything bar
-
-One text input that routes by prefix:
+## 5. The command bar
 
 | You type | What happens |
 |---|---|
-| `goal: get a Boeing internship` | Jumps to Goals and generates a full phased plan |
-| `find airbus` / `search boeing` / `?spacex` | Jumps to Applications filtered to that search |
-| `habit: read 20 minutes` | Creates a new daily habit |
-| `focus` | Opens the Focus timer |
-| `apply to SpaceX tomorrow` | Smart-detected as a task: categorized (Career), due date parsed from "today"/"tomorrow" |
-| anything else | Captured to the Inbox, auto-sorted into a life area |
+| `call Onset lead tomorrow at 3pm` | A task, due tomorrow at 3:00 PM, titled "call Onset lead". Understands today, tonight, tomorrow, weekday names, and times like `3pm` or `at 15:30`. |
+| `sent 15` / `15 dms` / `+15` | Logs 15 outreach conversations |
+| `3 replies` | Logs 3 replies |
+| `later: drone mapping startup` | Parks a new business idea in Later (the 90-day lock) |
+| `review` | Opens the Scoreboard |
+| `goal: get a Boeing internship` | Jumps to Goals and generates a phased plan |
+| `find airbus` / `?spacex` | Jumps to Applications filtered to that search |
+| anything else | Becomes a task |
 
 ---
 
 ## 6. The Today tab (the main screen)
 
-Top to bottom:
+### 6.1 Your next move + rundown
 
-### 6.1 Your next move + Daily rundown (one combined card)
+**Your next move** is the single highest-value open task or goal action. **Your rundown** is five to seven short bullets, rebuilt live: the date and what's next on the calendar; outreach today and this week; today's training; everything still open, by name; tasks due; applications today; and on Sundays, a reminder that the review is due.
 
-**Your next move** is the single highest-value thing to do right now, chosen by the priority engine (section 7) from all open tasks and goal actions. It shows the task, its area, duration, and two buttons: ✅ Done and ⏱ Focus on it (which opens the timer).
+### 6.2 Today's numbers — the daily lead measures
 
-**Your daily rundown** is a human-written briefing, rebuilt live:
-- Greeting with the date.
-- Calendar summary: how many events today and what's next at what time.
-- Applications: sent today out of your daily goal of 20, companies gone quiet that need a nudge, interviews in play.
-- Overdue tasks, if any, with the one to clear first.
-- Best use of your time right now.
-- **Everything still on the board today, by name**: remaining prayers (e.g. "3 prayers (Asr, Maghrib, Isha)"), scheduled training sessions, language lesson, Narcos episode, and dollars left to the income goal. When it's all done: "Every daily category is done. That's a perfect day."
-- Habits not yet checked.
-- Deep work so far ("No deep work logged yet. One focused session gets the ball rolling.").
-- On Sundays, a weekly review: applications, tasks done, deep-work hours, interview movement over the last 7 days.
+One overall percentage (also the header's **day %**) and a card per area, each with its own bar, Monday-to-Sunday dots, and this-week and 30-day percentages. Click any dot to fix a past day.
 
-🔊 **Read it to me** speaks the whole thing in Elise's voice.
+- **🕌 Faith** — five prayers on the ring, then Quran (10 min). On Fridays, Jummah.
+- **📞 The venture** (Onset Listings by default) — a conversation counter with −/+1/+5 buttons against 15 a day (weekdays; 75 a week), a replies counter, and 30 minutes of sales study.
+- **🥋 Training** — today's sessions from the weekly plan.
+- **🧴 Body** — slept 7+ hours, creatine, skincare.
+- **🧠 Mind** — language lesson and immersion.
+- **💵 Income** — a log, deliberately **not scored**: money is an outcome. It still feeds the Sunday review and Finance.
 
-### 6.2 Markets
+New measures only count from the day the system went live, so older days aren't dragged down retroactively.
 
-Live tiles for **Bitcoin**, **Solana** (7-day area graphs, 24-hour change) and the **S&P 500** (today's intraday graph vs previous close). Green graph and ▲ when up, red and ▼ when down. Prices come from CoinGecko and Yahoo Finance through your local server (cached 60 seconds server-side), refreshed every minute while the app is open. Free, no keys.
+### 6.3 This week
 
-### 6.3 Your day at a glance (daily performance)
+Martial arts against 4, lifting against 3, and outreach against 75 — coloured by pace, never red early in the week — plus checkboxes for the call home and a social evening out, and a link to the Sunday review.
 
-A big overall percentage with an animated bar, plus a motivating line that changes with progress ("Fresh slate. Pick one and get started." → "Almost there. Finish strong." → "Perfect day. Every single category closed out. 💯"). The overall number is the average of every category active today and also appears in the header as **day %**.
+### 6.4 The venture card
 
-Five life-area cards, each with its own percentage and progress bar, glowing green when complete:
+Day X of 90 on the lock, outreach this week, progress toward 1,000 conversations, the reply rate, paying customers (add them by name; three lifts the lock), and **Later**, where new business ideas go to be parked and closed.
 
-- **🕌 Faith** — the five daily prayers (Fajr, Dhuhr, Asr, Maghrib, Isha) around a **circular tracker split into five equal segments**. Each prayer you check fills one segment with a cyan glow and adds 20% to the ring's center number; at five the whole ring turns green. Checked items get a satisfying strikethrough.
-- **🥋 Training** — today's sessions from the weekly plan (Mon Upper Body A + Muay Thai, Tue Lower Body Strength + BJJ, Wed Recovery & Mobility, Thu Upper Body B + BJJ, Fri Muay Thai then Lower Body Power + Athletic Work, Sat & Sun Rest), plus anything training-related your calendar adds. Every session is a plain checkbox, exactly like prayers: check it once you've been, nothing else to log. Checking one off also completes its task in the planner. On rest days the card is excluded from the overall average so it never drags your score.
-- **🧴 Body** — two daily non-negotiables: creatine (5 g) and your nightly skincare routine. Plain checkboxes with the same Monday-to-Sunday dots and weekly / 30-day percentages as prayers, so a missed streak is obvious at a glance. Say "took my creatine" or "did my skincare" and Sarah checks them off.
-- **🧠 Mind** — Language lesson, one episode of Narcos.
-- **💵 Income** — a full money log (next section).
+### 6.5 Tasks and today's schedule
 
-### 6.4 The income log
+Add a task with a date and optional time; check it off; delete it. With calendar sync on, every dated task also lives on your SARAH calendar (section 8). Beside it, today's schedule from every calendar, with SARAH's own blocks tagged.
 
-Goal: **$100 a day**. Type any amount and hit "Log it" (or Enter) each time you make money. The card shows: total earned today in large type, dollars left to the goal ("$25 left to make" → "Goal hit. Everything extra is a bonus. 🎉"), every entry logged today with an ✕ to remove mistakes, and a running **all-time total** that keeps growing forever. The category percentage (earned ÷ 100, capped at 100%) feeds your overall day. If the page refreshes while you're mid-typing, your input survives.
+### 6.6 Markets
 
-### 6.5 Up next
-
-Your top seven actions ranked by score — regular tasks and goal-plan actions mixed together, each with its priority number (red-tinted when 70+, meaning hot). Check them off right there.
-
-### 6.6 Worth keeping an eye on
-
-A radar of things that aren't tasks but matter: interviews coming up (prep!), companies waiting on a reply (with days silent), active goals with percent complete, later calendar events, and today's habits with streak counts and checkboxes.
-
-### 6.7 Today's schedule
-
-Every calendar event today with its time, dimmed once it has ended, and a status tag showing whether it became a task ("⚡ in tasks" / "✅ done"). Empty state: "Nothing scheduled today. The day is yours."
-
-### 6.8 Where your time goes
-
-Sarah counts every module you open and every meaningful action (tasks completed, focus sessions, captures, command-bar uses, habit checks) — locally, kept 30 days, never leaves your machine. This panel ranks your most-used modules over the last 14 days with bars, plus action counts as pills. It's your own usage mirror.
-
-### 6.9 Milestones
-
-Achievement badges that unlock as you go: 🚀 first 10 applications, 💯 50 applications, 🎤 first interview, 🔥 7-day habit streak, 🧠 10 hours of deep work, ✅ 25 tasks done, 🏆 offer received. Locked ones are greyed out.
+Bitcoin, Solana and the S&P 500 with small graphs, refreshed every minute.
 
 ---
 
-## 7. The priority engine
+## 7. The Scoreboard tab
 
-Every open task gets a score from 0–100:
-
-- Base 20, plus importance × 14 (importance is Low/Med/High = 1/2/3).
-- Area bonus: Career +12, University +8.
-- Deadline pressure: overdue +40, due today +32, tomorrow +24, within 3 days +14, within a week +6.
-- Quick-win bonus: +6 if it takes 30 minutes or less.
-- Anti-rot: +1 per day old, up to +8, so nothing gets buried forever.
-
-Goal-plan actions are scored separately (base 30 + importance, +20 if it's a daily habit-type action, earlier phases beat later ones, short actions get a nudge). If you ignore a suggested goal action for 3+ days its score drops and it gets flagged "stuck, break it down?" instead of nagging you.
-
-The highest score becomes **Your next move**; the top seven become **Up next**.
+- **🗒 Sunday review** — the five numbers for the week, filled in automatically: prayers on time, training sessions, outreach conversations, replies received, dollars earned. Write one line on what to change, save it. Step back through past weeks with ‹ ›, and see the last eight weeks in a table. 🔊 reads it aloud.
+- **🧭 Destination · September 2027** — every domain, with live progress where the data exists: Faith (30-day prayers, Quran, Jummah, a knowledge area), Body (blue belt, no-gi competitions, weeks hitting 4 + 3), Money (paying customers, income this month), Skill (conversations toward 1,000), Degree (capstone, graduation countdown), People (call-home streak, social evenings), Place (relocation plan and savings).
+- **🗺 Milestones to graduation** — Now → December, January → April, May 2027, Summer 2027, with the current quarter highlighted and live bars for customers, outreach and monthly income.
+- **🛡 The rules** — the 90-day lock (with its live status), build time capped / outreach not, rejection is the metric, faith / training / sleep never traded for work, and the money rule.
+- **🗓 Calendar** — connect sync and set up your daily blocks (section 8).
 
 ---
 
-## 8. Calendar sync (Google Calendar)
+## 8. Calendar (both ways)
 
-- Connected once via a browser approval; after that a saved token refreshes itself.
-- Reads **all calendars on your account** — primary, gym apps, shared and secondary calendars — deduped and sorted.
-- Checks every **5 minutes** while the app is open, plus on every load.
-- **Every event on today's schedule automatically becomes a task**: named after the event, auto-categorized by title (a lecture → University, an interview call → Career, BJJ → Health, tuition → Finance), duration taken from the event's real length (clamped 15 min–4 h), and dropped into the planner at the event's actual hour if it falls between 09:00 and 20:00.
-- Each event imports **once per day** (tracked by event ID), so nothing duplicates no matter how many times the sync runs. Events that already ended before the sync are skipped rather than added as stale to-dos.
-- Training events additionally appear in the Faith/Training daily card as described above.
-- The rundown and the schedule card both reflect it, and a toast tells you when new events land ("Added 2 calendar events to today's plan").
+**Reading** works as before: every calendar on your account is read every 5 minutes, and today's events from your other calendars become tasks once each.
+
+**Writing** is new and opt-in. Press **Connect** once and Google asks for permission to write to your calendars (one approval in the browser). From then on:
+
+- SARAH creates its own calendar called **"SARAH"** and only ever writes there. Your other calendars are never edited.
+- **Every task with a date goes on it** — timed tasks at their time, dateless-time tasks as all-day events.
+- **Check a task off in the app** → it shows **✓** in Google and turns grey.
+- **Drag it to a new time or day in Google** → it moves in the app.
+- **Put ✓ at the start of its title in Google** (e.g. from your phone) → it's marked done in the app.
+- **Delete it in the app** → it's removed from Google. **Delete it in Google** → the task stays in the app but comes off the calendar.
+- If both sides changed, the most recent edit wins. Sync runs a couple of seconds after any change, every 5 minutes, and on **Sync now**.
+
+**Daily blocks** put the system itself on your calendar as recurring events, with times you choose: Quran + sales study (Mon–Fri, 7:00 for 40 min), Outreach · 15 conversations (Mon–Fri, 12:15 for 60 min, before the 1:30 shift), and the Sunday review (Sunday 8:00 PM, 30 min). Change the times and press Update; untick one to remove it.
 
 ---
 
@@ -203,37 +175,13 @@ Progress is measured honestly: one-off tasks count when done, daily tasks count 
 
 ---
 
-## 11. Planner
-
-Twelve hourly slots, 09:00–20:00. Unscheduled tasks sit on the left as draggable chips (with score and duration) — drag them onto a slot to plan your day. Calendar-imported tasks arrive already slotted at their real times. **✨ Auto-plan my day** fills the slots by priority in one click. Your Google Calendar events for the next two days sit alongside for reference.
-
----
-
-## 12. Inbox
-
-Press `C` anywhere and dump whatever's in your head. Every capture is auto-sorted into a life area by its words — University (exam, homework, GPA...), Career (apply, resume, recruiter...), Health (gym, BJJ, muay thai...), Finance (pay, tuition, rent...), Projects (build, CAD, prototype...), Knowledge (read, learn, course...), Goals, or Productivity — and links are detected. From the inbox, one click turns an item into a task or archives it. Below sits the full task board grouped by area, with a proper add-task form (area, due date, importance, duration).
-
----
-
-## 13. Habits
-
-Add any habit. Each shows the last 7 days as tappable cells, a 🔥 current streak counter, and appears on Today with a checkbox. Streaks count consecutive days backward from today (today being unchecked yet doesn't break it).
-
----
-
-## 14. Focus
-
-A deep-work timer: 25, 50, or 90 minutes, with the countdown mirrored in the browser tab title. Finish and it logs the session; stop early and it logs the real minutes (under 5 minutes isn't logged). It suggests what to focus on (your top task). History shows minutes today, hours this week, hours all time, and total sessions — which also feed the daily rundown and the 🧠 10-hour milestone.
-
----
-
-## 15. Projects
+## 11. Projects
 
 Name a project, press ▶ Start when you work on it, ⏹ Stop when you're done — sessions are timed to the second, accumulated forever, and logged automatically. Add written log entries anytime ("printed bracket v3"); the last five show per project.
 
 ---
 
-## 16. The server (what runs behind the scenes)
+## 12. The server (what runs behind the scenes)
 
 Endpoints, all on localhost only:
 
@@ -246,37 +194,39 @@ Endpoints, all on localhost only:
 | `POST /api/goal-plan` | Goal decomposition (Claude or templates) |
 | `POST /api/assistant` | Sarah's conversational brain (Claude, with state + history) |
 | `POST /api/speak` | Text-to-speech through ElevenLabs |
+| `GET /api/calsync/status` | Whether calendar write access is on |
+| `POST /api/calsync/connect` | The one-time Google approval, then finds or creates the SARAH calendar |
+| `POST /api/calsync/sync` | One two-way task sync pass |
+| `POST /api/calsync/blocks` | Puts the daily blocks on the calendar as recurring events |
 
-The server is threaded, so a slow market fetch or the one-time Google approval never freezes the rest of the app, and it can restart immediately after Ctrl+C. It refuses to serve any secret file over HTTP (`notion_token.txt`, `credentials.json`, `token.json`, `token_calendar.json`, `elevenlabs_key.txt`, `anthropic_key.txt`, `personal_data.json`, `.sync_state.json`, `notion_config.json`).
+The server is threaded, so a slow market fetch or the one-time Google approval never freezes the rest of the app, and it can restart immediately after Ctrl+C. It refuses to serve any secret file over HTTP (`notion_token.txt`, `credentials.json`, `token.json`, `token_calendar.json`, `elevenlabs_key.txt`, `anthropic_key.txt`, `personal_data.json`, `.sync_state.json`, `notion_config.json`, `.sarah_calendar.json`).
 
 **The voice pipeline**: your text goes to ElevenLabs pinned to the Elise voice ID; if that voice isn't on your account it finds her by name or auto-adds her from the voice library; if all else fails it falls back to a standard voice, and the frontend falls back further to the browser's built-in voice — you always get audio.
 
 ---
 
-## 17. Data, privacy, and cost
+## 13. Data, privacy, and cost
 
-- **Everything personal lives on your Mac.** Tasks, prayers, income, habits, usage stats: `personal_data.json` + a browser localStorage backup. Job data lives in your Notion. Nothing is sent anywhere except the API calls you configured, each using its own key from your own account.
+- **Everything personal lives on your Mac.** Lead measures, tasks, reviews, income, imported spending: `personal_data.json` + a browser localStorage backup. Job data lives in your Notion. Your Rocket Money export is read in the browser and never sent anywhere. Dated tasks and blocks go to your own Google Calendar only if you turn sync on.
 - **API keys** sit in plain files in the app folder, gitignored, never served, never leaving your machine except to their own service.
 - **Cost**: the app, market data, calendar, and Notion are free. ElevenLabs has a free tier (~10 min of speech/month; $5/mo for more). The Claude conversation brain is pay-as-you-go — roughly half a cent per exchange, a few dollars a month with heavy daily use, and it's optional: without a key, Sarah still works with pattern matching.
 
 ---
 
-## 18. Everyday flow
+## 14. Everyday flow
 
-Morning: double-click `start.command`. Boot sequence, then Today. Your calendar has already become your plan. Hit "Read it to me" while making coffee. Through the day: check prayers as you pray (watch the ring fill), tell Sarah "just finished BJJ, made 60 bucks today" on your way out of the gym, capture stray thoughts with `C`, run Focus sessions for deep work, and keep the application pace bar green. Evening: the day-at-a-glance percentages tell you exactly what's left; clear them and get the perfect-day message. The all-time income counter and the milestones make the compounding visible.
+Morning, before class: Fajr, then Quran, then 30 minutes of sales study (the morning block). Open Sarah; the rundown tells you what's left. Midday, before the 1:30 shift: the outreach block, fifteen conversations, pressing +5 as you go. After 5:30: training, already on the plan. Through the day, tell Sarah "sent 15, got 2 replies" or "slept 8 hours" instead of clicking. New business idea? `later:` it and close it. Sunday: open the Scoreboard, read the five numbers, write one line, save. That's the whole system.
 
 ---
 
-## 19. Sarah 2.0 additions
+## 15. Sarah 2.0 additions
 
 Since this guide was written, five major phases shipped (full detail in ROADMAP.md):
 
-- **Pattern engine**: Sarah learns your productive hours, strong and weak days,
-  prayer consistency, habit difficulty, stale tasks, income rhythm, deep-work
-  trends, training days, stalled goals and best resume version — locally, with
-  zero setup — and weaves two observations into every daily rundown.
-- **Weekly and monthly reviews**: automatic on Sundays or on demand ("review" /
-  "monthly review"), with deltas, six-month trend graphs, suggestions, and voice.
+- **Pattern engine**: Sarah learns your productive hours, strongest outreach
+  days, prayer consistency, stale tasks, income rhythm, training days, stalled
+  goals and best resume version — locally, with zero setup — and shares them
+  with the voice assistant.
 - **🏋️ Train**: attendance, not logging. Today's sessions as simple checkboxes,
   a week view showing every scheduled session as went / missed / upcoming, a
   performance card with this-week and 30-day attendance percentages plus a list
@@ -289,9 +239,14 @@ Since this guide was written, five major phases shipped (full detail in ROADMAP.
   "mastered" when all its techniques are checked; the card tracks overall
   percentage, skills mastered out of ten, the current week, and highlights the
   next unmastered skill as this week's focus.
-- **💰 Finance**: expenses with budgets, savings goals, net worth with
-  live-valued crypto holdings, six-month trends; markets mirrored in; voice
-  expense logging.
+- **💰 Finance**: spending comes from **Rocket Money**. It has no public API, so
+  the connection is its export: on rocketmoney.com open Transactions, Export a
+  CSV, and drop it on the Finance tab. Sarah reads it locally, shows this month
+  by category, and finds your **subscriptions** from recurring charges (what
+  each costs, how often, when it hits next; ones that stopped charging are
+  treated as cancelled). Re-import any time; the new file replaces the dates it
+  covers without duplicating. Savings goals, net worth with live-valued crypto,
+  six-month trends and cash spending said by voice sit alongside.
 - **🎯 Resume Match**: upload your resume once, then paste any job description
   and get a recruiter-style read on whether to apply. APPLY NOW / APPLY IF YOU
   HAVE TIME / SKIP with an overall score, an eight-category breakdown,

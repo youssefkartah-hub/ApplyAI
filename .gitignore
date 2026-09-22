@@ -163,6 +163,7 @@ __pycache__/
 venv/
 env/
 token_calendar.json
+.sarah_calendar.json
 elevenlabs_key.txt
 anthropic_key.txt
 knowledge/

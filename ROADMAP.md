@@ -126,6 +126,38 @@ deliberately minimal: show up and check the box, exactly like prayers.
   overall day percentage and the daily rundown, both are voice-checkable offline
   ("took my creatine", "did my skincare"), and Claude gains a check_body action.
 
+## Phase 8 — Lead measures, simpler app, two-way calendar ✅ (shipped)
+
+- **Score inputs, never outcomes.** The day is scored only on things you control:
+  five prayers on time, 10 min Quran (plus Jummah on Fridays), a 30 min sales
+  study block, 15 outreach conversations on weekdays (75 a week), training, 7+ h
+  sleep, creatine and skincare. Income is still logged but no longer scored.
+  Measures start counting from the day the system was switched on, so older days
+  are not marked down retroactively.
+- **Today, simplified.** The daily rundown is a short bullet list. A This week card
+  paces the weekly measures (4 martial arts, 3 lifts, 1 call home, 1 social
+  evening, 75 outreach) and a Venture card holds the 90-day lock: one venture
+  (default Onset Listings, renamable) until 3 paying customers, with new ideas
+  parked in a Later list (`later: <idea>` in the command bar).
+- **Scoreboard tab** replaces the old weekly/monthly reviews: the Sunday review
+  with its five numbers and one line on what to change (8-week history,
+  speakable), the Sept 2027 destination across seven domains, quarterly
+  milestones, the rules, and the daily calendar blocks.
+- **Removed:** Planner, Inbox, Habits, the deep-work focus timer and monthly
+  budgets. Tasks remain, with an optional date and time.
+- **Two-way Google Calendar sync.** Dated tasks are written to a dedicated SARAH
+  calendar; moving, renaming, deleting or marking an event done (✓ prefix) in
+  Google Calendar flows back into the task. The most recent edit wins. The
+  morning, outreach and Sunday review blocks can be pushed as recurring events.
+  Only the SARAH calendar is ever written to; the rest of the calendar stays
+  read-only.
+- **Rocket Money.** Rocket Money has no public API, so Finance imports its
+  transactions CSV export (drag and drop, deduplicated by date range), shows
+  spending by category and detects subscriptions from repeating charges with
+  their monthly cost and likely cancellations.
+- **Fix:** Finance was being reset on every load since Phase 3 (it was treated
+  as a list), which wiped savings goals, assets and expenses. It now persists.
+
 ## Later ideas (unscheduled)
 
 - Journal, spaced-repetition flashcards, richer language stats, deeper knowledge

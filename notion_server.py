@@ -38,7 +38,7 @@ CACHE_TTL = 20  # seconds; avoid hammering the Notion API on every poll
 
 BLOCKED = {"notion_token.txt", "notion_config.json", "credentials.json",
            "token.json", ".sync_state.json", "personal_data.json", "token_calendar.json",
-           "elevenlabs_key.txt", "anthropic_key.txt"}
+           "elevenlabs_key.txt", "anthropic_key.txt", ".sarah_calendar.json"}
 ANTHROPIC_KEY_FILE = os.path.join(DIRECTORY, "anthropic_key.txt")
 
 
@@ -284,36 +284,91 @@ def goal_plan(goal):
 
 
 CAL_TOKEN = os.path.join(DIRECTORY, "token_calendar.json")
-CAL_SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
+CAL_READ = ["https://www.googleapis.com/auth/calendar.readonly"]
+# Writing needs the full calendar scope: read-only can't create a calendar or
+# events. It is only requested when you turn sync on, and SARAH only ever writes
+# to its own "SARAH" calendar, never to your other calendars.
+CAL_WRITE = ["https://www.googleapis.com/auth/calendar"]
+CAL_SARAH = os.path.join(DIRECTORY, ".sarah_calendar.json")
 _cal_lock = threading.Lock()
+
+
+def _token_scopes():
+    try:
+        with open(CAL_TOKEN) as f:
+            return set(json.load(f).get("scopes") or [])
+    except Exception:
+        return set()
+
+
+def _save_creds(creds):
+    with open(CAL_TOKEN, "w") as f:
+        f.write(creds.to_json())
+
+
+def _cal_creds(write=False, interactive=True):
+    """Google Calendar credentials.
+
+    Reads use whatever scope the saved token already has (never pinned, so a
+    token upgraded to write access keeps refreshing fine). A write that finds
+    only read access is refused unless interactive, which is how the one-time
+    upgrade happens: only when you press Connect.
+    """
+    from google.auth.transport.requests import Request
+    from google.oauth2.credentials import Credentials
+    from google_auth_oauthlib.flow import InstalledAppFlow
+    with _cal_lock:
+        have = _token_scopes()
+        upgrade = write and CAL_WRITE[0] not in have
+        creds = None
+        if os.path.exists(CAL_TOKEN) and not upgrade:
+            try:
+                creds = Credentials.from_authorized_user_file(CAL_TOKEN)
+            except Exception:
+                creds = None
+        if creds and creds.valid:
+            return creds, None
+        if creds and creds.expired and creds.refresh_token:
+            try:
+                creds.refresh(Request())
+                _save_creds(creds)
+                return creds, None
+            except Exception:
+                creds = None
+        if not interactive:
+            return None, ("needs_write" if upgrade else "needs_auth")
+        secrets = os.path.join(DIRECTORY, "credentials.json")
+        if not os.path.exists(secrets):
+            return None, "no_creds"
+        scopes = CAL_WRITE if (write or CAL_WRITE[0] in have) else CAL_READ
+        print("\nGoogle Calendar needs a one-time approval — check your browser.")
+        creds = InstalledAppFlow.from_client_secrets_file(secrets, scopes).run_local_server(port=0)
+        _save_creds(creds)
+        print("Calendar connected. ✓")
+        return creds, None
+
+
+def _cal_service(creds):
+    from googleapiclient.discovery import build
+    return build("calendar", "v3", credentials=creds, cache_discovery=False)
+
+
+def _sarah_cal_id():
+    try:
+        with open(CAL_SARAH) as f:
+            return json.load(f).get("id")
+    except Exception:
+        return None
 
 
 def fetch_calendar():
     """Read today's + tomorrow's events from all of the user's Google Calendars."""
     try:
-        from google.auth.transport.requests import Request
-        from google.oauth2.credentials import Credentials
-        from google_auth_oauthlib.flow import InstalledAppFlow
-        from googleapiclient.discovery import build
         import datetime as dt
-        with _cal_lock:
-            creds = None
-            if os.path.exists(CAL_TOKEN):
-                creds = Credentials.from_authorized_user_file(CAL_TOKEN, CAL_SCOPES)
-            if not creds or not creds.valid:
-                if creds and creds.expired and creds.refresh_token:
-                    creds.refresh(Request())
-                else:
-                    if not os.path.exists(os.path.join(DIRECTORY, "credentials.json")):
-                        return {"error": "no_creds"}
-                    print("\nGoogle Calendar needs a one-time approval — check your browser.")
-                    flow = InstalledAppFlow.from_client_secrets_file(
-                        os.path.join(DIRECTORY, "credentials.json"), CAL_SCOPES)
-                    creds = flow.run_local_server(port=0)  # opens browser once
-                    print("Calendar connected. ✓")
-                with open(CAL_TOKEN, "w") as f:
-                    f.write(creds.to_json())
-        svc = build("calendar", "v3", credentials=creds, cache_discovery=False)
+        creds, err = _cal_creds(write=False, interactive=True)
+        if err:
+            return {"error": err}
+        svc = _cal_service(creds)
         # Full current day (local) through tomorrow, so the daily sync catches
         # everything on today's schedule, not just upcoming events.
         now = dt.datetime.now().astimezone()
@@ -328,6 +383,7 @@ def fetch_calendar():
                        if c.get("selected", True)] or ["primary"]
         except Exception:
             pass
+        sarah = _sarah_cal_id()
         out, seen = [], set()
         for cid in cal_ids:
             try:
@@ -343,15 +399,281 @@ def fetch_calendar():
                 seen.add(eid)
                 st = e.get("start", {})
                 en = e.get("end", {})
-                out.append({"id": eid,
-                            "title": e.get("summary", "(no title)"),
-                            "start": st.get("dateTime") or st.get("date", ""),
-                            "end": en.get("dateTime") or en.get("date", ""),
-                            "allday": "date" in st})
+                ev = {"id": eid,
+                      "title": e.get("summary", "(no title)"),
+                      "start": st.get("dateTime") or st.get("date", ""),
+                      "end": en.get("dateTime") or en.get("date", ""),
+                      "allday": "date" in st}
+                if sarah and cid == sarah:
+                    priv = (e.get("extendedProperties") or {}).get("private") or {}
+                    ev["sarah"] = True
+                    ev["taskId"] = priv.get("sarahTask")
+                    ev["block"] = priv.get("sarahBlock")
+                out.append(ev)
         out.sort(key=lambda ev: (ev["allday"] and "0" or "1", ev["start"]))
         return {"events": out}
     except Exception as e:
         return {"error": "cal", "message": str(e)[:150]}
+
+
+# ---- Two-way task sync with a dedicated "SARAH" calendar -------------------
+DONE_RE = re.compile(r"^\s*(?:✓|✔|☑|\[x\]|done\s*[:\-])\s*", re.I)
+_TASK_NOTE = ("Task from SARAH. Check it off in the app, or put ✓ at the start "
+              "of this title to mark it done from here.")
+
+
+def _sarah_calendar(svc):
+    """Find or create the SARAH calendar. Returns (calendar id, IANA time zone)."""
+    cid = _sarah_cal_id()
+    if cid:
+        try:
+            cal = svc.calendars().get(calendarId=cid).execute()
+            return cid, cal.get("timeZone") or "UTC"
+        except Exception:
+            cid = None
+    tz = "UTC"
+    try:
+        tz = svc.calendars().get(calendarId="primary").execute().get("timeZone") or "UTC"
+    except Exception:
+        pass
+    try:  # the id file was lost: reuse the calendar made before instead of a second one
+        for c in svc.calendarList().list(maxResults=250).execute().get("items", []):
+            if c.get("summary") == "SARAH" and "SARAH app" in (c.get("description") or ""):
+                cid = c["id"]
+                break
+    except Exception:
+        pass
+    if not cid:
+        cid = svc.calendars().insert(body={
+            "summary": "SARAH", "timeZone": tz,
+            "description": "Tasks and daily blocks from your SARAH app."}).execute()["id"]
+    with open(CAL_SARAH, "w") as f:
+        json.dump({"id": cid, "tz": tz}, f)
+    return cid, tz
+
+
+def _parse_rfc3339(v):
+    import datetime as dt
+    return dt.datetime.fromisoformat(v.replace("Z", "+00:00"))
+
+
+def _ms(v):
+    try:
+        return int(_parse_rfc3339(v).timestamp() * 1000)
+    except Exception:
+        return 0
+
+
+def _task_body(t, tz):
+    import datetime as dt
+    title = ("✓ " if t.get("done") else "") + str(t.get("title", "")).strip()[:200]
+    due, tm = t["due"], t.get("time")
+    dur = max(15, min(480, int(t.get("dur") or 30)))
+    if tm:
+        st = dt.datetime.strptime(f"{due} {tm}", "%Y-%m-%d %H:%M")
+        en = st + dt.timedelta(minutes=dur)
+        start = {"dateTime": st.strftime("%Y-%m-%dT%H:%M:00"), "timeZone": tz}
+        end = {"dateTime": en.strftime("%Y-%m-%dT%H:%M:00"), "timeZone": tz}
+    else:
+        d0 = dt.date.fromisoformat(due)
+        start, end = {"date": d0.isoformat()}, {"date": (d0 + dt.timedelta(days=1)).isoformat()}
+    return {"summary": title, "description": _TASK_NOTE, "start": start, "end": end,
+            "colorId": "8" if t.get("done") else "7",  # graphite when done, peacock when open
+            "extendedProperties": {"private": {"sarahTask": t["id"]}}}
+
+
+def _event_to_task(ev, tz):
+    raw = ev.get("summary", "") or ""
+    out = {"title": DONE_RE.sub("", raw).strip(), "done": bool(DONE_RE.match(raw))}
+    st, en = ev.get("start", {}), ev.get("end", {})
+    if "date" in st:
+        out.update(due=st["date"], time=None)
+        return out
+    try:
+        from zoneinfo import ZoneInfo
+        zone = ZoneInfo(tz)
+    except Exception:
+        zone = None
+    s = _parse_rfc3339(st["dateTime"])
+    local = s.astimezone(zone) if zone else s
+    out.update(due=local.date().isoformat(), time=local.strftime("%H:%M"))
+    if en.get("dateTime"):
+        out["dur"] = max(15, int((_parse_rfc3339(en["dateTime"]) - s).total_seconds() // 60))
+    return out
+
+
+def _differs(ev_task, t):
+    if ev_task["title"] != str(t.get("title", "")).strip()[:200]:
+        return True
+    if ev_task["done"] != bool(t.get("done")) or ev_task["due"] != t.get("due"):
+        return True
+    if (ev_task.get("time") or None) != (t.get("time") or None):
+        return True
+    return bool(ev_task.get("time")) and ev_task.get("dur") not in (None, int(t.get("dur") or 30))
+
+
+def _merged(ev, body):
+    """Keep what you added in Google (reminders, location, notes); replace the rest."""
+    out = {k: v for k, v in ev.items() if k in ("location", "reminders", "attendees",
+                                                 "transparency", "visibility")}
+    out.update(body)
+    return out
+
+
+def _list_sarah_events(svc, cid):
+    tasks, blocks, page = {}, {}, None
+    while True:
+        r = svc.events().list(calendarId=cid, maxResults=250, pageToken=page).execute()
+        for ev in r.get("items", []):
+            if ev.get("status") == "cancelled":
+                continue
+            priv = (ev.get("extendedProperties") or {}).get("private") or {}
+            if priv.get("sarahTask"):
+                tasks[priv["sarahTask"]] = ev
+            elif priv.get("sarahBlock"):
+                blocks[priv["sarahBlock"]] = ev
+        page = r.get("nextPageToken")
+        if not page:
+            return tasks, blocks
+
+
+def cal_reconcile(svc, payload):
+    """One sync pass. The app sends its tasks; the calendar is compared event by
+    event; whichever side changed most recently wins. Returns updated links and
+    any changes the app should apply."""
+    cid, tz = _sarah_calendar(svc)
+    tasks = {t["id"]: t for t in (payload.get("tasks") or []) if t.get("id") and t.get("due")}
+    all_ids = set(payload.get("allIds") or [])
+    drop_ids = set(payload.get("dropIds") or [])
+    links = dict(payload.get("links") or {})
+    # the moment the app took its snapshot: an edit made after it must still count as new
+    snap = int(payload.get("sentAt") or time.time() * 1000)
+    existing, _ = _list_sarah_events(svc, cid)
+    patches, unlinked = [], []
+    stats = {"created": 0, "updated": 0, "pulled": 0, "deleted": 0}
+
+    for tid, t in tasks.items():
+        ev, link = existing.get(tid), links.get(tid) or {}
+        if not ev:
+            if link.get("eventId"):          # it was on the calendar and was deleted there
+                unlinked.append(tid)
+                links.pop(tid, None)
+                continue
+            made = svc.events().insert(calendarId=cid, body=_task_body(t, tz)).execute()
+            links[tid] = {"eventId": made["id"], "evUpdated": made.get("updated", ""), "syncedAt": snap}
+            stats["created"] += 1
+            continue
+        g_changed = ev.get("updated", "") != link.get("evUpdated", "")
+        t_updated = int(t.get("updatedAt") or 0)
+        t_changed = t_updated > int(link.get("syncedAt") or 0)
+        as_task = _event_to_task(ev, tz)
+        if g_changed and link and (not t_changed or _ms(ev.get("updated", "")) > t_updated):
+            if _differs(as_task, t):         # changed in Google: the app follows
+                as_task["id"] = tid
+                patches.append(as_task)
+                stats["pulled"] += 1
+            links[tid] = {"eventId": ev["id"], "evUpdated": ev.get("updated", ""), "syncedAt": snap}
+        elif t_changed or not link:
+            if _differs(as_task, t) or ev.get("colorId") != ("8" if t.get("done") else "7"):
+                upd = svc.events().update(calendarId=cid, eventId=ev["id"],
+                                          body=_merged(ev, _task_body(t, tz))).execute()
+                stats["updated"] += 1
+                ev = upd
+            links[tid] = {"eventId": ev["id"], "evUpdated": ev.get("updated", ""), "syncedAt": snap}
+
+    # Events whose task was deleted in the app, or that no longer belong on the
+    # calendar. If the app sent no ids at all, never mass-delete: that looks like
+    # a data problem, not a user decision.
+    trusted = bool(all_ids) or len(existing) <= 3
+    for tid, ev in existing.items():
+        if tid in tasks:
+            continue
+        if tid in drop_ids or (trusted and tid not in all_ids):
+            try:
+                svc.events().delete(calendarId=cid, eventId=ev["id"]).execute()
+                stats["deleted"] += 1
+            except Exception:
+                pass
+            links.pop(tid, None)
+    return {"ok": True, "links": links, "patches": patches, "unlinked": unlinked,
+            "stats": stats, "calendarId": cid}
+
+
+_DAY_CODES = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"]
+
+
+def cal_apply_blocks(svc, payload):
+    """Put the daily system blocks on the SARAH calendar as recurring events."""
+    import datetime as dt
+    cid, tz = _sarah_calendar(svc)
+    _, existing = _list_sarah_events(svc, cid)
+    state = {}
+    for b in payload.get("blocks") or []:
+        key = str(b.get("key", ""))[:40]
+        if not key:
+            continue
+        ev = existing.get(key)
+        if not b.get("enabled"):
+            if ev:
+                svc.events().delete(calendarId=cid, eventId=ev["id"]).execute()
+            state[key] = False
+            continue
+        days = [d for d in (b.get("days") or []) if d in _DAY_CODES] or ["MO", "TU", "WE", "TH", "FR"]
+        hh, mm = [int(x) for x in str(b.get("start", "07:00")).split(":")[:2]]
+        mins = max(10, min(240, int(b.get("mins") or 30)))
+        # keep the series' first date when editing, so its history stays put
+        if ev and ev.get("start", {}).get("dateTime"):
+            first = _parse_rfc3339(ev["start"]["dateTime"]).date()
+        else:
+            first = dt.date.today()
+            while _DAY_CODES[first.weekday()] not in days:
+                first += dt.timedelta(days=1)
+        st = dt.datetime(first.year, first.month, first.day, hh, mm)
+        en = st + dt.timedelta(minutes=mins)
+        body = {"summary": str(b.get("title", "Block"))[:120],
+                "description": "A daily block from your SARAH system.",
+                "start": {"dateTime": st.strftime("%Y-%m-%dT%H:%M:00"), "timeZone": tz},
+                "end": {"dateTime": en.strftime("%Y-%m-%dT%H:%M:00"), "timeZone": tz},
+                "recurrence": ["RRULE:FREQ=WEEKLY;BYDAY=" + ",".join(days)],
+                "colorId": "7",
+                "extendedProperties": {"private": {"sarahBlock": key}}}
+        if ev:
+            svc.events().update(calendarId=cid, eventId=ev["id"], body=_merged(ev, body)).execute()
+        else:
+            svc.events().insert(calendarId=cid, body=body).execute()
+        state[key] = True
+    return {"ok": True, "blocks": state}
+
+
+_CAL_ERRORS = {
+    "needs_write": "Calendar sync isn't switched on yet. Press Connect to approve it once.",
+    "needs_auth": "Google needs you to approve calendar access again. Press Connect.",
+    "no_creds": "credentials.json is missing from the app folder.",
+}
+
+
+def _cal_write_call(fn, payload, interactive=False):
+    try:
+        creds, err = _cal_creds(write=True, interactive=interactive)
+        if err:
+            return {"error": err, "message": _CAL_ERRORS.get(err, err)}
+        return fn(_cal_service(creds), payload)
+    except Exception as e:
+        return {"error": "cal", "message": str(e)[:200]}
+
+
+def cal_status():
+    return {"connected": os.path.exists(CAL_TOKEN),
+            "write": CAL_WRITE[0] in _token_scopes(),
+            "calendarId": _sarah_cal_id()}
+
+
+def cal_connect(_payload):
+    """Runs the one-time approval in the browser, then makes sure SARAH's calendar exists."""
+    def go(svc, _):
+        cid, tz = _sarah_calendar(svc)
+        return {"ok": True, "calendarId": cid, "tz": tz}
+    return _cal_write_call(go, {}, interactive=True)
 
 
 # Voice assistant brain: understands spoken updates and questions.
@@ -366,6 +688,7 @@ ASSIST_SCHEMA = {
             "properties": {
                 "type": {"type": "string",
                          "enum": ["check_prayer", "check_training", "check_body", "check_mind",
+                                  "check_system", "log_outreach", "log_replies",
                                   "log_income", "log_expense", "add_task",
                                   "complete_task", "none"]},
                 "key": {"type": "string"},
@@ -402,17 +725,33 @@ ASSIST_PROMPT = (
     "he missed this week. Training is tracked purely by showing up, exactly "
     "like prayers: no set or weight logging. Encourage attendance, call out "
     "missed sessions plainly, and credit strong weeks. "
+    "His operating system: he scores himself only on inputs he controls, never "
+    "on outcomes; customers, belts and money are lagging results. The lead "
+    "measures in STATE are the scoreboard: daily, five prayers on time, 10 "
+    "minutes of Quran, 15 sales conversations started on his one venture "
+    "(weekdays; 75 a week), 30 minutes of sales and distribution study, and 7+ "
+    "hours of sleep; weekly, 4 martial arts sessions, 3 lifts, a call home, a "
+    "social evening and a Sunday review of five numbers plus one line. The "
+    "venture is under a 90-day lock: until it has three paying customers he "
+    "does not start, plan or research a new business idea, it goes in the "
+    "Later list. Build time is capped, outreach is not: if he talks about "
+    "polishing a product instead of contacting people, name it as avoiding "
+    "the hard skill. Rejection is the metric, not the enemy. Faith, training "
+    "and sleep are never traded for work. Hold him to this plainly and kindly. "
     "Treat all of this as your own observations and weave it in "
     "when relevant, but never recite lists. When he reports something done, "
     "acknowledge it briefly and emit matching actions: check_prayer with key "
     "fajr/dhuhr/asr/maghrib/isha, check_training with key "
     "bjj/muaythai/training/lift (lift covers his scheduled gym session), "
-    "check_body with key creatine (his daily 5 g) or skincare (his nightly "
-    "routine), check_mind with key lesson/immersion, log_income with amount, log_expense "
+    "check_body with key sleep (7+ hours), creatine (his daily 5 g) or skincare "
+    "(his nightly routine), check_system with key quran/study/jummah (study is "
+    "the 30 minutes of sales study) or callHome/social (weekly), log_outreach "
+    "with amount for sales conversations started, log_replies with amount for "
+    "replies received, check_mind with key lesson/immersion, log_income with amount, log_expense "
     "with amount plus key for the category (Food, Rent, Transport, Training, "
     "Subscriptions, School, Fun, Other) and title for what it was, add_task "
     "with title, complete_task with the task's title. STATE.finance carries "
-    "month income, month spend, net worth and budget notes; use it when money "
+    "month income, month spend, monthly subscriptions and net worth; use it when money "
     "comes up. Never invent progress he didn't mention, and never fake numbers "
     "not in STATE."
 )
@@ -1430,6 +1769,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if path == "/api/calendar":
             self._send_json(fetch_calendar())
             return
+        if path == "/api/calsync/status":
+            self._send_json(cal_status())
+            return
         if path == "/api/markets":
             self._send_json(fetch_markets())
             return
@@ -1496,6 +1838,25 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self._send_json(kb_delete(str(payload.get("id", ""))))
             else:
                 self._send_json(kb_ask(payload))
+            return
+        if path.startswith("/api/calsync/"):
+            length = int(self.headers.get("Content-Length", 0))
+            if length < 0 or length > 5_000_000:
+                self.send_error(413, "Bad size")
+                return
+            try:
+                payload = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            except Exception as e:
+                self.send_error(400, f"Bad request: {e}")
+                return
+            if path == "/api/calsync/connect":
+                self._send_json(cal_connect(payload))
+            elif path == "/api/calsync/sync":
+                self._send_json(_cal_write_call(cal_reconcile, payload))
+            elif path == "/api/calsync/blocks":
+                self._send_json(_cal_write_call(cal_apply_blocks, payload))
+            else:
+                self.send_error(404, "Not found")
             return
         if path.startswith("/api/resume/"):
             length = int(self.headers.get("Content-Length", 0))
