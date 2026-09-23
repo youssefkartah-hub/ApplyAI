@@ -659,7 +659,17 @@ def _cal_write_call(fn, payload, interactive=False):
             return {"error": err, "message": _CAL_ERRORS.get(err, err)}
         return fn(_cal_service(creds), payload)
     except Exception as e:
-        return {"error": "cal", "message": str(e)[:200]}
+        msg = str(e)
+        # Most common first-run failure: the Calendar API is off in the user's Cloud project.
+        m = re.search(r"has not been used in project (\d+)|accessNotConfigured|SERVICE_DISABLED", msg)
+        if m:
+            proj = re.search(r"project (\d+)", msg)
+            url = ("https://console.cloud.google.com/apis/library/calendar-json.googleapis.com"
+                   + (f"?project={proj.group(1)}" if proj else ""))
+            return {"error": "api_disabled", "url": url,
+                    "message": "The Google Calendar API is switched off for your Google project. "
+                               "Open the link, press Enable, wait a minute, then try again."}
+        return {"error": "cal", "message": msg[:200]}
 
 
 def cal_status():

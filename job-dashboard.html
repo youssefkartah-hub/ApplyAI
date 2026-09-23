@@ -3197,7 +3197,9 @@ document.addEventListener("drop",e=>{ const z=e.target.closest("[data-rm-drop]")
    Check one off here and it shows ✓ there; move it there and it moves
    here; delete it on either side and the other follows.
    ================================================================== */
-const calState={write:false,syncing:false,pending:false,connecting:false,last:0,err:""};
+const calState={write:false,syncing:false,pending:false,connecting:false,last:0,err:"",errUrl:""};
+// Shown when Google says the Calendar API is switched off for the user's Cloud project.
+function calErrLink(){ return calState.errUrl?`<a class="rowbtn" href="${esc(calState.errUrl)}" target="_blank" rel="noopener" style="text-transform:none;letter-spacing:0;text-decoration:none">Enable Calendar API ↗</a>`:""; }
 const BLOCK_DEFAULTS=[
   {key:"morning",title:"Quran + sales study",days:["MO","TU","WE","TH","FR"],start:"07:00",mins:40,enabled:true,
     hint:"Fajr, then Quran, then 30 minutes of sales study. The block nobody can take."},
@@ -3211,6 +3213,7 @@ function blocksCfg(){ const s=OS.settings&&OS.settings.blocks;
 function agoLabel(ms){ const m=Math.round((Date.now()-ms)/60000); return m<1?"just now":m<60?`${m}m ago`:`${Math.round(m/60)}h ago`; }
 function calSyncChip(){
   const st='style="float:right;text-transform:none;letter-spacing:0"';
+  if(calState.errUrl) return `<a class="rowbtn" href="${esc(calState.errUrl)}" target="_blank" rel="noopener" ${st} title="${esc(calState.err)}">📅 ⚠ Enable Calendar API</a>`;
   if(!OS.settings.calSync) return `<button class="rowbtn" data-cal-connect ${st}>${calState.connecting?"Waiting for approval…":"📅 Sync to calendar"}</button>`;
   if(calState.err) return `<button class="rowbtn" data-cal-connect ${st} title="${esc(calState.err)}">📅 ⚠ Reconnect</button>`;
   if(calState.syncing) return `<span class="muted" ${st}>📅 syncing…</span>`;
@@ -3240,8 +3243,8 @@ async function runCalSync(){
     body:JSON.stringify(body)}).then(x=>x.json()); }
   catch(e){ r={error:"net",message:"Couldn't reach the app server."}; }
   calState.syncing=false;
-  if(r.error){ calState.err=r.message||r.error; renderOS(); return; }
-  calState.err=""; calState.last=Date.now();
+  if(r.error){ calState.err=r.message||r.error; calState.errUrl=r.url||""; renderOS(); return; }
+  calState.err=""; calState.errUrl=""; calState.last=Date.now();
   OS.calLinks=r.links||{};
   (r.patches||[]).forEach(p=>{ const t=OS.tasks.find(x=>x.id===p.id); if(!t) return;
     if((t.updatedAt||0)>body.sentAt) return;   // edited here while the sync was running: keep that edit
@@ -3265,8 +3268,8 @@ async function calConnect(){
   try{ j=await fetch("/api/calsync/connect",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"}).then(r=>r.json()); }
   catch(e){ j={error:"net",message:"Couldn't reach the app server."}; }
   calState.connecting=false;
-  if(j.error){ calState.err=j.message||j.error; toast(calState.err); renderOS(); return false; }
-  OS.settings.calSync=true; calState.write=true; calState.err=""; osSave();
+  if(j.error){ calState.err=j.message||j.error; calState.errUrl=j.url||""; toast(calState.err); renderOS(); return false; }
+  OS.settings.calSync=true; calState.write=true; calState.err=""; calState.errUrl=""; osSave();
   toast("Calendar connected. Your tasks are going on it now.");
   await runCalSync();
   return true;
@@ -3277,7 +3280,7 @@ async function pushBlocks(){
   try{ j=await fetch("/api/calsync/blocks",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({blocks:blocksCfg()})}).then(r=>r.json()); }
   catch(e){ j={error:"net",message:"Couldn't reach the app server."}; }
-  if(j.error){ toast(j.message||j.error); return; }
+  if(j.error){ toast(j.message||j.error); if(j.url){ calState.err=j.message; calState.errUrl=j.url; renderOS(); } return; }
   OS.settings.blocksOn=j.blocks||{}; osSave();
   const n=Object.values(j.blocks||{}).filter(Boolean).length;
   toast(n?`${n} block${n>1?"s":""} on your calendar. Same time, every week.`:"Blocks removed from your calendar.");
@@ -3294,12 +3297,14 @@ function renderBlocks(){
   const status=!OS.settings.calSync
     ?`<p class="muted" style="font-size:13px;margin:4px 0 8px">Not connected. Connecting asks Google once for permission to write to calendars.
        SARAH only ever writes to its own "SARAH" calendar and never touches your others.</p>
-      <button class="primary" data-cal-connect>${calState.connecting?"Waiting for your approval…":"Connect Google Calendar"}</button>`
+      ${calState.err?`<p style="font-size:13px;margin:0 0 8px;color:var(--rejected)">⚠ ${esc(calState.err)}</p>`:""}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${calErrLink()}
+      <button class="primary" data-cal-connect>${calState.connecting?"Waiting for your approval…":calState.errUrl?"Try again":"Connect Google Calendar"}</button></div>`
     :`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 6px">
         <span class="tagpill ${calState.err?"bad":"ok"}">${calState.err?"⚠ needs attention":"● syncing both ways"}</span>
         <span class="muted" style="font-size:12px">${calState.err?esc(calState.err):calState.last?"last sync "+agoLabel(calState.last):""}</span>
         <button class="rowbtn" data-cal-sync style="text-transform:none;letter-spacing:0">Sync now</button>
-        ${calState.err?`<button class="rowbtn" data-cal-connect style="text-transform:none;letter-spacing:0">Reconnect</button>`:""}</div>`;
+        ${calState.errUrl?calErrLink():calState.err?`<button class="rowbtn" data-cal-connect style="text-transform:none;letter-spacing:0">Reconnect</button>`:""}</div>`;
   box.innerHTML=`<h3>🗓 Calendar</h3>${status}
     <div class="usage-note" style="margin-bottom:6px">Every task with a date goes on the SARAH calendar. Check it off here and it shows ✓ there.
       Drag it to a new time in Google and it moves here. To finish one from your phone, put ✓ at the start of its title.</div>
