@@ -39,6 +39,10 @@ DEFAULT_DATABASE_ID = "77941b0b-e1e8-4b63-981c-cbc3fffc21b6"  # your Job Applica
 NOTION_VERSION = "2022-06-28"
 CACHE_TTL = 20  # seconds; avoid hammering the Notion API on every poll
 
+# The only paths served as files. Everything else in the folder stays private.
+STATIC_FILES = {"/job-dashboard.html"}
+# Secrets and personal data in the app folder: never served (only STATIC_FILES
+# are), and tightened to owner-only permissions at startup.
 BLOCKED = {"notion_token.txt", "notion_config.json", "credentials.json",
            "token.json", ".sync_state.json", "personal_data.json", "token_calendar.json",
            "elevenlabs_key.txt", "anthropic_key.txt", ".sarah_calendar.json",
@@ -2338,11 +2342,37 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         """Only answer requests addressed to this machine. A web page can point
         its own domain at 127.0.0.1 (DNS rebinding) to reach a local app; its
         requests still carry that domain in Host, so they stop here."""
-        host = (self.headers.get("Host") or "").strip().lower()
-        name = host[1:].split("]", 1)[0] if host.startswith("[") else host.rsplit(":", 1)[0]
-        if host and name not in ("localhost", "127.0.0.1", "::1"):
+        local = ("localhost", "127.0.0.1", "::1")
+
+        def name_of(hostport):
+            h = hostport.strip().lower()
+            return h[1:].split("]", 1)[0] if h.startswith("[") else h.rsplit(":", 1)[0]
+
+        host = self.headers.get("Host") or ""
+        if host and name_of(host) not in local:
             self.send_error(403, "Forbidden")
             return False
+        # The API only answers the app's own page. Any other website you have
+        # open could otherwise send requests here (wipe your data, disconnect
+        # accounts, spend API credit) even though it can't read the replies.
+        # The one exception is the page SnapTrade's portal redirects to.
+        path = self.path.split("?", 1)[0]
+        if path.startswith("/api/") and path != "/api/robinhood/linked":
+            site = (self.headers.get("Sec-Fetch-Site") or "").lower()
+            origin = (self.headers.get("Origin") or "").strip()
+            if site and site not in ("same-origin", "none"):
+                self.send_error(403, "Forbidden")
+                return False
+            if origin:
+                m = re.match(r"^http://([^/]+)$", origin)        # "null" and https sites fail here
+                if not m or name_of(m.group(1)) not in local:
+                    self.send_error(403, "Forbidden")
+                    return False
+            # a cross-site form or beacon can't send JSON without asking first, and
+            # this server never answers that question (no OPTIONS handler)
+            if self.command == "POST" and not (self.headers.get("Content-Type") or "").startswith("application/json"):
+                self.send_error(415, "JSON only")
+                return False
         return True
 
     def do_GET(self):
@@ -2398,16 +2428,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", ctype)
             self.send_header("Content-Length", str(len(data)))
-            self.send_header("Content-Disposition", f'inline; filename="{m["name"]}"')
+            safe = re.sub(r'[^A-Za-z0-9 ._()-]', "_", str(m["name"]))[:120]   # no header injection
+            self.send_header("Content-Disposition", f'inline; filename="{safe}"')
             self.end_headers()
             self.wfile.write(data)
-            return
-        # private folders: never served as static files
-        if path == "/knowledge" or path.startswith("/knowledge/"):
-            self.send_error(404, "Not found")
-            return
-        if path == "/resume" or path.startswith("/resume/"):
-            self.send_error(404, "Not found")
             return
         if path == "/api/store":
             try:
@@ -2416,10 +2440,27 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             except Exception:
                 self._send_json({})
             return
-        if os.path.basename(path).lower() in BLOCKED:
+        self._serve_static()
+
+    def _serve_static(self, head=False):
+        """Only the app page itself is ever served as a file. A blocklist of key
+        files could be dodged (/anthropic%5Fkey.txt, .git/config, folder
+        listings); an allowlist can't."""
+        path = self.path.split("?", 1)[0]
+        if path in ("", "/"):
+            self.send_response(302)
+            self.send_header("Location", "/job-dashboard.html")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        if path not in STATIC_FILES:
             self.send_error(404, "Not found")
             return
-        super().do_GET()
+        super().do_HEAD() if head else super().do_GET()
+
+    def do_HEAD(self):
+        if self._addressed_here():
+            self._serve_static(head=True)
 
     def do_POST(self):
         if not self._addressed_here():
@@ -2570,13 +2611,40 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def end_headers(self):
         self.send_header("Cache-Control", "no-store, max-age=0")
+        # no other site may frame the app (clickjacking), sniff types, or see where you came from
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Content-Security-Policy", "frame-ancestors 'none'")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "no-referrer")
         super().end_headers()
 
     def log_message(self, *args):
         pass
 
 
+def lock_down_files():
+    """Owner-only permissions: for every file this server creates from now on
+    (personal data, documents, resume, tokens), and for the key files and
+    private folders already sitting in the app folder."""
+    os.umask(0o077)
+    for name in BLOCKED | {"knowledge", "resume"}:
+        p = os.path.join(DIRECTORY, name)
+        try:
+            if os.path.isdir(p):
+                os.chmod(p, 0o700)
+                for root, dirs, files in os.walk(p):
+                    for n in dirs:
+                        os.chmod(os.path.join(root, n), 0o700)
+                    for n in files:
+                        os.chmod(os.path.join(root, n), 0o600)
+            elif os.path.exists(p):
+                os.chmod(p, 0o600)
+        except OSError:
+            pass
+
+
 def main():
+    lock_down_files()
     token, db = load_token_and_db()
     url = f"http://localhost:{PORT}/job-dashboard.html"
     socketserver.ThreadingTCPServer.allow_reuse_address = True

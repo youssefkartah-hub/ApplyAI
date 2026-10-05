@@ -36,10 +36,11 @@ python3 sync_gmail.py --once --verbose
 
 # keep syncing every 5 minutes
 python3 sync_gmail.py --loop --interval 300
-
-# serve the dashboard (separate terminal)
-python3 serve.py
 ```
+
+The dashboard itself is now SARAH: run `python3 notion_server.py` (or
+double-click `start.command`). The old `serve.py` was removed because it
+listened on the whole network and could serve the app folder's key files.
 
 Useful flags: `--days 7` (wider lookback), `--no-ai` (skip Claude).
 
@@ -54,7 +55,7 @@ Useful flags: `--days 7` (wider lookback), `--no-ai` (skip Claude).
 
 ## Dashboard features
 
-Open `http://localhost:8000/job-dashboard.html` (via `serve.py`):
+Historical notes on the original Gmail-fed dashboard (see SARAH.md for the current app):
 
 - **Stats header** — totals per status, response rate, follow-up count.
 - **Targets by region** — progress bars vs. your `targets`.

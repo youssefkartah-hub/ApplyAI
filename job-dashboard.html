@@ -3023,7 +3023,7 @@ function renderFin(){
       ${rt!=null?`<div class="imetric"><div class="n">${usd(rt)}</div><div class="l">Robinhood</div></div>`:""}
       <div class="imetric"><div class="n">${nw<0?"-":""}$${Math.abs(nw).toLocaleString()}</div><div class="l">Net worth</div></div>
     </div>
-    ${finInsights().map(x=>`<div class="usage-note">${x}</div>`).join("")}`;
+    ${finInsights().map(x=>`<div class="usage-note">${esc(x)}</div>`).join("")}`;
   renderFinRh(); renderFinSpend(); renderFinSubs(); renderFinGoals(); renderFinWorth(); renderFinTrend(); renderFinMkts();
 }
 function renderFinSpend(){
