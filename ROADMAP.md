@@ -158,6 +158,29 @@ deliberately minimal: show up and check the box, exactly like prayers.
 - **Fix:** Finance was being reset on every load since Phase 3 (it was treated
   as a list), which wiped savings goals, assets and expenses. It now persists.
 
+## Phase 9 — Calls home, Canvas, Robinhood ✅ (shipped October 2026)
+
+- **Calls home.** The weekly "call home" checkbox became a 👪 Family card on
+  Today: Mom and Dad tracked separately, each at least once every four days,
+  with due/overdue status by name, week dots, 30-day on-schedule percentages,
+  voice and command-bar logging ("called mom", "talked to my parents"), and a
+  Claude log_call action.
+- **Removed:** the outreach conversation counter (daily 15 / weekly 75 /
+  toward 1,000, replies, the midday outreach calendar block and the two
+  outreach rules) and the income log. The sales study block, 90-day lock,
+  customers and Later list stay. Old outreach and income entries remain in
+  personal_data.json, unread. The Sunday review is now four numbers: prayers,
+  training, calls home, assignments done.
+- **Canvas.** 🎓 Courses tab: courses with current grades and every assignment
+  with submission status (access token), or due dates only (calendar feed
+  fallback). Due-soon card on Today, coursework line in the rundown, voice.
+- **Robinhood through SnapTrade.** Robinhood has no public stock API; a free
+  SnapTrade personal key links it read-only through SnapTrade's own portal.
+  Positions, cash, gains, net worth, Today card, voice. Requests are signed
+  exactly as SnapTrade's official SDK signs them (verified byte for byte).
+- **Hardening.** The server listens on 127.0.0.1 only and rejects foreign Host
+  headers (DNS rebinding); new key files are 0600, gitignored, never served.
+
 ## Later ideas (unscheduled)
 
 - Journal, spaced-repetition flashcards, richer language stats, deeper knowledge

@@ -168,3 +168,5 @@ elevenlabs_key.txt
 anthropic_key.txt
 knowledge/
 resume/
+canvas_config.json*
+snaptrade_keys.json*

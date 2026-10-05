@@ -19,6 +19,9 @@ Setup (one time):
 
 Run:
     python3 notion_server.py          # or just double-click start.command
+
+Optional connections, set up from inside the app: Canvas (Courses tab) for
+courses, assignments and grades, and Robinhood through SnapTrade (Finance tab).
 """
 import http.server
 import socketserver
@@ -38,7 +41,8 @@ CACHE_TTL = 20  # seconds; avoid hammering the Notion API on every poll
 
 BLOCKED = {"notion_token.txt", "notion_config.json", "credentials.json",
            "token.json", ".sync_state.json", "personal_data.json", "token_calendar.json",
-           "elevenlabs_key.txt", "anthropic_key.txt", ".sarah_calendar.json"}
+           "elevenlabs_key.txt", "anthropic_key.txt", ".sarah_calendar.json",
+           "canvas_config.json", "snaptrade_keys.json"}
 ANTHROPIC_KEY_FILE = os.path.join(DIRECTORY, "anthropic_key.txt")
 
 
@@ -698,8 +702,7 @@ ASSIST_SCHEMA = {
             "properties": {
                 "type": {"type": "string",
                          "enum": ["check_prayer", "check_training", "check_body", "check_mind",
-                                  "check_system", "log_outreach", "log_replies",
-                                  "log_income", "log_expense", "add_task",
+                                  "check_system", "log_call", "log_expense", "add_task",
                                   "complete_task", "none"]},
                 "key": {"type": "string"},
                 "amount": {"type": "number"},
@@ -710,8 +713,8 @@ ASSIST_SCHEMA = {
 ASSIST_PROMPT = (
     "You are Sarah, Youssef's AI executive assistant, living in his personal "
     "command center app. He is an aerospace engineering student running a job "
-    "search, university, BJJ and Muay Thai training, prayer, language learning, "
-    "and building income. Your character: an elite executive assistant. "
+    "search, university coursework, BJJ and Muay Thai training, prayer, language "
+    "learning, and one small venture. Your character: an elite executive assistant. "
     "Professional, calm, confident, observant. Direct without being cold, never "
     "gushing, never robotic, no filler enthusiasm. You think ahead of him: when "
     "the data shows a pattern worth acting on, say so plainly, and when a "
@@ -725,7 +728,7 @@ ASSIST_PROMPT = (
     "Each turn you receive a STATE snapshot of his day, including "
     "learnedPatterns: behavioral patterns the app has computed from weeks of his "
     "real data (productive hours, weak days, slipping prayers, stale tasks, "
-    "income rhythms, training habits). STATE also carries trainingPlan: "
+    "late calls home, training habits). STATE also carries trainingPlan: "
     "today's scheduled sessions from his weekly split (Mon Upper Body A plus "
     "Muay Thai, Tue Lower Body Strength plus BJJ, Wed Recovery and Mobility, "
     "Thu Upper Body B plus BJJ, Fri Muay Thai followed by Lower Body Power "
@@ -738,16 +741,15 @@ ASSIST_PROMPT = (
     "His operating system: he scores himself only on inputs he controls, never "
     "on outcomes; customers, belts and money are lagging results. The lead "
     "measures in STATE are the scoreboard: daily, five prayers on time, 10 "
-    "minutes of Quran, 15 sales conversations started on his one venture "
-    "(weekdays; 75 a week), 30 minutes of sales and distribution study, and 7+ "
-    "hours of sleep; weekly, 4 martial arts sessions, 3 lifts, a call home, a "
-    "social evening and a Sunday review of five numbers plus one line. The "
-    "venture is under a 90-day lock: until it has three paying customers he "
-    "does not start, plan or research a new business idea, it goes in the "
-    "Later list. Build time is capped, outreach is not: if he talks about "
-    "polishing a product instead of contacting people, name it as avoiding "
-    "the hard skill. Rejection is the metric, not the enemy. Faith, training "
-    "and sleep are never traded for work. Hold him to this plainly and kindly. "
+    "minutes of Quran, 30 minutes of sales and distribution study, and 7+ hours "
+    "of sleep; a phone call with his mom and one with his dad at least every "
+    "four days each (STATE.callsHome says when each was last called and whether "
+    "one is due; remind him by name when a call is due or overdue); weekly, 4 "
+    "martial arts sessions, 3 lifts, a social evening and a Sunday review of "
+    "four numbers plus one line. The venture is under a 90-day lock: until it "
+    "has three paying customers he does not start, plan or research a new "
+    "business idea, it goes in the Later list. Faith, training and sleep are "
+    "never traded for work. Hold him to this plainly and kindly. "
     "Treat all of this as your own observations and weave it in "
     "when relevant, but never recite lists. When he reports something done, "
     "acknowledge it briefly and emit matching actions: check_prayer with key "
@@ -755,15 +757,18 @@ ASSIST_PROMPT = (
     "bjj/muaythai/training/lift (lift covers his scheduled gym session), "
     "check_body with key sleep (7+ hours), creatine (his daily 5 g) or skincare "
     "(his nightly routine), check_system with key quran/study/jummah (study is "
-    "the 30 minutes of sales study) or callHome/social (weekly), log_outreach "
-    "with amount for sales conversations started, log_replies with amount for "
-    "replies received, check_mind with key lesson/immersion, log_income with amount, log_expense "
+    "the 30 minutes of sales study) or social (weekly), log_call with key mom, "
+    "dad or both when he says he called or spoke with his parents, check_mind "
+    "with key lesson/immersion, log_expense "
     "with amount plus key for the category (Food, Rent, Transport, Training, "
     "Subscriptions, School, Fun, Other) and title for what it was, add_task "
-    "with title, complete_task with the task's title. STATE.finance carries "
-    "month income, month spend, monthly subscriptions and net worth; use it when money "
-    "comes up. Never invent progress he didn't mention, and never fake numbers "
-    "not in STATE."
+    "with title, complete_task with the task's title. STATE.coursework lists "
+    "his Canvas assignments due in the next week, anything past due and his "
+    "current course grades; use it when school comes up and name anything past "
+    "due. STATE.finance carries month spend, monthly subscriptions and net "
+    "worth, and STATE.portfolio his Robinhood holdings when linked; use them "
+    "when money comes up, but never give buy or sell advice. Never invent "
+    "progress he didn't mention, and never fake numbers not in STATE."
 )
 
 
@@ -1758,6 +1763,564 @@ def fetch_markets():
     return data
 
 
+def _save_private(path, obj):
+    """Write a secrets file that only this user can read."""
+    tmp = path + ".tmp"
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    if hasattr(os, "fchmod"):
+        os.fchmod(fd, 0o600)              # also when an old temp file was left behind
+    with os.fdopen(fd, "w") as f:
+        json.dump(obj, f)
+    os.replace(tmp, path)
+
+
+def _forget(path):
+    try:
+        os.remove(path)
+    except FileNotFoundError:
+        pass
+
+
+def _drop_cache(cache, lock):
+    # under the lock, so a fetch already running can't put old data back afterwards
+    with lock:
+        cache.update(at=0, data=None)
+
+
+def _clean_url(url):
+    """Normalise a pasted address. Credentials only travel over https, except
+    to a server on this machine."""
+    from urllib.parse import urlparse
+    u = (url or "").strip()
+    if not u:
+        return None
+    if not re.match(r"^https?://", u, re.I):
+        u = "https://" + u
+    try:
+        p = urlparse(u)
+        host, port = (p.hostname or "").lower(), p.port
+    except ValueError:
+        return None
+    if not host or ("." not in host and host != "localhost"):
+        return None
+    local = host in ("localhost", "127.0.0.1")
+    scheme = "http" if (local and p.scheme.lower() == "http") else "https"
+    return p._replace(scheme=scheme, netloc=host + (f":{port}" if port else ""))
+
+
+# --------------------------------------------------------------------------
+# Canvas: courses, assignments and grades from your school's Canvas.
+# Two ways in, both read-only:
+#   - an access token (Account -> Settings -> + New Access Token): courses
+#     with current grades, and every assignment with your submission status;
+#   - the calendar feed link (Calendar -> Calendar Feed), for schools that
+#     switch tokens off: due dates only.
+# Whichever you use lives in canvas_config.json (gitignored, never served).
+# --------------------------------------------------------------------------
+CANVAS_CFG = os.path.join(DIRECTORY, "canvas_config.json")
+CANVAS_TTL = 600            # seconds; coursework doesn't move minute to minute
+CANVAS_PAST_DAYS = 70       # enough history for eight weeks of Sunday reviews
+CANVAS_AHEAD_DAYS = 160     # the rest of the term
+# submission types Canvas sees arrive. Paper, "no submission" and outside tools
+# (Gradescope and the like) only show up once graded, so they never count as late.
+CANVAS_ONLINE = {"online_upload", "online_text_entry", "online_url", "online_quiz",
+                 "discussion_topic", "media_recording", "student_annotation"}
+_cv_cache = {"at": 0, "data": None}
+_cv_lock = threading.Lock()
+
+
+class CanvasAuthError(Exception):
+    pass
+
+
+def canvas_cfg():
+    try:
+        with open(CANVAS_CFG) as f:
+            d = json.load(f)
+        return d if isinstance(d, dict) else {}
+    except Exception:
+        return {}
+
+
+def _cv_get(base, token, path, params=None):
+    """GET a Canvas API path, following Canvas's Link-header pagination."""
+    s = _session()
+    url, out = f"{base}/api/v1{path}", []
+    params = dict(params or {}, per_page=100)
+    for _ in range(25):
+        r = s.get(url, headers={"Authorization": f"Bearer {token}"}, params=params, timeout=25)
+        if r.status_code == 401:
+            raise CanvasAuthError()
+        r.raise_for_status()
+        data = r.json()
+        if not isinstance(data, list):
+            return data
+        out.extend(data)
+        nxt = (r.links.get("next") or {}).get("url") or ""
+        if not nxt.startswith(base + "/"):   # the token never follows a link off this Canvas
+            break
+        url, params = nxt, None               # the next link already carries the query
+    return out
+
+
+def _cv_status(a):
+    """What Canvas knows about your submission, in one word."""
+    sub = a.get("submission") or {}
+    if sub.get("excused"):
+        return "excused"
+    ws = sub.get("workflow_state")
+    if ws == "graded" and (sub.get("score") is not None or sub.get("submitted_at")):
+        return "graded"
+    if ws in ("submitted", "pending_review") or sub.get("submitted_at"):
+        return "submitted"
+    return "missing" if sub.get("missing") else "open"
+
+
+def _canvas_token_fetch(cfg):
+    from concurrent.futures import ThreadPoolExecutor
+    from urllib.parse import urlparse
+    base, token, now = cfg["base"], cfg["token"], time.time()
+    raw = _cv_get(base, token, "/courses",
+                  {"enrollment_state": "active", "include[]": ["total_scores", "term"]})
+    courses = []
+    for c in raw if isinstance(raw, list) else []:
+        if not c.get("id") or not c.get("name") or c.get("access_restricted_by_date"):
+            continue
+        end = (c.get("term") or {}).get("end_at") or c.get("end_at")
+        if end and 0 < _ms(end) < (now - 30 * 86400) * 1000:
+            continue                          # an old term that never closed out
+        enr = next((e for e in c.get("enrollments") or []
+                    if e.get("type") in ("student", "StudentEnrollment")), {})
+        score = enr.get("computed_current_score")
+        courses.append({"id": c["id"], "name": str(c["name"])[:120],
+                        "code": str(c.get("course_code") or "")[:60],
+                        "score": round(score, 1) if isinstance(score, (int, float)) else None,
+                        "grade": enr.get("computed_current_grade") or None,
+                        "url": f"{base}/courses/{c['id']}"})
+    lo, hi = (now - CANVAS_PAST_DAYS * 86400) * 1000, (now + CANVAS_AHEAD_DAYS * 86400) * 1000
+
+    def assignments(course):
+        try:
+            rows = _cv_get(base, token, f"/courses/{course['id']}/assignments",
+                           {"include[]": ["submission"], "order_by": "due_at"})
+        except CanvasAuthError:
+            raise
+        except Exception:
+            return []                         # one locked course shouldn't hide the rest
+        out = []
+        for a in rows if isinstance(rows, list) else []:
+            due = a.get("due_at")
+            if a.get("published") is False or (due and not lo <= _ms(due) <= hi):
+                continue
+            sub, url = a.get("submission") or {}, str(a.get("html_url") or "")
+            out.append({"id": f"a{a.get('id')}", "courseId": course["id"],
+                        "course": course["code"] or course["name"],
+                        "title": str(a.get("name") or "Untitled")[:200], "due": due,
+                        "points": a.get("points_possible"), "url": url if url.startswith(base) else "",
+                        "status": _cv_status(a), "score": sub.get("score"),
+                        "tracked": bool(set(a.get("submission_types") or []) & CANVAS_ONLINE)})
+        return out
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        items = [a for lst in pool.map(assignments, courses) for a in lst]
+    items.sort(key=lambda a: (a["due"] is None, a["due"] or ""))
+    return {"mode": "token", "host": urlparse(base).hostname, "user": cfg.get("name", ""),
+            "courses": courses, "assignments": items, "fetchedAt": int(now * 1000)}
+
+
+def _ics_events(text):
+    text = re.sub(r"\r?\n[ \t]", "", text)    # unfold long lines
+    events, cur = [], None
+    for line in text.splitlines():
+        if line == "BEGIN:VEVENT":
+            cur = {}
+        elif line == "END:VEVENT":
+            if cur is not None:
+                events.append(cur)
+            cur = None
+        elif cur is not None and ":" in line:
+            key, _, value = line.partition(":")
+            name, _, params = key.partition(";")
+            cur[name.upper()] = (value, params)
+    return events
+
+
+def _ics_text(v):
+    return re.sub(r"\\(.)", lambda m: "\n" if m.group(1) in "nN" else m.group(1), v or "").strip()
+
+
+def _ics_when(value, params):
+    """DTSTART as an ISO time. A date-only entry is due at the end of that day,
+    local, which a time without a zone means to the browser."""
+    import datetime as dt
+    v = value.strip()
+    if "VALUE=DATE" in params.upper() or re.fullmatch(r"\d{8}", v):
+        return dt.datetime.strptime(v[:8], "%Y%m%d").strftime("%Y-%m-%dT23:59:00")
+    m = re.fullmatch(r"(\d{8}T\d{6})(Z?)", v)
+    if not m:
+        return None
+    t = dt.datetime.strptime(m.group(1), "%Y%m%dT%H%M%S")
+    tz = re.search(r"TZID=\"?([^;:\"]+)", params)
+    try:
+        if m.group(2):
+            t = t.replace(tzinfo=dt.timezone.utc)
+        elif tz:
+            from zoneinfo import ZoneInfo
+            t = t.replace(tzinfo=ZoneInfo(tz.group(1))).astimezone(dt.timezone.utc)
+        else:
+            return t.isoformat()
+    except Exception:
+        return t.isoformat()
+    return t.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _canvas_ics_fetch(cfg):
+    from urllib.parse import urlparse
+    r = _session().get(cfg["ics"], timeout=25)
+    if r.status_code in (401, 403, 404):
+        raise CanvasAuthError()
+    r.raise_for_status()
+    now, feed = time.time(), urlparse(cfg["ics"])
+    lo, hi = (now - CANVAS_PAST_DAYS * 86400) * 1000, (now + CANVAS_AHEAD_DAYS * 86400) * 1000
+    courses, items = {}, []
+    for ev in _ics_events(r.text):
+        uid, link = ev.get("UID", ("", ""))[0], _ics_text(ev.get("URL", ("", ""))[0])
+        aid = re.search(r"assignment[-_/](\d+)", uid) or re.search(r"assignment[-_/s]+(\d+)", link)
+        if not aid:
+            continue                          # lectures and office hours already come from Google
+        start = ev.get("DTSTART")
+        due = _ics_when(*start) if start else None
+        if due and not lo <= _ms(due) <= hi:
+            continue
+        summary = _ics_text(ev.get("SUMMARY", ("", ""))[0])
+        m = re.match(r"^(.*?)\s*\[([^\[\]]+)\]$", summary)
+        title, course = (m.group(1), m.group(2)) if m else (summary, "Canvas")
+        cnum = re.search(r"course[_s/]+(\d+)", link)
+        cid = f"ics-{cnum.group(1)}" if cnum else "ics-" + re.sub(r"[^a-z0-9]+", "-", course.lower()).strip("-")
+        courses.setdefault(cid, {"id": cid, "name": course[:120], "code": course[:60],
+                                 "score": None, "grade": None, "url": ""})
+        url = (f"{feed.scheme}://{feed.netloc}/courses/{cnum.group(1)}/assignments/{aid.group(1)}"
+               if cnum else link if link.startswith("https://") else "")
+        items.append({"id": f"a{aid.group(1)}", "courseId": cid, "course": course[:60],
+                      "title": (title or "Untitled")[:200], "due": due, "points": None, "url": url,
+                      "status": "open", "score": None, "tracked": False})
+    items.sort(key=lambda a: (a["due"] is None, a["due"] or ""))
+    return {"mode": "ics", "host": feed.hostname, "user": "",
+            "courses": sorted(courses.values(), key=lambda c: c["name"]),
+            "assignments": items, "fetchedAt": int(now * 1000)}
+
+
+def fetch_canvas(force=False):
+    cfg = canvas_cfg()
+    if not (cfg.get("base") and cfg.get("token")) and not cfg.get("ics"):
+        return {"error": "not_connected"}
+    with _cv_lock:
+        now = time.time()
+        if _cv_cache["data"] and now - _cv_cache["at"] < (60 if force else CANVAS_TTL):
+            return _cv_cache["data"]
+        try:
+            data = _canvas_ics_fetch(cfg) if cfg.get("ics") else _canvas_token_fetch(cfg)
+        except CanvasAuthError:
+            return {"error": "auth", "message": (
+                "Canvas turned the calendar feed link away. Copy it again from Calendar → Calendar Feed."
+                if cfg.get("ics") else
+                "Canvas turned the token away. It may have expired or been revoked: disconnect and connect with a new one.")}
+        except Exception as e:
+            return {"error": "fetch", "message": f"Couldn't reach Canvas: {str(e)[:140]}"}
+        _cv_cache.update(at=now, data=data)
+        return data
+
+
+def canvas_connect(payload):
+    ics = str(payload.get("ics") or "").strip()
+    url = str(payload.get("url") or "").strip()
+    token = str(payload.get("token") or "").strip()
+    if not ics and (".ics" in url or "/feeds/calendars/" in url):
+        ics = url                              # the feed link, pasted into the address box
+    if ics:
+        p = _clean_url(ics)
+        if not p or not (p.path.endswith(".ics") or "/feeds/" in p.path):
+            return {"error": "bad_url", "message": "That isn't a Canvas calendar feed link. It ends in .ics."}
+        feed = p.geturl()
+        try:
+            r = _session().get(feed, timeout=20)
+        except Exception as e:
+            return {"error": "net", "message": f"Couldn't reach that link: {str(e)[:120]}"}
+        if not r.ok or "BEGIN:VCALENDAR" not in r.text[:3000]:
+            return {"error": "bad_feed",
+                    "message": "That link didn't return a calendar. Copy it again from Calendar → Calendar Feed."}
+        _save_private(CANVAS_CFG, {"ics": feed})
+        _drop_cache(_cv_cache, _cv_lock)
+        return {"ok": True, "mode": "ics"}
+    p = _clean_url(url)
+    if not p:
+        return {"error": "bad_url", "message": "Type your school's Canvas address, like psu.instructure.com."}
+    base = f"{p.scheme}://{p.netloc}"
+    if len(token) < 20:
+        return {"error": "no_token", "message": "Paste the whole access token Canvas showed you. It's about 70 characters."}
+    s = _session()
+    try:
+        # vanity addresses (canvas.school.edu) often forward to school.instructure.com:
+        # follow that once without the token, and only when it keeps the API path
+        r = s.get(f"{base}/api/v1/users/self", allow_redirects=False, timeout=15)
+        loc = r.headers.get("Location", "") if r.status_code in (301, 302, 303, 307, 308) else ""
+        moved = _clean_url(loc) if loc.startswith("http") else None
+        if moved and moved.path.startswith("/api/v1/"):
+            base = f"{moved.scheme}://{moved.netloc}"
+        r = s.get(f"{base}/api/v1/users/self", headers={"Authorization": f"Bearer {token}"},
+                  allow_redirects=False, timeout=20)
+    except Exception as e:
+        return {"error": "net", "message": f"Couldn't reach {p.hostname}: {str(e)[:120]}"}
+    if r.status_code == 401:
+        return {"error": "auth", "message": "Canvas turned that token away. Check you copied all of it, or make a new one."}
+    try:
+        me = r.json() if r.ok else None
+    except ValueError:
+        me = None
+    if not isinstance(me, dict):
+        return {"error": "canvas", "message": f"{p.hostname} didn't answer like Canvas ({r.status_code}). Check the address."}
+    name = str(me.get("short_name") or me.get("name") or "")[:80]
+    _save_private(CANVAS_CFG, {"base": base, "token": token, "name": name})
+    _drop_cache(_cv_cache, _cv_lock)
+    return {"ok": True, "mode": "token", "name": name}
+
+
+def canvas_disconnect(_payload=None):
+    _forget(CANVAS_CFG)
+    _drop_cache(_cv_cache, _cv_lock)
+    return {"ok": True}
+
+
+# --------------------------------------------------------------------------
+# Robinhood, through SnapTrade. Robinhood has no public API for stock
+# accounts, and signing in with your password through an unofficial client
+# breaks its terms. SnapTrade is a brokerage-connection service with a free
+# personal key: Robinhood is linked once in SnapTrade's own portal, and this
+# server reads balances and positions, read-only. Requests are signed the way
+# SnapTrade's official SDK signs them for a personal key.
+# The keys live in snaptrade_keys.json (gitignored, never served).
+# --------------------------------------------------------------------------
+SNAP_KEYS = os.path.join(DIRECTORY, "snaptrade_keys.json")
+SNAP_HOST = os.environ.get("SNAPTRADE_HOST", "https://api.snaptrade.com")
+RH_TTL = 300                # SnapTrade allows a personal account 10 calls a minute
+_rh_cache = {"at": 0, "data": None}
+_rh_lock = threading.Lock()
+
+
+class SnapError(Exception):
+    def __init__(self, info):
+        super().__init__(info.get("message", ""))
+        self.info = info
+
+
+def snap_keys():
+    cid = os.environ.get("SNAPTRADE_CLIENT_ID", "").strip()
+    key = os.environ.get("SNAPTRADE_CONSUMER_KEY", "").strip()
+    if not (cid and key):
+        try:
+            with open(SNAP_KEYS) as f:
+                d = json.load(f)
+            cid, key = str(d.get("clientId", "")).strip(), str(d.get("consumerKey", "")).strip()
+        except Exception:
+            return None, None
+    return (cid, key) if cid and key else (None, None)
+
+
+def snap_signature(key, path, query, body=None):
+    """HMAC-SHA256 over {content, path, query} as compact sorted JSON, base64."""
+    import base64
+    import hashlib
+    import hmac
+    signed = json.dumps({"content": body or None, "path": path, "query": query},
+                        separators=(",", ":"), sort_keys=True)
+    return base64.b64encode(hmac.new(key.encode(), signed.encode(), hashlib.sha256).digest()).decode()
+
+
+def snap_call(method, path, cid, key, body=None):
+    from urllib.parse import quote
+    query = f"clientId={quote(cid, safe='')}&timestamp={int(time.time())}"
+    headers = {"Signature": snap_signature(key, path, query, body), "Accept": "application/json"}
+    data = None
+    if body is not None:
+        headers["Content-Type"] = "application/json"
+        data = json.dumps(body, separators=(",", ":"))
+    return _session().request(method, f"{SNAP_HOST}{path}?{query}", headers=headers, data=data, timeout=25)
+
+
+def _snap_error(r):
+    if r.status_code in (401, 403):
+        return {"error": "auth", "message": "SnapTrade turned the keys away. Copy the Client ID and "
+                                            "Consumer Key again from the SnapTrade dashboard."}
+    if r.status_code == 429:
+        return {"error": "rate", "message": "SnapTrade asked for a short pause. It refreshes again in a few minutes."}
+    try:
+        j = r.json()
+        detail = str(j.get("detail") or j.get("message") or "") if isinstance(j, dict) else ""
+    except ValueError:
+        detail = r.text
+    return {"error": "snap", "message": f"SnapTrade answered {r.status_code}" + (f": {detail[:140]}" if detail else ".")}
+
+
+def _snap_json(path, cid, key):
+    r = snap_call("GET", path, cid, key)
+    if not r.ok:
+        raise SnapError(_snap_error(r))
+    return r.json()
+
+
+def _num(v):
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def _rh_position(p, account_id):
+    ins = p.get("instrument") or {}
+    kind = str(ins.get("kind") or "other")
+    units, price, cost = _num(p.get("units")), _num(p.get("price")), _num(p.get("cost_basis"))
+    mult = 1
+    if kind == "option":                       # prices are per share, a contract is 100 of them
+        mult = _num(ins.get("multiplier")) or 100
+        u = ins.get("underlying") or {}
+        sym = " ".join(str(x) for x in (u.get("raw_symbol") or u.get("symbol"), ins.get("expiration_date"),
+                                          ins.get("strike_price"), (ins.get("option_type") or "")[:1]) if x)
+    else:
+        sym = ins.get("raw_symbol") or ins.get("symbol")
+    sym = str(sym or "?")
+    value = units * price * mult if units is not None and price is not None else None
+    basis = units * cost * mult if units is not None and cost else None
+    gain = value - basis if value is not None and basis else None
+    return {"symbol": sym[:40], "name": str(ins.get("description") or sym)[:80], "kind": kind,
+            "units": units, "price": price, "value": value, "gain": gain,
+            "gainPct": 100 * gain / abs(basis) if gain is not None else None,
+            "cashEquivalent": bool(p.get("cash_equivalent")), "account": account_id}
+
+
+def fetch_robinhood(force=False):
+    cid, key = snap_keys()
+    if not cid:
+        return {"error": "no_keys"}
+    with _rh_lock:
+        now, cached = time.time(), _rh_cache["data"]
+        if cached and now - _rh_cache["at"] < (60 if force else RH_TTL):
+            return cached
+        try:
+            accounts = [a for a in _snap_json("/accounts", cid, key) or [] if isinstance(a, dict)
+                        and a.get("id") and a.get("status") not in ("closed", "archived")
+                        and a.get("account_category") not in ("DEPOSIT", "LOC")]
+            if not accounts:
+                return {"error": "no_accounts"}   # keys work, Robinhood isn't linked yet
+            out, positions, stamps = [], [], []
+            for a in accounts:
+                aid = a["id"]
+                pos = _snap_json(f"/accounts/{aid}/positions/all", cid, key) or {}
+                bal = _snap_json(f"/accounts/{aid}/balances", cid, key) or []
+                ps = [_rh_position(p, aid) for p in pos.get("results") or [] if isinstance(p, dict)]
+                cash = sum(_num(b.get("cash")) or 0 for b in bal if isinstance(b, dict)
+                           and (b.get("currency") or {}).get("code") in (None, "USD"))
+                # money-market sweeps already sit inside cash
+                invested = sum(p["value"] or 0 for p in ps if not p["cashEquivalent"])
+                total = _num(((a.get("balance") or {}).get("total") or {}).get("amount"))
+                out.append({"id": aid, "name": str(a.get("name") or "")[:60],
+                            "institution": str(a.get("institution_name") or "Brokerage")[:40],
+                            "number": str(a.get("number") or "")[-4:],
+                            "total": total if total is not None else invested + cash,
+                            "cash": cash, "invested": invested})
+                positions += ps
+                stamp = (pos.get("data_freshness") or {}).get("as_of")
+                if stamp:
+                    stamps.append(stamp)
+        except SnapError as e:
+            # a hiccup shouldn't blank the portfolio: keep the last good numbers on screen
+            if cached and e.info["error"] != "auth":
+                return dict(cached, warning=e.info["message"])
+            return e.info
+        except Exception as e:
+            msg = f"Couldn't reach SnapTrade: {str(e)[:120]}"
+            return dict(cached, warning=msg) if cached else {"error": "net", "message": msg}
+        positions.sort(key=lambda p: -(p["value"] or 0))
+        known = [p for p in positions if p["gain"] is not None]
+        gain = sum(p["gain"] for p in known) if known else None
+        basis = sum(p["value"] - p["gain"] for p in known)
+        data = {"accounts": out, "positions": positions,
+                "total": sum(a["total"] for a in out), "cash": sum(a["cash"] for a in out),
+                "invested": sum(a["invested"] for a in out),
+                "gain": gain, "gainPct": 100 * gain / basis if gain is not None and basis else None,
+                "asOf": min(stamps) if stamps else None,
+                "institutions": sorted({a["institution"] for a in out}), "fetchedAt": int(now * 1000)}
+        _rh_cache.update(at=now, data=data)
+        return data
+
+
+def rh_connect(payload):
+    cid = str(payload.get("clientId") or "").strip()
+    key = str(payload.get("consumerKey") or "").strip()
+    if not cid or not key:
+        return {"error": "missing", "message": "Paste both the Client ID and the Consumer Key."}
+    try:
+        r = snap_call("GET", "/accounts", cid, key)
+    except Exception as e:
+        return {"error": "net", "message": f"Couldn't reach SnapTrade: {str(e)[:120]}"}
+    if not r.ok:
+        return _snap_error(r)
+    try:
+        linked = len(r.json() or [])
+    except ValueError:
+        linked = 0
+    _save_private(SNAP_KEYS, {"clientId": cid, "consumerKey": key})
+    _drop_cache(_rh_cache, _rh_lock)
+    return {"ok": True, "accounts": linked}
+
+
+def rh_link(payload):
+    """A Connection Portal link: SnapTrade's own page, where you pick Robinhood and sign in.
+    It expires after five minutes."""
+    cid, key = snap_keys()
+    if not cid:
+        return {"error": "no_keys", "message": "Save your SnapTrade keys first."}
+    back = str(payload.get("back") or "")
+    if not re.match(r"^http://(localhost|127\.0\.0\.1)(:\d+)?/api/robinhood/linked$", back):
+        back = f"http://localhost:{PORT}/api/robinhood/linked"
+    body = {"connectionType": "read", "immediateRedirect": True, "customRedirect": back, "darkMode": True}
+    try:
+        r = snap_call("POST", "/snapTrade/login", cid, key, body)
+        if r.status_code == 400:
+            # if SnapTrade won't send the browser back to localhost, its own finish screen will do
+            r = snap_call("POST", "/snapTrade/login", cid, key, {"connectionType": "read", "darkMode": True})
+    except Exception as e:
+        return {"error": "net", "message": f"Couldn't reach SnapTrade: {str(e)[:120]}"}
+    if not r.ok:
+        return _snap_error(r)
+    try:
+        url = str((r.json() or {}).get("redirectURI") or "")
+    except (ValueError, AttributeError):
+        url = ""
+    if not url.startswith("https://"):
+        return {"error": "snap", "message": "SnapTrade didn't send back a portal link."}
+    return {"url": url}
+
+
+def rh_disconnect(_payload=None):
+    _forget(SNAP_KEYS)
+    _drop_cache(_rh_cache, _rh_lock)
+    if snap_keys()[0]:
+        return {"ok": True, "message": "The keys come from SNAPTRADE_* environment variables; unset them too."}
+    return {"ok": True}
+
+
+# Where SnapTrade's portal sends the browser when you're done: it tells the app
+# tab to reload the portfolio, then closes itself.
+RH_LINKED_PAGE = b"""<!doctype html><meta charset="utf-8"><title>Robinhood linked</title>
+<body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;
+background:#04070d;color:#d9f1ff;font:15px -apple-system,BlinkMacSystemFont,sans-serif">
+<div style="text-align:center"><div style="font-size:42px;color:#22c55e">&#10003;</div>
+<p>Robinhood is linked to SARAH.<br>You can close this tab.</p></div>
+<script>try{new BroadcastChannel("sarah").postMessage("rh-linked")}catch(e){}
+try{localStorage.setItem("sarah_rh_linked",String(Date.now()))}catch(e){}
+setTimeout(function(){window.close()},700)</script></body>"""
+
+
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=DIRECTORY, **kwargs)
@@ -1771,8 +2334,36 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _addressed_here(self):
+        """Only answer requests addressed to this machine. A web page can point
+        its own domain at 127.0.0.1 (DNS rebinding) to reach a local app; its
+        requests still carry that domain in Host, so they stop here."""
+        host = (self.headers.get("Host") or "").strip().lower()
+        name = host[1:].split("]", 1)[0] if host.startswith("[") else host.rsplit(":", 1)[0]
+        if host and name not in ("localhost", "127.0.0.1", "::1"):
+            self.send_error(403, "Forbidden")
+            return False
+        return True
+
     def do_GET(self):
-        path = self.path.split("?", 1)[0]
+        if not self._addressed_here():
+            return
+        path, _, query = self.path.partition("?")
+        force = "force=1" in query.split("&")
+        if path == "/api/canvas":
+            self._send_json(fetch_canvas(force))
+            return
+        if path == "/api/robinhood":
+            self._send_json(fetch_robinhood(force))
+            return
+        if path == "/api/robinhood/linked":
+            _drop_cache(_rh_cache, _rh_lock)
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(RH_LINKED_PAGE)))
+            self.end_headers()
+            self.wfile.write(RH_LINKED_PAGE)
+            return
         if path == "/api/applications":
             self._send_json(fetch_applications())
             return
@@ -1831,7 +2422,24 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_POST(self):
+        if not self._addressed_here():
+            return
         path = self.path.split("?", 1)[0]
+        connectors = {"/api/canvas/connect": canvas_connect, "/api/canvas/disconnect": canvas_disconnect,
+                      "/api/robinhood/connect": rh_connect, "/api/robinhood/link": rh_link,
+                      "/api/robinhood/disconnect": rh_disconnect}
+        if path in connectors:
+            length = int(self.headers.get("Content-Length", 0))
+            if length < 0 or length > 20000:
+                self.send_error(413, "Bad size")
+                return
+            try:
+                payload = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            except Exception as e:
+                self.send_error(400, f"Bad request: {e}")
+                return
+            self._send_json(connectors[path](payload if isinstance(payload, dict) else {}))
+            return
         if path in ("/api/kb/upload", "/api/kb/delete", "/api/kb/ask"):
             length = int(self.headers.get("Content-Length", 0))
             if length <= 0 or length > 40_000_000:
@@ -1974,7 +2582,9 @@ def main():
     socketserver.ThreadingTCPServer.allow_reuse_address = True
     socketserver.ThreadingTCPServer.daemon_threads = True
     try:
-        httpd = socketserver.ThreadingTCPServer(("", PORT), Handler)
+        # this machine only: the app holds your grades, portfolio and keys, so it
+        # must not be reachable from the rest of a campus or café network
+        httpd = socketserver.ThreadingTCPServer(("127.0.0.1", PORT), Handler)
     except OSError as e:
         print(f"Could not start on port {PORT}: {e}\nTry: python3 notion_server.py {PORT + 1}")
         sys.exit(1)
@@ -1996,6 +2606,11 @@ def main():
         else:
             print("Assistant brain: pattern matching only. Put an Anthropic API key in")
             print("anthropic_key.txt to let Sarah hold real conversations.")
+        cv = canvas_cfg()
+        print("Canvas: " + ("connected (" + ("calendar feed" if cv.get("ics") else cv.get("base", "")) + ")."
+                            if cv else "not connected. Connect it from the Courses tab."))
+        print("Robinhood: " + ("SnapTrade keys found." if snap_keys()[0]
+                               else "not connected. Set it up from the Finance tab."))
         print("\nKeep this window open while you use the dashboard. Ctrl+C to stop.")
         threading.Timer(0.8, lambda: webbrowser.open(url)).start()
         try:

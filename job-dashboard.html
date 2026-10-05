@@ -298,11 +298,6 @@
   .blist li::marker{color:var(--accent)}
   .tkadd{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:8px 0}
   .tkadd input{padding:6px 9px}
-  .outctl{display:flex;align-items:center;gap:6px;margin:4px 0}
-  .outctl .rowbtn{min-width:34px;text-transform:none;letter-spacing:0}
-  .outn{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
-  .outn b{font-size:24px}
-  .outn span{color:var(--muted);font-size:13px}
   .mstone{border-left:2px solid var(--line);padding:4px 0 8px 12px;margin:6px 0}
   .mstone.now{border-left-color:var(--accent)}
   .mstone.past{opacity:.55}
@@ -315,6 +310,23 @@
   .blkrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:4px 0}
   .kbdrop{border:1px dashed var(--line);border-radius:10px;padding:14px;text-align:center;color:var(--muted);transition:border-color .15s,background .15s}
   .kbdrop.over{border-color:var(--accent);background:rgba(34,211,238,.06)}
+  /* ---- Family calls, coursework, portfolio ---- */
+  .famst{margin-left:auto;font-size:11.5px;color:var(--muted);text-align:right}
+  .famst.ok{color:var(--offer)} .famst.warn{color:var(--warn)} .famst.bad{color:var(--rejected)}
+  .cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr));gap:14px}
+  .duegrp{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 2px}
+  .arow{display:flex;align-items:center;gap:9px;padding:6px 4px;border-bottom:1px solid var(--line)}
+  .arow:last-child{border-bottom:none}
+  .arow .tt{flex:1;min-width:0}
+  .arow .tt a{color:var(--txt);text-decoration:none}
+  .arow .tt a:hover{color:var(--accent)}
+  .arow .sub{font-size:11.5px;color:var(--muted)}
+  .arow.done .tt>.t{text-decoration:line-through;opacity:.55}
+  .arow input[type=checkbox]{width:15px;height:15px;accent-color:var(--offer);cursor:pointer}
+  .num,.revhist th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .gain{color:var(--offer)} .loss{color:var(--rejected)}
+  .steps{margin:6px 0 10px 18px;padding:0;font-size:13px;line-height:1.6;color:var(--muted)}
+  .steps b{color:var(--txt)}
   /* ---- Resume Match Analyzer ---- */
   .verdict{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:16px 18px;border-radius:14px;
     border:1px solid var(--line);background:linear-gradient(135deg,rgba(34,211,238,.07),transparent)}
@@ -395,7 +407,7 @@
     </div>
     <div class="headright">
     <div class="cmdwrap"><input id="cmdbar" class="cmdbar"
-      placeholder='Add a task or log anything…  ("call Onset lead tomorrow at 3pm", "sent 15", "later: drone idea")'/></div>
+      placeholder='Add a task or log anything…  ("email the recruiter tomorrow at 3pm", "called mom", "later: drone idea")'/></div>
     <div class="controls">
       <span id="hudClock"></span>
       <span class="live"><span id="livedot"></span><span id="connText">Live</span></span>
@@ -444,6 +456,7 @@
       <button class="tab" data-tab="crm">🎤 Interviews·CRM</button>
       <button class="tab" data-tab="match">🎯 Resume Match</button>
       <div class="navlbl">Life</div>
+      <button class="tab" data-tab="courses">🎓 Courses</button>
       <button class="tab" data-tab="train">🏋️ Train</button>
       <button class="tab" data-tab="fin">💰 Finance</button>
       <button class="tab" data-tab="proj">🛠 Projects</button>
@@ -462,7 +475,17 @@
         <div class="icard" id="tasksBox"></div>
         <div class="icard" id="agendaBox"></div>
       </div>
+      <div class="charts" style="margin-top:14px">
+        <div class="icard" id="schoolBox"></div>
+        <div class="icard" id="rhBox"></div>
+      </div>
       <div class="icard" id="mktBox" style="margin-top:14px"></div>
+    </div>
+
+    <div class="pane" data-pane="courses" hidden>
+      <div class="icard" id="cvConn" style="margin-bottom:14px"></div>
+      <div class="icard" id="cvDue" style="margin-bottom:14px"></div>
+      <div class="cgrid" id="cvCourses"></div>
     </div>
 
     <div class="pane" data-pane="score" hidden>
@@ -520,6 +543,7 @@
 
     <div class="pane" data-pane="fin" hidden>
       <div class="icard" id="finOverview" style="margin-bottom:14px"></div>
+      <div class="icard" id="finRh" style="margin-bottom:14px"></div>
       <div class="charts">
         <div class="icard" id="finSpend"></div>
         <div class="icard" id="finSubs"></div>
@@ -1046,11 +1070,13 @@ loadData(false).then(startTicking);
 const AREAS=["Career","University","Projects","Productivity","Health","Finance","Goals","Knowledge"];
 const AREA_ICON={Career:"💼",University:"🎓",Projects:"🛠",Productivity:"⚡",Health:"💪",Finance:"💰",Goals:"🎯",Knowledge:"📚"};
 let OS={tasks:[],habits:[],sessions:[],inbox:[],goals:[],courses:[],uniItems:[],
-  contacts:[],interviews:[],resumes:[],projects:[],notes:[],incomeLog:[],settings:{}};
+  contacts:[],interviews:[],resumes:[],projects:[],notes:[],settings:{}};
 // Keys that must be arrays. Finance is an object (see fin()), so it must never be
 // listed here: forcing it to [] on load wiped savings goals, net worth and spending.
+// Retired features (incomeLog, outreach) are not listed either: their data rides
+// along in personal_data.json untouched, nothing reads it.
 const OS_LISTS=["tasks","habits","sessions","inbox","goals","goalTrees","courses","uniItems",
-  "contacts","interviews","resumes","projects","notes","incomeLog"];
+  "contacts","interviews","resumes","projects","notes"];
 let osSaveT=null;
 
 let calEvents=null;
@@ -1097,6 +1123,7 @@ async function osLoad(){
   OS_LISTS.forEach(k=>{ if(!Array.isArray(OS[k])) OS[k]=[]; });
   OS.settings=OS.settings||{};
   if(!OS.settings.systemStart){ OS.settings.systemStart=todayKey(); osSave(); }
+  if(!OS.settings.familyStart){ OS.settings.familyStart=todayKey(); osSave(); }
   if(OS.settings.theme==="light") document.documentElement.dataset.theme="light";
   renderOS();
 }
@@ -1162,7 +1189,7 @@ let _patCache={key:"",data:null};
 const WDAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 function hourLabel(h){ h=((h%24)+24)%24; return h===0?"midnight":h<12?h+" am":h===12?"noon":(h-12)+" pm"; }
 function computePatterns(){
-  const key=todayKey()+"|"+OS.tasks.length+"|"+(OS.incomeLog||[]).length+"|"+Object.keys(OS.outreach||{}).length;
+  const key=todayKey()+"|"+OS.tasks.length+"|"+Object.keys(OS.daily||{}).length;
   if(_patCache.key===key) return _patCache.data;
   const now=Date.now(), day=86400000, since=d=>now-d*day;
   const P={facts:[],briefLines:[]};
@@ -1178,16 +1205,6 @@ function computePatterns(){
     P.peakStart=bi;
     say(`Most productive between ${hourLabel(bi)} and ${hourLabel(bi+3)}`,
       `You get the most done between ${hourLabel(bi)} and ${hourLabel(bi+3)}. Protect that window for the hardest work.`);
-  }
-  // 2. Best and worst weekday for outreach (last 6 weeks), where the volume lives
-  const outDays=Object.entries(OS.outreach||{}).filter(([d])=>Date.parse(d)>since(42));
-  if(outDays.length>=10){
-    const byW=Array(7).fill(0);
-    outDays.forEach(([d,o])=>byW[new Date(d+"T12:00").getDay()]+=(+o.sent||0));
-    const hi=byW.indexOf(Math.max(...byW)), lo=byW.indexOf(Math.min(...byW));
-    P.bestDay=WDAYS[hi]; P.worstDay=WDAYS[lo];
-    if(hi!==lo) say(`${WDAYS[hi]}s are the strongest outreach day, ${WDAYS[lo]}s the weakest`,
-      `${WDAYS[hi]}s are your strongest outreach day. ${WDAYS[lo]}s are where the volume drops.`);
   }
   // 3. Prayer consistency, last 14 days
   const dailyDays=Object.keys(OS.daily||{}).filter(d=>Date.parse(d)>since(14)&&d!==todayKey());
@@ -1208,13 +1225,10 @@ function computePatterns(){
     say(`Oldest open task: "${stale.title}" (${age} days)`,
       `"${esc(stale.title)}" has been open for ${age} days. When something slides that long, the task itself is usually the problem. Break it down or delete it.`);
   }
-  // 6. Income rhythm, last 14 days
-  const inc=(OS.incomeLog||[]).filter(e=>Date.parse(e.date)>since(14));
-  if(inc.length>=4){
-    const byW=Array(7).fill(0); inc.forEach(e=>byW[new Date(e.date+"T12:00").getDay()]+=e.amount);
-    const bestW=byW.indexOf(Math.max(...byW));
-    say(`${WDAYS[bestW]}s bring in the most income`);
-  }
+  // 7. Calls home that keep slipping past the four-day mark (needs a couple of weeks of data)
+  FAMILY.forEach(([k,n])=>{ const p=familyPct(k,30,14);
+    if(p!=null&&p<70) say(`Calls with ${n} on schedule ${p}% of the time this month`,
+      `Calls with ${n} have been on schedule ${p}% of the time this month. Anchor them to something fixed, like the walk home from class.`); });
   // 8. Usual training days (last 28 days)
   const trainDays=Object.keys(OS.daily||{}).filter(d=>Date.parse(d)>since(28))
     .filter(d=>["bjj","muaythai","training"].some(k=>(OS.daily[d]||{})[k]));
@@ -1322,17 +1336,15 @@ function addTask(title,due,time){
   OS.tasks.push(t); return t;
 }
 function renderToday(){
-  renderDaily(); renderWeek(); renderVenture(); renderTasks(); renderAgenda(); renderMarkets();
+  renderDaily(); renderWeek(); renderVenture(); renderTasks(); renderAgenda(); renderSchool(); renderRhCard(); renderMarkets();
   const all=jobRows(), tk=todayKey();
   const appsToday=all.filter(isToday).length, goal=Object.values(TARGETS).reduce((a,b)=>a+b,0);
   const interviews=all.filter(a=>a.status==="Interview Scheduled").length;
   const b=[];
   const evs=todayCalEvents(), next=evs.find(ev=>!ev.allday&&Date.parse(ev.start)>Date.now());
   b.push(`<b>${new Date().toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"})}</b> · ${evs.length} on the calendar${next?` · next: ${esc(next.title)} at ${fmtClock(next.start)}`:""}`);
-  const o=outToday(), tgt=outreachTarget(tk), wk=weekStatsFor(0);
-  b.push(tgt?`Outreach <b>${o.sent}/${tgt}</b> today · ${wk.outreach}/${OUTREACH_WEEKLY} this week`+
-      (o.sent<tgt&&new Date().getHours()>=12&&new Date().getHours()<14?" · the midday block is on now":"")
-    :`Outreach · weekend, ${wk.outreach}/${OUTREACH_WEEKLY} this week`);
+  const cw=courseworkLine(); if(cw) b.push(cw);
+  const wk=weekStatsFor(0);
   const tr=trainingToday();
   b.push(tr.length?`Training: <b>${tr.map(x=>esc(x[1])).join(" + ")}</b>`:"Training: rest day");
   const left=dailyLeftBits();
@@ -1340,7 +1352,7 @@ function renderToday(){
   const due=openTasks().filter(t=>t.due&&t.due<=tk).sort(byWhen);
   if(due.length) b.push(`Tasks due: <b>${due.length}</b> · first up: ${esc(due[0].title)}${due[0].time?` at ${fmtHM(due[0].time)}`:""}`);
   b.push(`Applications <b>${appsToday}/${goal}</b> today${interviews?` · ${interviews} interview${interviews>1?"s":""} in play`:""}`);
-  if(new Date().getDay()===0&&!wk.review) b.push(`<b>Sunday review is due.</b> Five numbers and one line, on the Scoreboard.`);
+  if(new Date().getDay()===0&&!wk.review) b.push(`<b>Sunday review is due.</b> Four numbers and one line, on the Scoreboard.`);
   $("briefBox").innerHTML=`<h3>☀️ Your rundown
     <button class="rowbtn" data-speak style="float:right;text-transform:none;letter-spacing:0">🔊 Read it to me</button></h3>
     <ul class="blist">${b.map(x=>`<li>${x}</li>`).join("")}</ul>`;
@@ -1427,8 +1439,6 @@ function trainingToday(){
     out.push(["training","Training session"]);
   return out;
 }
-function incomeToday(){ return (OS.incomeLog||[]).filter(e=>e.date===todayKey()).reduce((a,b)=>a+(+b.amount||0),0); }
-function incomeTotal(){ return (OS.incomeLog||[]).reduce((a,b)=>a+(+b.amount||0),0); }
 function mindItems(){
   const s=OS.settings&&OS.settings.mindItems;
   if(Array.isArray(s)&&s.length) return s;
@@ -1439,19 +1449,17 @@ function lifeSections(){
   const tk=todayKey();
   return [
     {id:"faith",name:"Faith",icon:"🕌",ring:true,items:faithItems(tk)},
-    {id:"venture",name:venture().name,icon:"📞",venture:true,items:[STUDY]},
+    {id:"venture",name:venture().name,icon:"💼",items:[STUDY]},
     {id:"training",name:"Training",icon:"🥋",cal:true,items:trainingToday(),
       rest:"Rest day. No sessions on the plan."},
     {id:"body",name:"Body",icon:"🧴",items:bodyItems(tk)},
     {id:"mind",name:"Mind",icon:"🧠",items:mindItems()},
-    {id:"income",name:"Income",icon:"💵",money:true,items:[]},
+    {id:"family",name:"Family",icon:"👪",family:true,items:FAMILY},
   ];
 }
 function secPct(sec,d){
-  if(sec.money) return null;   // an outcome: logged, never scored
-  if(sec.venture){ const tk=todayKey(), tgt=outreachTarget(tk), parts=[d.study?1:0];
-    if(tgt) parts.push(Math.min(1,outToday().sent/tgt));
-    return Math.round(100*parts.reduce((a,b)=>a+b,0)/parts.length); }
+  // a parent called within the last four days counts as done, whether or not it was today
+  if(sec.family){ const s=dayScoreFor("family",todayKey()); return s?Math.round(100*s.done/s.total):null; }
   if(!sec.items.length) return null;
   return Math.round(100*sec.items.filter(([k])=>d[k]).length/sec.items.length); }
 function prayerRing(done){
@@ -1473,8 +1481,8 @@ function dailyLeftBits(){
   const pl=PRAYERS.filter(([k])=>!dd[k]).map(([,n])=>n);
   if(pl.length) bits.push(pl.length===5?"all five prayers":pl.join(", "));
   faithItems(tk).filter(([k])=>!isPrayer(k)&&!dd[k]).forEach(([,n])=>bits.push(n.split(" · ")[0]));
-  const tgt=outreachTarget(tk), o=outToday();
-  if(tgt&&o.sent<tgt) bits.push(`${tgt-o.sent} more conversation${tgt-o.sent>1?"s":""}`);
+  const calls=FAMILY.filter(([k])=>!familyCovered(k,tk)).map(([,n])=>n);
+  if(calls.length) bits.push(`call ${calls.join(" and ")}`);
   if(!dd.study) bits.push("sales study");
   trainingToday().filter(([k])=>!dd[k]).forEach(([,n])=>bits.push(n));
   bodyItems(tk).filter(([k])=>!dd[k]).forEach(([k,n])=>bits.push(k==="sleep"?"sleep check":n.split(" · ")[0].toLowerCase()));
@@ -1492,40 +1500,20 @@ function updateDayPct(){
   $("dayPct").style.color=overall>=100?"var(--offer)":overall>=50?"var(--warn)":"var(--rejected)";
   return overall;
 }
-function outCtl(field,val,tgt){
-  return `<div class="outctl">
-    <button class="rowbtn" data-out="${field}|-1" title="Undo one">−</button>
-    <div class="outn"><b>${val}</b>${tgt!=null?`<span>/${tgt||"—"}</span>`:""}</div>
-    <button class="rowbtn" data-out="${field}|1">+1</button>
-    ${field==="sent"?`<button class="rowbtn" data-out="${field}|5">+5</button>`:""}</div>`;
+// one row per parent: tick it the day you call, and the status says when the next call is due
+function familyRow(k,name,on){
+  const st=familyStatus(k);
+  return `<label class="lchk ${on?"on":""}"><input type="checkbox" data-daily="${k}" ${on?"checked":""}/>
+    <span class="lbl">Call ${esc(name)}</span><span class="famst ${st.cls}">${st.text}</span></label>`;
 }
 function renderDaily(){
-  const prevInc=document.querySelector("[data-inc-in]");
-  const incVal=prevInc?prevInc.value:"", incFocus=prevInc&&document.activeElement===prevInc;
-  const d=dayChecks(), secs=lifeSections(), tk=todayKey();
+  const d=dayChecks(), secs=lifeSections();
   const overall=updateDayPct();
   const cards=secs.map(sec=>{
     const pct=secPct(sec,d), complete=pct===100;
     let body;
-    if(sec.money){
-      const earned=incomeToday();
-      const entries=(OS.incomeLog||[]).filter(e=>e.date===tk).slice().reverse();
-      body=`<div style="font-size:21px;font-weight:700">$${earned.toLocaleString()}
-          <span class="muted" style="font-size:12px;font-weight:400">today</span></div>
-        <div style="display:flex;gap:6px;margin-top:8px">
-          <input data-inc-in type="number" min="0" step="any" inputmode="decimal" placeholder="Log an amount…" style="flex:1;min-width:0;padding:6px 9px"/>
-          <button class="rowbtn" data-inc-add>Log it</button></div>
-        ${entries.map(en=>`<div class="trow" style="padding:5px 2px"><div class="tt">$${(+en.amount).toLocaleString()}</div>
-          <span class="x" data-inc-del="${en.id}" style="cursor:pointer;color:var(--muted)">✕</span></div>`).join("")}
-        <div class="usage-note">An outcome, so it's logged, not scored. All time: <b style="color:var(--offer)">$${incomeTotal().toLocaleString()}</b></div>`;
-    }
-    else if(sec.venture){
-      const tgt=outreachTarget(tk), o=outToday();
-      body=`${outCtl("sent",o.sent,tgt)}
-        <div class="muted" style="font-size:11.5px;margin:0 0 7px">${tgt?"conversations started today":"weekend · no daily target"}</div>
-        <div style="display:flex;align-items:center;gap:8px">${outCtl("replies",o.replies,null)}<span class="muted" style="font-size:11.5px">replies</span></div>
-        ${lifeChk("study",STUDY[1],d.study)}`;
-    }
+    if(sec.family) body=FAMILY.map(([k,n])=>familyRow(k,n,d[k])).join("")+
+      `<div class="usage-note" style="margin-top:4px">Each of them, at least once every ${FAMILY_EVERY} days.</div>`;
     else if(!sec.items.length) body=`<p class="muted" style="font-size:12px;margin:6px 0 0">${sec.rest||"Nothing here today."}</p>`;
     else if(sec.ring){
       const done=PRAYERS.filter(([k])=>d[k]).length;
@@ -1534,10 +1522,10 @@ function renderDaily(){
         sec.items.filter(([k])=>!isPrayer(k)).map(([k,n])=>lifeChk(k,n,d[k])).join("");
     } else body=sec.items.map(([k,n])=>lifeChk(k,n,d[k])).join("");
     return `<div class="lifesec ${complete?"complete":""}">
-      <div class="lhead"><span class="lname">${sec.icon} ${esc(sec.name)}</span><span class="lpct">${sec.money?`<span class="muted" style="font-size:10.5px">not scored</span>`:pct==null?"":complete?"Done ✓":pct+"%"}</span></div>
+      <div class="lhead"><span class="lname">${sec.icon} ${esc(sec.name)}</span><span class="lpct">${pct==null?"":complete?"Done ✓":pct+"%"}</span></div>
       ${pct!=null?`<div class="lifebar"><span style="width:${pct}%"></span></div>`:""}
       ${body}
-      ${["faith","venture","training","body","mind"].includes(sec.id)?perfLine(sec.id):""}</div>`;
+      ${["faith","venture","training","body","mind","family"].includes(sec.id)?perfLine(sec.id):""}</div>`;
   }).join("");
   const msg=overall>=100?"Every daily number hit. That's the whole job. 💯"
     :overall>=75?"Almost there. Finish strong.":overall>=40?"Good momentum, keep it going."
@@ -1547,37 +1535,69 @@ function renderDaily(){
     <div class="overallbar"><span style="width:${overall}%"></span></div>
     <div class="muted" style="font-size:12px;margin-top:6px">${msg} Inputs only: results arrive on their own schedule.</div>
     <div class="lifegrid">${cards}</div>`;
-  if(incVal||incFocus){ const ni=document.querySelector("[data-inc-in]");
-    if(ni){ ni.value=incVal; if(incFocus) ni.focus(); } }
 }
 
 /* ==================================================================
    The system. Score only inputs you control, never outcomes.
    Daily and weekly lead measures, one venture under a 90-day lock,
-   a five-number Sunday review, and the 12-month destination.
+   a four-number Sunday review, and the 12-month destination.
    ================================================================== */
 const QURAN=["quran","Quran · 10 min"], JUMMAH=["jummah","Jummah"], STUDY=["study","Sales study · 30 min"];
-const OUTREACH_DAILY=15, OUTREACH_WEEKLY=75, CONVO_GOAL=1000;
 // New lead measures start counting the day the system went live, so they
 // never drag down scores for days before they existed.
 function systemStart(){ return (OS.settings&&OS.settings.systemStart)||todayKey(); }
 function dow(dk){ return new Date(dk+"T12:00").getDay(); }
-function isWeekend(dk){ const d=dow(dk); return d===0||d===6; }
 function faithItems(dk){ const it=[...PRAYERS];
   if(dk>=systemStart()){ it.push(QURAN); if(dow(dk)===5) it.push(JUMMAH); }
   return it; }
 function bodyItems(dk){ return dk>=systemStart()?[["sleep","Slept 7+ hours"],...BODY]:BODY; }
-// 75 a week is 15 a day across the five weekdays
-function outreachTarget(dk){ return isWeekend(dk)?0:OUTREACH_DAILY; }
-function outOn(dk){ return ((OS.outreach&&!Array.isArray(OS.outreach))?OS.outreach:{})[dk]||{sent:0,replies:0}; }
-function outToday(){ return outOn(todayKey()); }
-function bumpOutreach(field,n,dk){
-  dk=dk||todayKey();
-  if(!OS.outreach||Array.isArray(OS.outreach)) OS.outreach={};
-  const o=OS.outreach[dk]=OS.outreach[dk]||{sent:0,replies:0};
-  o[field]=Math.max(0,(+o[field]||0)+n);
+
+/* ---- Calls home: Mom and Dad, each at least once every four days ----
+   A call is a tick on the day it happened (OS.daily[day].callMom / callDad).
+   A parent is "covered" on a day when the last call was under four days
+   earlier, so calling Monday covers through Thursday and Friday is due. */
+const FAMILY=[["callMom","Mom"],["callDad","Dad"]], FAMILY_EVERY=4;
+function familyStart(){ return (OS.settings&&OS.settings.familyStart)||todayKey(); }
+function dkShift(dk,n){ const d=new Date(dk+"T12:00:00"); d.setDate(d.getDate()+n); return dkFor(d); }
+function daysBetween(a,b){ return Math.round((Date.parse(b+"T12:00:00")-Date.parse(a+"T12:00:00"))/86400000); }
+function familyCovered(k,dk){
+  for(let i=0;i<FAMILY_EVERY;i++) if(((OS.daily||{})[dkShift(dk,-i)]||{})[k]) return true;
+  return false; }
+function lastCall(k,dk){
+  for(let i=0;i<120;i++){ const x=dkShift(dk,-i); if(((OS.daily||{})[x]||{})[k]) return x; }
+  return null; }
+function dayWord(dk){ const n=daysBetween(todayKey(),dk);
+  return n===0?"today":n===1?"tomorrow":new Date(dk+"T12:00:00").toLocaleDateString(undefined,{weekday:"short"}); }
+function familyStatus(k){
+  const tk=todayKey(), last=lastCall(k,tk);
+  if(!last) return {cls:"warn",text:"no call logged yet",due:true};
+  const ago=daysBetween(last,tk), next=dkShift(last,FAMILY_EVERY), late=ago-FAMILY_EVERY;
+  if(ago===0) return {cls:"ok",text:`called today · next ${dayWord(next)}`,ago,next};
+  if(ago<FAMILY_EVERY) return {cls:"ok",text:`${ago===1?"yesterday":ago+" days ago"} · next ${dayWord(next)}`,ago,next};
+  if(!late) return {cls:"warn",text:"due today",ago,due:true};
+  return {cls:"bad",text:`${late} day${late>1?"s":""} overdue`,ago,due:true};
 }
-function convoTotal(){ return Object.values(OS.outreach||{}).reduce((a,o)=>a+(+o.sent||0),0); }
+// share of the last n days this parent was on schedule; null until there are min days to judge
+function familyPct(k,n,min=1){
+  const fs=familyStart(); let hit=0,tot=0;
+  for(let i=0;i<n;i++){ const dk=dkOffset(i); if(dk<fs) break; tot++; if(familyCovered(k,dk)) hit++; }
+  return tot>=min?Math.round(100*hit/tot):null; }
+function familySpeech(){
+  return FAMILY.map(([k,n])=>{ const s=familyStatus(k);
+    if(s.ago==null) return `There's no call with ${n} logged yet.`;
+    if(s.ago===0) return `You called ${n} today.`;
+    return `You last called ${n} ${s.ago===1?"yesterday":s.ago+" days ago"}`+
+      (s.due?`, so ${s.text==="due today"?"a call is due today":"that call is "+s.text}.`:`, next one ${dayWord(s.next)}.`);
+  }).join(" "); }
+// "called mom", "talked to my parents", "facetimed dad": which parents a reported call reached
+const MOM_RE=/\b(mom|mum|mother|mama|mommy|ummi)\b/, DAD_RE=/\b(dad|father|baba|papa|daddy)\b/;
+function heardCalls(l){
+  if(/\bremind\b/.test(l)) return [];
+  if(!/\b(called|talked (to|with)|spoke (to|with)|face ?timed|video called|rang|phoned|caught up with|got off the phone with)\b/.test(l)) return [];
+  const both=/\b(parents|folks|both of them|(mom|mum) and dad|dad and (mom|mum))\b/.test(l)||/\bcalled (my )?(home|family)\b/.test(l);
+  return FAMILY.map(([k])=>k).filter(k=>both||(k==="callMom"?MOM_RE:DAD_RE).test(l));
+}
+function callNames(keys){ return keys.map(k=>FAMILY.find(([x])=>x===k)[1]).join(" and "); }
 function venture(){
   if(!OS.venture||typeof OS.venture!=="object"||Array.isArray(OS.venture))
     OS.venture={name:"Onset Listings",lockStart:systemStart(),customers:[],later:[]};
@@ -1591,18 +1611,19 @@ function setWeekly(k,val,back=0){
 }
 function weekStatsFor(back=0){
   const days=weekDates(back), tk=todayKey(), wk=days[0], w=(OS.weekly||{})[wk]||{};
-  const s={wk,days,prayers:0,prayersMax:0,martial:0,lifts:0,outreach:0,replies:0,dollars:0,
-    callHome:!!w.callHome,social:!!w.social,review:w.review||null};
+  const s={wk,days,prayers:0,prayersMax:0,martial:0,lifts:0,mom:0,dad:0,
+    social:!!w.social,review:w.review||null};
   days.forEach(dk=>{ if(dk>tk) return;
     const d=(OS.daily||{})[dk]||{};
     s.prayersMax+=5; s.prayers+=PRAYERS.filter(([k])=>d[k]).length;
     let m=(d.bjj?1:0)+(d.muaythai?1:0); if(!m&&d.training) m=1; s.martial+=m;
     const sp=splitFor(dk); if(d.lift&&sp.lift&&sp.lift!=="recovery") s.lifts++;
-    const o=(OS.outreach||{})[dk]; if(o){ s.outreach+=+o.sent||0; s.replies+=+o.replies||0; }
-    s.dollars+=(OS.incomeLog||[]).filter(e=>e.date===dk).reduce((a,b)=>a+(+b.amount||0),0);
+    if(d.callMom) s.mom++; if(d.callDad) s.dad++;
   });
   s.training=s.martial+s.lifts;
-  s.dollars=Math.round(s.dollars*100)/100;
+  s.calls=s.mom+s.dad;
+  s.onSchedule=attendPct("family",days.filter(dk=>dk<=tk));
+  s.coursework=courseworkFor(days);   // null until Canvas is connected
   return s;
 }
 // weekly progress bar coloured by pace, never red: early in the week 0/4 is on schedule
@@ -1620,8 +1641,8 @@ function renderWeek(){
   const chk=(k,label)=>`<label class="lchk ${s[k]?"on":""}"><input type="checkbox" data-weekly="${k}" ${s[k]?"checked":""}/>
     <span class="lbl">${label}</span></label>`;
   box.innerHTML=`<h3>📅 This week <span class="muted" style="float:right;text-transform:none;letter-spacing:0">${left?`${left} day${left>1?"s":""} left`:"last day"}</span></h3>
-    ${paceBar("Martial arts",s.martial,4)}${paceBar("Lifting",s.lifts,3)}${paceBar("Outreach",s.outreach,OUTREACH_WEEKLY)}
-    <div style="margin-top:8px">${chk("callHome","Call home")}${chk("social","Social evening out")}</div>
+    ${paceBar("Martial arts",s.martial,4)}${paceBar("Lifting",s.lifts,3)}
+    <div style="margin-top:8px">${chk("social","Social evening out")}</div>
     <button class="rowbtn" data-go-review style="margin-top:6px;text-transform:none;letter-spacing:0">
       ${s.review?"✓ Sunday review done":"Sunday review →"}</button>`;
 }
@@ -1629,14 +1650,9 @@ function renderVenture(){
   const box=$("ventureBox"); if(!box) return;
   const keep={}; ["data-cust-in","data-later-in"].forEach(a=>{ const el=document.querySelector(`[${a}]`);
     if(el) keep[a]={v:el.value,f:document.activeElement===el}; });
-  const v=venture(), s=weekStatsFor(0), tot=convoTotal(), n=v.customers.length;
-  box.innerHTML=`<h3>📞 ${esc(v.name)} <button class="rowbtn" data-v-rename title="Rename or switch venture" style="padding:1px 7px">✎</button>
+  const v=venture(), n=v.customers.length;
+  box.innerHTML=`<h3>💼 ${esc(v.name)} <button class="rowbtn" data-v-rename title="Rename or switch venture" style="padding:1px 7px">✎</button>
       <span style="float:right;text-transform:none;letter-spacing:0">Day ${lockDay()} of 90 ${n<3?"🔒":"🔓"}</span></h3>
-    ${paceBar("This week",s.outreach,OUTREACH_WEEKLY)}
-    <div class="mrow"><div class="ml">Toward 1,000</div>
-      <div class="mbar"><span style="width:${Math.min(100,Math.round(100*tot/CONVO_GOAL))}%"></span></div>
-      <div class="mval">${tot.toLocaleString()}</div></div>
-    <div class="muted" style="font-size:12px;margin:2px 0 6px">${s.replies} repl${s.replies===1?"y":"ies"} this week${s.outreach?` · ${Math.round(100*s.replies/s.outreach)}% reply rate`:""}</div>
     <div class="areahead">Paying customers · ${n}/3</div>
     <div class="chiplist">${v.customers.map(c=>`<span class="tagpill ok">${esc(c.name)} <span class="x" data-cust-del="${c.id}" title="Remove">✕</span></span>`).join("")}</div>
     <div class="tkadd"><input data-cust-in placeholder="Customer name" style="flex:1"/><button class="rowbtn" data-cust-add>Add</button></div>
@@ -1645,18 +1661,21 @@ function renderVenture(){
     ${v.later.length?`<details><summary class="muted" style="cursor:pointer;font-size:12px">Open the Later list</summary>
       ${v.later.slice().reverse().map(i=>`<div class="trow"><div class="tt">${esc(i.text)}<div class="sub">${i.date}</div></div>
         <span class="x" data-later-del="${i.id}">✕</span></div>`).join("")}</details>`:""}
-    <div class="usage-note">${n<3?"One venture until three paying customers. New ideas wait in Later. ":"Three paying customers. The lock is lifted. "}Rejection is the metric, not the enemy.</div>`;
+    <div class="usage-note">${n<3?"One venture until three paying customers. New ideas wait in Later.":"Three paying customers. The lock is lifted."}</div>`;
   Object.entries(keep).forEach(([a,k])=>{ const el=document.querySelector(`[${a}]`); if(el){ el.value=k.v; if(k.f) el.focus(); } });
 }
 
 /* ---- Scoreboard tab ---- */
 let reviewBack=0;
-function fiveNumbers(s){
+function cwText(cw){ return cw?`${cw.done}/${cw.total}`:"—"; }
+// weeks that ended before calls were tracked per parent show a dash, not zeros
+function callsTracked(s){ return s.days[6]>=familyStart(); }
+function reviewNumbers(s){
+  const cw=s.coursework, ct=callsTracked(s);
   return [["Prayers on time",`${s.prayers}/${s.prayersMax||35}`,""],
     ["Training sessions",`${s.training}`,`${s.martial} martial arts · ${s.lifts} lifts`],
-    ["Outreach conversations",`${s.outreach}`,`target ${OUTREACH_WEEKLY}`],
-    ["Replies received",`${s.replies}`,s.outreach?`${Math.round(100*s.replies/s.outreach)}% reply rate`:""],
-    ["Dollars earned",`$${s.dollars.toLocaleString()}`,""]];
+    ["Calls home",ct?`${s.calls}`:"—",ct?`Mom ${s.mom} · Dad ${s.dad}${s.onSchedule!=null?` · ${s.onSchedule}% on schedule`:""}`:"not tracked yet"],
+    ["Assignments done",cwText(cw),cw?(cw.total?"of those due this week":"nothing due this week"):"connect Canvas"]];
 }
 function renderReview(){
   const box=$("reviewBox"); if(!box) return;
@@ -1664,9 +1683,9 @@ function renderReview(){
   const lbl=reviewBack===0?"This week":reviewBack===1?"Last week":`${reviewBack} weeks ago`;
   const hist=[];
   for(let b=1;b<=8;b++){ const h=weekStatsFor(b);
-    if(!h.prayers&&!h.training&&!h.outreach&&!h.dollars&&!h.review) continue;
+    if(!h.prayers&&!h.training&&!h.calls&&!h.review) continue;
     hist.push(`<tr><td>${fmtShortDate(h.days[0]).replace(/^\w+, /,"")}</td><td>${h.prayers}/${h.prayersMax}</td>
-      <td>${h.training}</td><td>${h.outreach}</td><td>${h.replies}</td><td>$${h.dollars.toLocaleString()}</td>
+      <td>${h.training}</td><td>${callsTracked(h)?`${h.mom} · ${h.dad}`:"—"}</td><td>${cwText(h.coursework)}</td>
       <td class="muted">${h.review?esc(h.review.note||""):"—"}</td></tr>`); }
   box.innerHTML=`<h3>🗒 Sunday review · ${lbl}
       <span class="muted" style="text-transform:none;letter-spacing:0">${fmtShortDate(s.days[0])} to ${fmtShortDate(s.days[6])}</span>
@@ -1674,19 +1693,20 @@ function renderReview(){
         <button class="rowbtn" data-rev-nav="1" title="Earlier week">‹</button>
         <button class="rowbtn" data-rev-nav="-1" ${reviewBack===0?"disabled":""} title="Later week">›</button>
         <button class="rowbtn" data-speak-review title="Read it to me">🔊</button></span></h3>
-    <div class="imetrics" style="margin-top:6px">${fiveNumbers(s).map(([l,v,sub])=>
+    <div class="imetrics" style="margin-top:6px">${reviewNumbers(s).map(([l,v,sub])=>
       `<div class="imetric"><div class="n" style="font-size:22px">${v}</div><div class="l">${l}${sub?`<div style="opacity:.6">${sub}</div>`:""}</div></div>`).join("")}</div>
     <div class="tkadd" style="margin-top:10px">
       <input data-review-note placeholder="One line: what changes next week?" value="${esc(saved?saved.note||"":"")}" style="flex:1;min-width:220px"/>
       <button class="primary" data-review-save>${saved?"Update review":"Save review"}</button></div>
-    <div class="usage-note">${saved?`Saved ${new Date(saved.savedAt).toLocaleDateString()}. `:""}Five numbers, one line, no interpretation. Thirty minutes, every Sunday.</div>
-    ${hist.length?`<table class="revhist"><thead><tr><th>Week of</th><th>Prayers</th><th>Training</th><th>Outreach</th><th>Replies</th><th>Earned</th><th>What changed</th></tr></thead>
+    <div class="usage-note">${saved?`Saved ${new Date(saved.savedAt).toLocaleDateString()}. `:""}Four numbers, one line, no interpretation. Thirty minutes, every Sunday.</div>
+    ${hist.length?`<table class="revhist"><thead><tr><th>Week of</th><th>Prayers</th><th>Training</th><th>Calls · Mom · Dad</th><th>Assignments</th><th>What changed</th></tr></thead>
       <tbody>${hist.join("")}</tbody></table>`:""}`;
 }
 function reviewSpeech(){
-  const s=weekStatsFor(reviewBack), note=s.review&&s.review.note;
-  return `${reviewBack===0?"This week":"That week"}: ${s.prayers} of ${s.prayersMax} prayers on time, ${s.training} training sessions, `+
-    `${s.outreach} outreach conversations, ${s.replies} replies, and $${s.dollars.toLocaleString()} earned.`+(note?` The change: ${note}`:"");
+  const s=weekStatsFor(reviewBack), note=s.review&&s.review.note, cw=s.coursework;
+  return `${reviewBack===0?"This week":"That week"}: ${s.prayers} of ${s.prayersMax} prayers on time, ${s.training} training sessions`+
+    (callsTracked(s)?`, ${s.mom} call${s.mom===1?"":"s"} with Mom and ${s.dad} with Dad`:"")+
+    (cw&&cw.total?`, and ${cw.done} of ${cw.total} assignments done.`:".")+(note?` The change: ${note}`:"");
 }
 function dest(){ if(!OS.dest||typeof OS.dest!=="object"||Array.isArray(OS.dest)) OS.dest={}; return OS.dest; }
 function pctOver(days,fn){ let done=0,tot=0; days.forEach(dk=>{ const r=fn(dk); if(r){ done+=r[0]; tot+=r[1]; } });
@@ -1701,9 +1721,8 @@ function renderDest(){
   const jum=fridays.filter(dk=>((OS.daily||{})[dk]||{}).jummah).length;
   const weeks=[1,2,3,4].map(weekStatsFor);
   const bodyWeeks=weeks.filter(w=>w.martial>=4&&w.lifts>=3).length;
-  let callStreak=0; for(let b=weekStatsFor(0).callHome?0:1;b<60;b++){ if(weekStatsFor(b).callHome) callStreak++; else break; }
   const social=weeks.filter(w=>w.social).length;
-  const month=incomeInMonth(monthKey(0)), grad=Math.ceil((Date.parse("2027-05-01")-Date.now())/86400000);
+  const grad=Math.ceil((Date.parse("2027-05-01")-Date.now())/86400000), cw=courseworkSoFar();
   const row=(label,val,max,shown)=>`<div class="mrow"><div class="ml">${label}</div>
     <div class="mbar"><span style="width:${Math.min(100,Math.round(100*(val||0)/max))}%"></span></div><div class="mval">${shown}</div></div>`;
   const chk=(k,label)=>`<label class="lchk ${D[k]?"on":""}"><input type="checkbox" data-dest="${k}" ${D[k]?"checked":""}/><span class="lbl">${label}</span></label>`;
@@ -1721,13 +1740,12 @@ function renderDest(){
     ${row("4 martial arts + 3 lifts",bodyWeeks,4,`${bodyWeeks}/4 wks`)}
     <div class="areahead">Money</div>
     ${row("Paying customers",v.customers.length,3,`${v.customers.length}/3`)}
-    ${row("Income this month",month,2000,"$"+month.toLocaleString())}
-    <div class="areahead">Skill</div>
-    ${row("Sales conversations",convoTotal(),CONVO_GOAL,`${convoTotal().toLocaleString()}/1,000`)}
     <div class="areahead">Degree</div>
+    ${cw&&cw.total?row("Assignments done so far",cw.done,cw.total,`${cw.done}/${cw.total}`):""}
     ${chk("capstone","Capstone finished")}${chk("graduated",`Graduated${grad>0?` · about ${grad} days to May 2027`:""}`)}
     <div class="areahead">People</div>
-    ${row("Weekly call home",callStreak,Math.max(4,callStreak),`${callStreak} wk${callStreak===1?"":"s"}`)}
+    ${FAMILY.map(([k,n])=>{ const p=familyPct(k,30);
+      return row(`${n}, on schedule`,p,100,p==null?"—":`${p}%`); }).join("")}
     ${row("Social evenings",social,4,`${social}/4 wks`)}
     <div class="areahead">Place</div>
     ${chk("relocPlan","Relocation plan written")}
@@ -1737,9 +1755,9 @@ function renderDest(){
 const MILESTONES=[
   {label:"Now → December 2026",end:"2026-12-31",items:[
     ["venture","One venture only"],["auto:customers","First 3 paying clients",3],
-    ["auto:outreach","About 900 outreach conversations",900],["fall","Fall semester finished clean"]]},
+    ["fall","Fall semester finished clean"]]},
   {label:"January → April 2027",end:"2027-04-30",items:[
-    ["auto:income","$1–2k a month",1000],["systematize","Repeated parts systematized"],["capstone","Capstone delivered"]]},
+    ["revenue","$1–2k a month"],["systematize","Repeated parts systematized"],["capstone","Capstone delivered"]]},
   {label:"May 2027",end:"2027-05-31",items:[
     ["graduated","Graduate"],["decided","Decide deliberately: a job as runway, or full time on the business"]]},
   {label:"Summer 2027",end:"2027-08-31",items:[
@@ -1749,7 +1767,7 @@ function renderMilestones(){
   const box=$("milestoneBox"); if(!box) return;
   const D=dest(), v=venture(), tk=todayKey();
   const cur=MILESTONES.findIndex(q=>q.end>=tk);
-  const auto={customers:v.customers.length,outreach:convoTotal(),income:incomeInMonth(monthKey(0))};
+  const auto={customers:v.customers.length};
   box.innerHTML=`<h3>🗺 Milestones to graduation</h3>`+MILESTONES.map((q,i)=>{
     const now=i===cur, past=i<cur;
     return `<div class="mstone ${now?"now":""} ${past?"past":""}"><div class="mslbl">${q.label}${now?' <span class="tagpill ok" style="font-size:10px">now</span>':""}</div>`+
@@ -1758,7 +1776,7 @@ function renderMilestones(){
         if(k.startsWith("auto:")){ const val=auto[k.slice(5)];
           return `<div class="mrow"><div class="ml" style="flex:0 0 190px;width:190px">${label}</div>
             <div class="mbar"><span style="width:${Math.min(100,Math.round(100*val/max))}%"></span></div>
-            <div class="mval">${k==="auto:income"?"$"+val.toLocaleString():val.toLocaleString()}</div></div>`; }
+            <div class="mval">${val.toLocaleString()}</div></div>`; }
         return `<label class="lchk ${D[k]?"on":""}"><input type="checkbox" data-dest="${k}" ${D[k]?"checked":""}/><span class="lbl">${label}</span></label>`;
       }).join("")+`</div>`;
   }).join("");
@@ -1770,8 +1788,6 @@ function renderRules(){
     <ol class="rules">
       <li><b>The 90-day lock.</b> One venture. Until it has three paying customers, you don't start, plan or research a new idea. It goes in Later.
         <div class="muted" style="font-size:12px">Day ${lockDay()} of 90 · ${n}/3 customers · ${v.later.length} idea${v.later.length===1?"":"s"} parked</div></li>
-      <li><b>Build time is capped, outreach is not.</b> Polishing a product instead of contacting people is avoiding the hard skill.</li>
-      <li><b>Rejection is the metric, not the enemy.</b> At 75 conversations a week most go nowhere. That's the job working.</li>
       <li><b>Faith, training and sleep are never traded for work.</b> A system that burns them collapses in a month.</li>
     </ol>
     <div class="areahead">The money rule</div>
@@ -1781,11 +1797,6 @@ function renderRules(){
 function renderScoreboard(){ renderReview(); renderDest(); renderMilestones(); renderRules(); renderBlocks(); }
 
 document.addEventListener("click",e=>{
-  const ob=e.target.closest("[data-out]"); if(ob){ const [f,n]=ob.dataset.out.split("|");
-    bumpOutreach(f,+n); osSave(); renderOS();
-    if(f==="sent"&&+n>0){ const o=outToday(), tgt=outreachTarget(todayKey());
-      if(tgt&&o.sent>=tgt&&o.sent-(+n)<tgt) toast(`${tgt} conversations. Today's number is hit. 📞`); }
-    return; }
   const wb=e.target.closest("[data-weekly]"); if(wb){ setWeekly(wb.dataset.weekly,wb.checked); osSave(); renderOS(); return; }
   if(e.target.closest("[data-go-review]")){ reviewBack=0; switchTab("score"); return; }
   if(e.target.closest("[data-v-rename]")){ const v=venture();
@@ -1808,8 +1819,8 @@ document.addEventListener("click",e=>{
     const s=weekStatsFor(reviewBack), note=(document.querySelector("[data-review-note]")||{}).value||"";
     if(!OS.weekly||Array.isArray(OS.weekly)) OS.weekly={};
     const w=OS.weekly[s.wk]=OS.weekly[s.wk]||{};
-    w.review={prayers:s.prayers,training:s.training,outreach:s.outreach,replies:s.replies,dollars:s.dollars,
-      note:note.trim(),savedAt:Date.now()};
+    w.review={prayers:s.prayers,training:s.training,mom:s.mom,dad:s.dad,
+      assignments:s.coursework?cwText(s.coursework):null,note:note.trim(),savedAt:Date.now()};
     osSave(); renderOS(); toast("Review saved. Same time next Sunday. 🗒"); return; }
   const rn=e.target.closest("[data-rev-nav]"); if(rn&&!rn.disabled){
     reviewBack=Math.max(0,reviewBack+(+rn.dataset.revNav)); renderReview(); return; }
@@ -1821,10 +1832,6 @@ document.addEventListener("click",e=>{
 });
 document.addEventListener("change",e=>{
   const dt=e.target.closest("[data-dest-text]"); if(dt){ dest()[dt.dataset.destText]=dt.value.trim(); osSave(); return; }
-  const od=e.target.closest("[data-out-day]"); if(od){ const [dk,f]=od.dataset.outDay.split("|");
-    if(!OS.outreach||Array.isArray(OS.outreach)) OS.outreach={};
-    const o=OS.outreach[dk]=OS.outreach[dk]||{sent:0,replies:0};
-    o[f]=Math.max(0,Math.round(+od.value||0)); osSave(); renderOS(); return; }
 });
 document.addEventListener("keydown",e=>{
   if(e.key!=="Enter"||!e.target.matches) return;
@@ -1920,7 +1927,7 @@ function renderGoals(){
 let heroItem=null, currentTab="today";
 const PANE_R={today:[renderToday],score:[renderScoreboard],crm:[renderCRM],
   proj:[renderProjects],goals:[renderGoals],train:[renderTrain,renderBjj],fin:[renderFin],
-  kb:[renderKB],match:[renderMatch]};
+  kb:[renderKB],match:[renderMatch],courses:[renderCourses]};
 function renderOS(){ try{
   // Only rebuild what's on screen: the Today pane rerenders when visible,
   // other tabs get their own renderers, and the header day % stays fresh
@@ -1951,16 +1958,6 @@ function parseWhen(v){
     .replace(/\s{2,}/g," ").trim();
   return {due,time,title};
 }
-function logOutreachText(l){
-  const r=l.match(/^(?:got\s+)?(\d{1,3})\s+repl(?:y|ies)\b/)||l.match(/^repl(?:y|ies)\s+\+?(\d{1,3})\b/);
-  if(r){ bumpOutreach("replies",+r[1]); return `${r[1]} repl${+r[1]===1?"y":"ies"} logged`; }
-  const m=l.match(/^(?:sent|did|logged|messaged|contacted|called|reached out to)\s+(\d{1,3})\b/)
-    ||l.match(/^(\d{1,3})\s+(?:dms?|conversations?|convos?|messages?|outreach|emails?|calls?)\b/)
-    ||l.match(/^outreach\s+\+?(\d{1,3})\b/)||l.match(/^\+(\d{1,3})$/);
-  if(m){ bumpOutreach("sent",+m[1]); const o=outToday();
-    return `${m[1]} conversation${+m[1]===1?"":"s"} logged · ${o.sent}/${outreachTarget(todayKey())||"—"} today`; }
-  return null;
-}
 function parkIdea(text){
   text=(text||"").trim(); if(!text) return false;
   venture().later.push({id:uid(),text,date:todayKey()});
@@ -1979,8 +1976,9 @@ function runCmd(v){
   if(["review","weekly review","sunday review","scoreboard"].includes(l)){ switchTab("score"); return; }
   if((m=pref("mind:"))){ OS.settings.mindItems=[["lesson","Language lesson"],["immersion",m]];
     osSave(); renderOS(); toast(`Mind item set: ${m}`); return; }
-  const logged=logOutreachText(l);
-  if(logged){ osSave(); renderOS(); toast(logged); return; }
+  const calls=heardCalls(l);
+  if(calls.length){ calls.forEach(k=>checkDaily(k)); osSave(); renderOS();
+    toast(`Call with ${callNames(calls)} logged. Next one in ${FAMILY_EVERY} days. 👪`); return; }
   const w=parseWhen(v), t=addTask(w.title||v,w.due,w.time);
   if(!t) return;
   osSave(); renderOS(); calSyncSoon();
@@ -2017,7 +2015,7 @@ $("themeBtn").addEventListener("click",()=>{
 document.addEventListener("keydown",e=>{
   if((e.metaKey||e.ctrlKey)&&e.key==="k"){ e.preventDefault(); $("cmdbar").focus(); return; }
   if(e.target.tagName==="INPUT"||e.target.tagName==="SELECT"||e.target.tagName==="TEXTAREA") return;
-  const map={"1":"today","2":"score","3":"overview","4":"apps","5":"calendar","6":"crm","7":"train","8":"fin"};
+  const map={"1":"today","2":"score","3":"overview","4":"apps","5":"calendar","6":"crm","7":"train","8":"fin","9":"courses"};
   if(map[e.key]){ switchTab(map[e.key]); return; }
   if(e.key==="n"||e.key==="N"){ switchTab("today");
     setTimeout(()=>{ const i=document.querySelector("[data-tk-title]"); if(i) i.focus(); },60); }
@@ -2058,14 +2056,6 @@ document.addEventListener("click",e=>{
     if(iv){ iv.checks=iv.checks||{}; if(chk.checked) iv.checks[chk.dataset.c]=true; else delete iv.checks[chk.dataset.c]; osSave(); renderOS(); } return; }
   const rv=e.target.closest("[data-rv]"); if(rv){ const r=OS.resumes.find(x=>x.id===rv.dataset.rv);
     if(r){ r[rv.dataset.f]=(r[rv.dataset.f]||0)+1; osSave(); renderOS(); } return; }
-  const ia=e.target.closest("[data-inc-add]"); if(ia){
-    const inp=document.querySelector("[data-inc-in]"), v=parseFloat(inp&&inp.value);
-    if(!v||v<=0){ toast("Type an amount first"); return; }
-    OS.incomeLog.push({id:uid(),date:todayKey(),amount:Math.round(v*100)/100});
-    osSave(); renderOS(); toast(`Logged $${v} 💵`);
-    return; }
-  const idel=e.target.closest("[data-inc-del]"); if(idel){
-    OS.incomeLog=OS.incomeLog.filter(x=>x.id!==idel.dataset.incDel); osSave(); renderOS(); return; }
   const dc=e.target.closest("[data-daily]"); if(dc){
     const dk=dc.dataset.day||todayKey();
     if(!OS.daily||Array.isArray(OS.daily)) OS.daily={};
@@ -2077,6 +2067,8 @@ document.addEventListener("click",e=>{
       if(tre) OS.tasks.forEach(t=>{ if(t.fromCal&&t.due===todayKey()&&tre.test(t.title||"")){
         t.done=dc.checked; t.doneAt=dc.checked?Date.now():null; } });
       if(dc.checked&&tre) toast("Training logged. Strong work. 🥋");
+      if(dc.checked&&FAMILY.some(([k])=>k===dc.dataset.daily))
+        toast(`Call with ${callNames([dc.dataset.daily])} logged. Next one in ${FAMILY_EVERY} days. 👪`);
     }
     osSave(); renderOS(); return; }
   const pt=e.target.closest("[data-prj-tgl]"); if(pt){ const pr=OS.projects.find(x=>x.id===pt.dataset.prjTgl);
@@ -2094,10 +2086,6 @@ document.addEventListener("click",e=>{
       if(t){ t.done=true; t.doneAt=Date.now(); t.updatedAt=Date.now(); calSyncSoon(); } }
     else { const t=heroItem.x.t; if(t.daily){ t.days=t.days||{}; t.days[todayKey()]=true; } else { t.done=true; t.doneAt=Date.now(); } }
     osSave(); renderOS(); toast("Nice. Next one is queued up ⚡"); return; }
-});
-document.addEventListener("keydown",e=>{
-  if(e.key==="Enter"&&e.target.matches&&e.target.matches("[data-inc-in]")){
-    const b=document.querySelector("[data-inc-add]"); if(b) b.click(); }
 });
 document.addEventListener("focusout",e=>{
   const ta=e.target.closest&&e.target.closest("[data-iv-notes]");
@@ -2180,10 +2168,13 @@ function dayScoreFor(kind,dk){
     if(d.training&&done<sch.length) done++;
     return {done,total:sch.length};
   }
-  if(kind==="venture"){   // the day's outreach target counts as one item, sales study as another
-    const tgt=outreachTarget(dk), o=(OS.outreach||{})[dk]||{};
+  if(kind==="venture"){   // the venture's daily input is the sales study block
     if(dk<systemStart()) return null;
-    return {done:(d.study?1:0)+(tgt&&(+o.sent||0)>=tgt?1:0),total:1+(tgt?1:0)};
+    return {done:d.study?1:0,total:1};
+  }
+  if(kind==="family"){    // each parent counts once they were called within the last four days
+    if(dk<familyStart()) return null;
+    return {done:FAMILY.filter(([k])=>familyCovered(k,dk)).length,total:FAMILY.length};
   }
   const items=kind==="faith"?faithItems(dk):kind==="body"?bodyItems(dk):mindItems();
   if(!items.length) return null;
@@ -2218,7 +2209,8 @@ let dayFix=null; // {kind, dk}
 function fixDayEditor(kind){
   const dk=dayFix.dk, d=(OS.daily||{})[dk]||{};
   const items=kind==="training"?scheduledFor(dk):kind==="faith"?faithItems(dk)
-    :kind==="body"?bodyItems(dk):kind==="venture"?[STUDY]:mindItems();
+    :kind==="body"?bodyItems(dk):kind==="venture"?[STUDY]
+    :kind==="family"?FAMILY.map(([k,n])=>[k,"Called "+n]):mindItems();
   const label=new Date(dk+"T12:00:00").toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
   const canFwd=dk<todayKey();
   return `<div class="fixbox">
@@ -2227,9 +2219,6 @@ function fixDayEditor(kind){
       <span style="flex:1">Fixing <b>${label}</b></span>
       <button class="rowbtn" data-fixnav="1" ${canFwd?"":"disabled"}>›</button>
       <button class="rowbtn" data-fixclose>Done</button></div>
-    ${kind==="venture"?`<div style="display:flex;gap:8px;align-items:center;font-size:12px;margin:2px 0 4px">
-        Conversations <input type="number" min="0" data-out-day="${dk}|sent" value="${((OS.outreach||{})[dk]||{}).sent||0}" style="width:64px;padding:3px 6px"/>
-        Replies <input type="number" min="0" data-out-day="${dk}|replies" value="${((OS.outreach||{})[dk]||{}).replies||0}" style="width:56px;padding:3px 6px"/></div>`:""}
     ${items.length?items.map(([k,n])=>lifeChk(k,n,d[k],dk)).join("")
       :`<p class="muted" style="font-size:12px;margin:0">Rest day, nothing was scheduled.</p>`}</div>`;
 }
@@ -2873,8 +2862,8 @@ document.addEventListener("drop",e=>{ const z=e.target.closest("[data-kb-drop]")
     if(e.dataTransfer.files.length) kbUploadFiles([...e.dataTransfer.files]); } });
 
 /* ==================================================================
-   Finance. Income (from the daily log), spending from Rocket Money,
-   savings goals, net worth with live-priced crypto, monthly trends.
+   Finance. Spending from Rocket Money, savings goals, the Robinhood
+   portfolio, net worth with live-priced crypto, monthly trends.
    All local; crypto valuation reuses the market feed already fetched.
    ================================================================== */
 const FIN_CATS=["Food","Rent","Transport","Training","Subscriptions","School","Fun","Other"];
@@ -2889,7 +2878,6 @@ function monthKey(off=0){ const d=new Date(); d.setDate(1); d.setMonth(d.getMont
   return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); }
 function monthLabel(off){ const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-off);
   return d.toLocaleDateString(undefined,{month:"short"}); }
-function incomeInMonth(mk){ return (OS.incomeLog||[]).filter(e=>(e.date||"").startsWith(mk)).reduce((a,b)=>a+(+b.amount||0),0); }
 
 /* ---- Rocket Money: import its transaction export, spot the subscriptions ----
    Rocket Money has no public API, so the connection is its CSV export.
@@ -3001,7 +2989,8 @@ function cryptoPrice(sym){ if(!mktData||!mktData.assets) return null;
 function assetValue(a){
   if(a.type==="crypto"){ const p=cryptoPrice(a.sym); return p!=null?Math.round(a.qty*p):(+a.value||0); }
   return (+a.value||0)*(a.type==="debt"?-1:1); }
-function netWorth(){ return fin().assets.reduce((s,a)=>s+assetValue(a),0); }
+// a linked Robinhood account counts at its live total, alongside what you added by hand
+function netWorth(){ return fin().assets.reduce((s,a)=>s+assetValue(a),0)+Math.round(rhTotal()||0); }
 function guessCat(text){ const l=(text||"").toLowerCase();
   if(/food|eat|grocer|restaurant|coffee|lunch|dinner|meal/.test(l)) return "Food";
   if(/rent|housing/.test(l)) return "Rent";
@@ -3018,12 +3007,7 @@ function logExpense(amount,cat,note){
   if(fin().expenses.length>5000) fin().expenses=fin().expenses.slice(-5000);
   return true; }
 function finInsights(){
-  const out=[], mk=monthKey(0), inc=incomeInMonth(mk), sp=spendInMonth(mk);
-  if(inc>0&&sp>0){
-    const rate=Math.round(100*(inc-sp)/inc);
-    if(rate<0) out.push(`You've spent $${(sp-inc).toLocaleString()} more than you've earned this month.`);
-    else if(rate>=30) out.push(`You're keeping ${rate}% of what you earn this month.`);
-  }
+  const out=[], mk=monthKey(0), sp=spendInMonth(mk);
   const top=spendByCat(mk)[0];
   if(top&&sp>0) out.push(`${top[0]} is the biggest line this month at $${top[1].toLocaleString()}, ${Math.round(100*top[1]/sp)}% of spending.`);
   const subs=subsMonthly();
@@ -3032,17 +3016,15 @@ function finInsights(){
 /* ---- Finance rendering ---- */
 function renderFin(){
   if(!$("finOverview")) return;
-  const mk=monthKey(0);
-  const inc=incomeInMonth(mk), sp=spendInMonth(mk), net=inc-sp, nw=netWorth();
+  const sp=spendInMonth(monthKey(0)), nw=netWorth(), rt=rhTotal();
   $("finOverview").innerHTML=`<h3>💰 This month</h3>
     <div class="imetrics" style="margin-top:6px">
-      <div class="imetric"><div class="n" style="color:var(--offer)">$${inc.toLocaleString()}</div><div class="l">Income</div></div>
       <div class="imetric"><div class="n" style="color:var(--rejected)">$${sp.toLocaleString()}</div><div class="l">Spent</div></div>
-      <div class="imetric"><div class="n" style="color:${net>=0?"var(--offer)":"var(--rejected)"}">${net<0?"-":""}$${Math.abs(net).toLocaleString()}</div><div class="l">Net${inc>0?` · keeping ${Math.max(0,Math.round(100*net/inc))}%`:""}</div></div>
+      ${rt!=null?`<div class="imetric"><div class="n">${usd(rt)}</div><div class="l">Robinhood</div></div>`:""}
       <div class="imetric"><div class="n">${nw<0?"-":""}$${Math.abs(nw).toLocaleString()}</div><div class="l">Net worth</div></div>
     </div>
     ${finInsights().map(x=>`<div class="usage-note">${x}</div>`).join("")}`;
-  renderFinSpend(); renderFinSubs(); renderFinGoals(); renderFinWorth(); renderFinTrend(); renderFinMkts();
+  renderFinRh(); renderFinSpend(); renderFinSubs(); renderFinGoals(); renderFinWorth(); renderFinTrend(); renderFinMkts();
 }
 function renderFinSpend(){
   const box=$("finSpend"); if(!box) return;
@@ -3119,6 +3101,9 @@ function renderFinWorth(){
         <option value="crypto-SOL">Crypto: SOL</option><option value="debt">Debt (owed)</option></select>
       <input data-as-val type="number" placeholder="$ or qty" style="width:96px;padding:6px 8px"/>
       <button class="rowbtn" data-as-add>Add</button></div>
+    ${rhTotal()!=null?`<div class="trow" style="padding:5px 2px"><div class="tt">Robinhood <span class="muted">· linked</span>
+        <div class="sub">counted at its live total · don't also add it by hand</div></div>
+      <span class="pill2">${usd(rhTotal())}</span></div>`:""}
     ${f.assets.length?f.assets.map(a=>{
       const v=assetValue(a);
       const detail=a.type==="crypto"?`${a.qty} ${a.sym}${cryptoPrice(a.sym)?` @ $${cryptoPrice(a.sym).toLocaleString()} live`:""}`:a.type;
@@ -3130,18 +3115,12 @@ function renderFinWorth(){
 }
 function renderFinTrend(){
   const rows=[];
-  for(let o=5;o>=0;o--){
-    const mk=monthKey(o), inc=incomeInMonth(mk), sp=spendInMonth(mk);
-    rows.push({l:monthLabel(o),inc,sp});
-  }
-  const max=Math.max(50,...rows.map(r=>Math.max(r.inc,r.sp)));
-  $("finTrend").innerHTML=`<h3>📈 Six month trend</h3>`+rows.map(r=>
+  for(let o=5;o>=0;o--) rows.push({l:monthLabel(o),sp:spendInMonth(monthKey(o))});
+  const max=Math.max(50,...rows.map(r=>r.sp));
+  $("finTrend").innerHTML=`<h3>📈 Six month spending</h3>`+rows.map(r=>
     `<div class="fn-row"><div class="fn-lbl" style="width:44px">${r.l}</div>
-      <div style="flex:1;display:flex;flex-direction:column;gap:3px">
-        <div class="fn-bar" style="flex:0 0 13px;height:13px"><span style="width:${Math.round(100*r.inc/max)}%;background:linear-gradient(90deg,#22c55e,#16a34a)"></span><i style="top:0;font-size:10px">$${r.inc.toLocaleString()}</i></div>
-        <div class="fn-bar" style="flex:0 0 13px;height:13px"><span style="width:${Math.round(100*r.sp/max)}%;background:linear-gradient(90deg,#f59e0b,#ef4444)"></span><i style="top:0;font-size:10px">$${r.sp.toLocaleString()}</i></div>
-      </div></div>`).join("")+
-    `<div class="usage-note">Green is income, red is spending, month by month.</div>`;
+      <div class="fn-bar"><span style="width:${Math.round(100*r.sp/max)}%;background:linear-gradient(90deg,#f59e0b,#ef4444)"></span><i>$${r.sp.toLocaleString()}</i></div></div>`).join("")+
+    `<div class="usage-note">Spending month by month, from Rocket Money plus anything you logged by voice.</div>`;
 }
 function renderFinMkts(){
   const box=$("finMkts"); if(!box) return;
@@ -3192,6 +3171,397 @@ document.addEventListener("drop",e=>{ const z=e.target.closest("[data-rm-drop]")
   e.preventDefault(); z.classList.remove("over");
   const f=e.dataTransfer.files&&e.dataTransfer.files[0]; if(f) rmLoadFile(f); });
 
+// re-render a form without losing what's half typed into it
+function keepInputs(attrs,draw){
+  const keep={};
+  attrs.forEach(a=>{ const el=document.querySelector(`[${a}]`); if(el) keep[a]={v:el.value,f:document.activeElement===el}; });
+  draw();
+  Object.entries(keep).forEach(([a,k])=>{ const el=document.querySelector(`[${a}]`); if(el){ el.value=k.v; if(k.f) el.focus(); } });
+}
+
+/* ==================================================================
+   Canvas. Every course, assignment, due date and grade, read from your
+   school's Canvas by the app server with your own access token (or the
+   calendar feed link where a school turns tokens off). Canvas is only
+   ever read: a tick you add here lives in this app.
+   ================================================================== */
+const cv={data:null,err:"",busy:false,loadedAt:0,lastUrl:""};
+try{ const c=JSON.parse(localStorage.getItem("sarah_canvas")||"null"); if(c&&Array.isArray(c.assignments)) cv.data=c; }catch(e){}
+const CV_DONE=new Set(["submitted","graded","excused"]);
+function cvMarks(){ if(!OS.canvasDone||typeof OS.canvasDone!=="object"||Array.isArray(OS.canvasDone)) OS.canvasDone={}; return OS.canvasDone; }
+function cvItems(){ return (cv.data&&cv.data.assignments)||[]; }
+function cvIsDone(a){ return CV_DONE.has(a.status)||!!cvMarks()[a.id]; }
+function cvDk(a){ return a.due?dkFor(new Date(a.due)):null; }
+function cvByDue(x,y){ return Date.parse(x.due)-Date.parse(y.due); }
+// due within the next n days and still open; keepDone also lists finished work, struck through
+function cvUpcoming(n,keepDone){ const now=Date.now(), until=dkShift(todayKey(),n);
+  return cvItems().filter(a=>a.due&&(keepDone||!cvIsDone(a))&&Date.parse(a.due)>=now&&cvDk(a)<=until).sort(cvByDue); }
+// past due and not handed in. Only work Canvas can actually see being submitted:
+// missing ones always, anything else for two weeks.
+function cvLate(){ const now=Date.now(), from=dkShift(todayKey(),-14);
+  return cvItems().filter(a=>a.due&&a.tracked&&!cvIsDone(a)&&Date.parse(a.due)<now&&(a.status==="missing"||cvDk(a)>=from)).sort(cvByDue); }
+function cvWhen(a){
+  const d=new Date(a.due), n=daysBetween(todayKey(),cvDk(a));
+  const day=n===0?"today":n===1?"tomorrow":n===-1?"yesterday":n>1&&n<7?d.toLocaleDateString(undefined,{weekday:"short"}):fmtShortDate(cvDk(a));
+  return `${day} ${d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})}`; }
+function cvLink(x,text){ return /^https?:\/\//.test(x.url||"")?`<a href="${esc(x.url)}" target="_blank" rel="noopener">${text}</a>`:text; }
+function cvRow(a){
+  const done=cvIsDone(a), late=!done&&a.tracked&&a.due&&Date.parse(a.due)<Date.now();
+  const tag=a.status==="graded"?`<span class="tagpill ok">${a.score!=null&&a.points?`${a.score}/${a.points}`:"graded"}</span>`
+    :a.status==="submitted"?`<span class="tagpill ok">submitted</span>`
+    :a.status==="excused"?`<span class="tagpill">excused</span>`
+    :a.status==="missing"?`<span class="tagpill bad">missing</span>`
+    :late?`<span class="tagpill warn">past due</span>`:"";
+  const box=CV_DONE.has(a.status)?`<span style="width:15px;text-align:center;color:var(--offer)">✓</span>`
+    :`<input type="checkbox" data-cv-done="${esc(a.id)}" ${done?"checked":""} title="Mark it done here. Canvas isn't changed."/>`;
+  return `<div class="arow ${done?"done":""}">${box}
+    <div class="tt"><span class="t">${cvLink(a,esc(a.title))}</span>
+      <div class="sub">${esc(a.course||"")}${a.due?` · ${cvWhen(a)}`:" · no due date"}${a.points?` · ${a.points} pts`:""}</div></div>${tag}</div>`;
+}
+function cvGrouped(list){
+  let last=null, html="";
+  list.forEach(a=>{ const n=daysBetween(todayKey(),cvDk(a));
+    const lbl=n===0?"Today":n===1?"Tomorrow":fmtShortDate(cvDk(a));
+    if(lbl!==last){ html+=`<div class="duegrp">${lbl}</div>`; last=lbl; }
+    html+=cvRow(a); });
+  return html; }
+async function loadCanvas(force){
+  if((document.hidden||cv.busy)&&!force) return;
+  cv.busy=true;
+  let j;
+  try{ j=await fetch("/api/canvas"+(force?"?force=1":""),{cache:"no-store"}).then(r=>r.json()); }
+  catch(e){ j={error:"net",message:"Couldn't reach the app server."}; }
+  cv.busy=false; cv.loadedAt=Date.now();
+  if(j.error==="not_connected"){ cv.data=null; cv.err=""; try{ localStorage.removeItem("sarah_canvas"); }catch(e){} }
+  else if(j.error) cv.err=j.message||"Canvas didn't answer.";
+  else { cv.data=j; cv.err=""; try{ localStorage.setItem("sarah_canvas",JSON.stringify(j)); }catch(e){} }
+  renderOS();
+}
+async function cvConnect(kind){
+  const val=a=>((document.querySelector(`[${a}]`)||{}).value||"").trim();
+  const body=kind==="ics"?{ics:val("data-cv-ics")}:{url:val("data-cv-url"),token:val("data-cv-token")};
+  if(kind!=="ics") cv.lastUrl=body.url;
+  cv.busy=true; cv.err=""; renderCourses();
+  let j;
+  try{ j=await fetch("/api/canvas/connect",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(body)}).then(r=>r.json()); }
+  catch(e){ j={error:"net",message:"Couldn't reach the app server."}; }
+  cv.busy=false;
+  if(j.error){ cv.err=j.message||j.error; renderCourses(); return; }
+  toast(`Canvas connected${j.name?` as ${j.name}`:""}. Loading your courses…`);
+  loadCanvas(true);
+}
+async function cvDisconnect(){
+  if(!confirm("Disconnect Canvas? The token or feed link is deleted from this machine. Your ticks stay.")) return;
+  try{ await fetch("/api/canvas/disconnect",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"}); }catch(e){}
+  cv.data=null; cv.err=""; try{ localStorage.removeItem("sarah_canvas"); }catch(e){}
+  renderOS();
+}
+// the Sunday review's coursework number: of what was due on these days, how much is done
+function courseworkFor(days){
+  if(!cv.data) return null;
+  const set=new Set(days), due=cvItems().filter(a=>a.due&&set.has(cvDk(a)));
+  return {done:due.filter(cvIsDone).length,total:due.length};
+}
+function courseworkSoFar(){
+  if(!cv.data) return null;
+  const now=Date.now(), due=cvItems().filter(a=>a.due&&Date.parse(a.due)<now);
+  return {done:due.filter(cvIsDone).length,total:due.length};
+}
+function courseworkLine(){
+  if(!cv.data) return null;
+  const soon=cvUpcoming(7), late=cvLate(), next=soon[0];
+  const lateTxt=late.length?` · <b style="color:var(--rejected)">${late.length} past due</b>`:"";
+  if(!next) return `Coursework: nothing due in the next 7 days${lateTxt}`;
+  return `Coursework: <b>${soon.length}</b> due in the next 7 days · next: ${esc(next.title)} (${esc(next.course)}) ${cvWhen(next)}${lateTxt}`;
+}
+function courseworkSpeech(l){
+  if(!cv.data) return "Canvas isn't connected yet. Open the Courses tab and connect it, and I'll keep track of every assignment.";
+  if(/\bgrades?\b/.test(l||"")){
+    const g=cv.data.courses.filter(c=>c.score!=null);
+    return g.length?"Your current grades: "+g.map(c=>`${c.code||c.name}, ${c.score} percent`).join("; ")+"."
+      :"Canvas isn't sharing grades through this connection.";
+  }
+  const soon=cvUpcoming(7), late=cvLate();
+  let s=soon.length?`You have ${soon.length} thing${soon.length===1?"":"s"} due in the next week. `+
+      soon.slice(0,3).map(a=>`${a.title} for ${a.course}, ${cvWhen(a)}`).join("; ")+"."
+    :"Nothing is due in the next week.";
+  if(late.length) s+=` ${late.length} ${late.length===1?"is":"are"} past due: ${late.slice(0,2).map(a=>a.title).join(" and ")}.`;
+  return s;
+}
+function courseworkState(){
+  if(!cv.data) return {connected:false};
+  return {connected:true,
+    dueNext7Days:cvUpcoming(7).slice(0,8).map(a=>({title:a.title,course:a.course,due:a.due,points:a.points})),
+    pastDue:cvLate().slice(0,6).map(a=>({title:a.title,course:a.course,due:a.due,status:a.status})),
+    courses:cv.data.courses.map(c=>({name:c.name,grade:c.score!=null?`${c.score}%${c.grade?" ("+c.grade+")":""}`:null}))};
+}
+function renderSchool(){
+  const box=$("schoolBox"); if(!box) return;
+  if(!cv.data){
+    box.innerHTML=`<h3>🎓 Coursework</h3>
+      <p class="muted" style="font-size:13px;margin:6px 0 10px">Connect Canvas and every course, assignment and due date shows up here.</p>
+      <button class="primary" data-go-courses>Connect Canvas</button>`;
+    return; }
+  const late=cvLate(), soon=cvUpcoming(7);
+  box.innerHTML=`<h3>🎓 Due soon <button class="rowbtn" data-go-courses style="float:right;text-transform:none;letter-spacing:0">All courses →</button></h3>
+    ${late.length?`<div class="duegrp" style="color:var(--rejected)">Past due · ${late.length}</div>${late.slice(0,3).map(cvRow).join("")}`:""}
+    ${soon.length?cvGrouped(soon.slice(0,6))+(soon.length>6?`<div class="usage-note">+${soon.length-6} more this week</div>`:"")
+      :`<p class="muted" style="font-size:13px">Nothing due in the next 7 days.</p>`}
+    ${cv.err?`<div class="usage-note" style="color:var(--warn)">⚠ ${esc(cv.err)} Showing what loaded last.</div>`:""}`;
+}
+function cvSetupHtml(){
+  return `<h3>🎓 Connect Canvas</h3>
+    <p style="font-size:13px;margin:4px 0 8px">See every course, assignment, due date and grade here. SARAH only reads Canvas: it never submits or changes anything.</p>
+    <div class="areahead">Best: an access token (grades and what you've handed in)</div>
+    <ol class="steps">
+      <li>In Canvas, open <b>Account → Settings</b>.</li>
+      <li>Under <b>Approved Integrations</b>, press <b>+ New Access Token</b>, name it SARAH, and copy the token.</li>
+      <li>Paste your Canvas address and the token here.</li></ol>
+    <div class="tkadd">
+      <input data-cv-url placeholder="Canvas address, e.g. psu.instructure.com" value="${esc(cv.lastUrl)}" style="flex:1;min-width:200px"/>
+      <input data-cv-token type="password" placeholder="Access token" autocomplete="off" style="flex:1;min-width:200px"/>
+      <button class="primary" data-cv-connect="token" ${cv.busy?"disabled":""}>${cv.busy?"Checking…":"Connect"}</button></div>
+    <div class="areahead" style="margin-top:12px">No token button? The calendar feed works too (due dates only)</div>
+    <ol class="steps"><li>In Canvas, open <b>Calendar</b>, press <b>Calendar Feed</b> at the bottom right, and copy the link.</li></ol>
+    <div class="tkadd">
+      <input data-cv-ics placeholder="https://….instructure.com/feeds/calendars/user_….ics" style="flex:1;min-width:260px"/>
+      <button class="rowbtn" data-cv-connect="ics" ${cv.busy?"disabled":""}>Connect feed</button></div>
+    ${cv.err?`<p style="color:var(--rejected);font-size:12.5px;margin:6px 0 0">⚠ ${esc(cv.err)}</p>`:""}
+    <div class="usage-note">Saved in canvas_config.json in the app folder: never sent to the browser, never committed to git. Disconnect deletes it; you can also revoke the token in Canvas.</div>`;
+}
+function cvCourseCard(c){
+  const list=cvItems().filter(a=>a.courseId===c.id), now=Date.now();
+  const past=list.filter(a=>a.due&&Date.parse(a.due)<now).sort((x,y)=>cvByDue(y,x));
+  const ahead=list.filter(a=>!a.due||Date.parse(a.due)>=now)
+    .sort((x,y)=>(x.due?Date.parse(x.due):Infinity)-(y.due?Date.parse(y.due):Infinity));
+  const next=ahead.find(a=>a.due&&!cvIsDone(a)), done=past.filter(cvIsDone).length;
+  return `<div class="icard">
+    <h3 style="text-transform:none;letter-spacing:0;color:var(--txt);font-size:14px">${esc(c.name)}</h3>
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:2px 0 4px">
+      ${c.score!=null?`<span style="font-size:22px;font-weight:700">${c.score}%</span>${c.grade?`<span class="pill2">${esc(c.grade)}</span>`:""}`:""}
+      <span class="muted" style="font-size:12px">${past.length?`${done}/${past.length} done so far · `:""}${ahead.length} ahead${c.url?` · ${cvLink(c,"open in Canvas ↗")}`:""}</span></div>
+    ${next?`<div class="duegrp">Next up</div>${cvRow(next)}`:`<p class="muted" style="font-size:12.5px">Nothing coming up.</p>`}
+    ${list.length?`<details style="margin-top:6px"><summary class="muted" style="cursor:pointer;font-size:12px">All assignments · ${list.length}</summary>
+      ${ahead.length?`<div class="duegrp">Ahead</div>${ahead.map(cvRow).join("")}`:""}
+      ${past.length?`<div class="duegrp">Earlier</div>${past.map(cvRow).join("")}`:""}</details>`:""}
+  </div>`;
+}
+function renderCourses(){
+  if(!$("cvConn")) return;
+  const d=cv.data;
+  if(!d){
+    keepInputs(["data-cv-url","data-cv-token","data-cv-ics"],()=>{ $("cvConn").innerHTML=cvSetupHtml(); });
+    $("cvDue").hidden=true; $("cvCourses").innerHTML=""; return; }
+  $("cvDue").hidden=false;
+  $("cvConn").innerHTML=`<h3>🎓 Canvas
+      <span style="float:right;text-transform:none;letter-spacing:0">
+        <button class="rowbtn" data-cv-refresh ${cv.busy?"disabled":""}>${cv.busy?"Refreshing…":"Refresh"}</button>
+        <button class="rowbtn" data-cv-disconnect>Disconnect</button></span></h3>
+    <div class="muted" style="font-size:12.5px">${esc(d.host||"")}${d.user?` · ${esc(d.user)}`:""} · ${d.courses.length} course${d.courses.length===1?"":"s"} · ${cvItems().length} assignments · updated ${agoLabel(d.fetchedAt)}</div>
+    ${d.mode==="ics"?`<div class="usage-note">Connected through the calendar feed, so Canvas shares due dates but not grades or what you've handed in. Tick work off here as you finish it, or connect with a token for the rest.</div>`:""}
+    ${cv.err?`<div class="usage-note" style="color:var(--warn)">⚠ ${esc(cv.err)}</div>`:""}`;
+  const late=cvLate(), soon=cvUpcoming(14,true);
+  $("cvDue").innerHTML=`<h3>📌 Due in the next two weeks</h3>
+    ${late.length?`<div class="duegrp" style="color:var(--rejected)">Past due · ${late.length}</div>${late.map(cvRow).join("")}`:""}
+    ${soon.length?cvGrouped(soon):`<p class="muted">Nothing due in the next two weeks.</p>`}`;
+  $("cvCourses").innerHTML=d.courses.map(cvCourseCard).join("")||`<p class="muted">No active courses came back from Canvas.</p>`;
+}
+document.addEventListener("click",e=>{
+  if(e.target.closest("[data-go-courses]")){ switchTab("courses"); return; }
+  const cc=e.target.closest("[data-cv-connect]"); if(cc&&!cc.disabled){ cvConnect(cc.dataset.cvConnect); return; }
+  if(e.target.closest("[data-cv-refresh]")){ loadCanvas(true); return; }
+  if(e.target.closest("[data-cv-disconnect]")){ cvDisconnect(); return; }
+  const cd=e.target.closest("[data-cv-done]"); if(cd){ const m=cvMarks();
+    if(cd.checked) m[cd.dataset.cvDone]=Date.now(); else delete m[cd.dataset.cvDone];
+    if(cd.checked) toast("Done. One less thing. 🎓");
+    osSave(); renderOS(); return; }
+});
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Enter"||!e.target.matches) return;
+  if(e.target.matches("[data-cv-url],[data-cv-token]")){ const b=document.querySelector('[data-cv-connect="token"]'); if(b) b.click(); }
+  if(e.target.matches("[data-cv-ics]")){ const b=document.querySelector('[data-cv-connect="ics"]'); if(b) b.click(); }
+});
+
+/* ==================================================================
+   Robinhood, read through SnapTrade. Robinhood has no public API for
+   stock accounts, so the link is SnapTrade's free personal key: you
+   connect Robinhood once in SnapTrade's own portal, then the server
+   reads balances and positions, read-only. Your Robinhood password is
+   never typed into SARAH; the keys stay in snaptrade_keys.json.
+   ================================================================== */
+const rh={data:null,keys:null,err:"",busy:false,linking:false,portal:"",loadedAt:0};
+function rhTotal(){ return rh.data&&rh.data.accounts&&rh.data.accounts.length?rh.data.total:null; }
+function usd(v,dec){ if(v==null||isNaN(v)) return "—"; const d=dec==null?(Math.abs(v)<1000?2:0):dec;
+  return (v<0?"-":"")+"$"+Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function signedPct(v){ return v==null||isNaN(v)?"":(v>=0?"+":"")+v.toFixed(1)+"%"; }
+function rhTitle(){ const ins=(rh.data&&rh.data.institutions)||[]; return ins.length===1?ins[0]:ins.length?"Portfolio":"Robinhood"; }
+// SnapTrade often names an account "Robinhood Individual" already; don't say Robinhood twice
+function rhAccountName(a){ const n=(a.name||"").trim();
+  return n.toLowerCase().includes((a.institution||"").toLowerCase())?n:`${a.institution} ${n}`.trim(); }
+function rhFreshness(d){ return (d.asOf?`Positions as of ${new Date(d.asOf).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}. `:"")+
+  "Read-only, through SnapTrade."; }
+async function loadRobinhood(force){
+  if((document.hidden&&!force)||rh.busy) return;
+  rh.busy=true;
+  let j;
+  try{ j=await fetch("/api/robinhood"+(force?"?force=1":""),{cache:"no-store"}).then(r=>r.json()); }
+  catch(e){ j={error:"net",message:"Couldn't reach the app server."}; }
+  rh.busy=false; rh.loadedAt=Date.now();
+  if(j.error==="no_keys"){ rh.keys=false; rh.data=null; rh.err=""; }
+  else if(j.error==="no_accounts"){ rh.keys=true; rh.data=null; rh.err=""; }
+  else if(j.error){ if(j.error==="auth") rh.keys=true; rh.err=j.message||"SnapTrade didn't answer."; }
+  else { rh.keys=true; rh.data=j; rh.err=j.warning||""; rh.portal=""; }   // warning: last good numbers, refresh failed
+  renderOS();
+}
+async function rhSaveKeys(){
+  const val=a=>((document.querySelector(`[${a}]`)||{}).value||"").trim();
+  const clientId=val("data-rh-cid"), consumerKey=val("data-rh-ck");
+  if(!clientId||!consumerKey){ toast("Paste both the Client ID and the Consumer Key."); return; }
+  rh.busy=true; rh.err=""; renderOS();
+  let j;
+  try{ j=await fetch("/api/robinhood/connect",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({clientId,consumerKey})}).then(r=>r.json()); }
+  catch(e){ j={error:"net",message:"Couldn't reach the app server."}; }
+  rh.busy=false;
+  if(j.error){ rh.err=j.message||j.error; renderOS(); return; }
+  rh.keys=true;
+  toast(j.accounts?"SnapTrade keys saved. Loading your portfolio…":"SnapTrade keys saved. Now link Robinhood.");
+  loadRobinhood(true);
+}
+async function rhLink(){
+  if(rh.linking) return;
+  const w=window.open("","_blank");   // opened inside the click, so the browser allows it
+  rh.linking=true; rh.portal=""; renderOS();
+  let j;
+  try{ j=await fetch("/api/robinhood/link",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({back:location.origin+"/api/robinhood/linked"})}).then(r=>r.json()); }
+  catch(e){ j={error:"net",message:"Couldn't reach the app server."}; }
+  rh.linking=false;
+  if(j.error||!j.url){ if(w) w.close(); rh.err=j.message||"SnapTrade didn't return a link."; renderOS(); return; }
+  rh.err="";
+  if(w){ w.opener=null; w.location.href=j.url;
+    toast("Choose Robinhood in SnapTrade's window and sign in there. This page fills in when you're done."); }
+  else {   // pop-up blocked: the link waits on the Finance card instead
+    rh.portal=j.url; switchTab("fin");
+    toast("Your browser blocked the window. Open SnapTrade from the link on this card."); }
+  renderOS();
+}
+async function rhDisconnect(){
+  if(!confirm("Disconnect Robinhood? Your SnapTrade keys are deleted from this machine. The link itself stays in your SnapTrade dashboard until you remove it there.")) return;
+  let j={};
+  try{ j=await fetch("/api/robinhood/disconnect",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"}).then(r=>r.json()); }catch(e){}
+  if(j.message) toast(j.message);
+  rh.data=null; rh.keys=false; rh.err=""; rh.portal=""; renderOS();
+}
+function portfolioSpeech(){
+  const d=rh.data;
+  if(!d) return rh.keys?"Robinhood isn't linked yet. Press Link Robinhood in Finance and sign in through SnapTrade."
+    :"Robinhood isn't connected yet. The setup is in the Finance tab.";
+  const top=d.positions.slice(0,3).map(p=>`${p.symbol} at ${usd(p.value,0)}`).join(", ");
+  return `Your portfolio is at ${usd(d.total,0)}, with ${usd(d.cash,0)} in cash`+
+    (d.gain!=null?`, ${d.gain>=0?"up":"down"} ${usd(Math.abs(d.gain),0)} overall`:"")+"."+(top?` Biggest positions: ${top}.`:"");
+}
+function portfolioState(){
+  const d=rh.data; if(!d) return {linked:false};
+  return {linked:true,total:Math.round(d.total),cash:Math.round(d.cash),
+    gainAllTime:d.gain!=null?Math.round(d.gain):null,asOf:d.asOf,
+    topPositions:d.positions.slice(0,6).map(p=>({symbol:p.symbol,value:Math.round(p.value||0),
+      gainPct:p.gainPct!=null?Math.round(p.gainPct*10)/10:null}))};
+}
+function renderRhCard(){
+  const box=$("rhBox"); if(!box) return;
+  const d=rh.data;
+  if(!d){
+    box.innerHTML=`<h3>📈 Robinhood</h3>
+      <p class="muted" style="font-size:13px;margin:6px 0 10px">${rh.keys?"Your keys are in. Link your Robinhood account once and the portfolio shows up here."
+        :"See your Robinhood portfolio here: total value, cash and every position, read-only."}</p>
+      ${rh.keys?`<button class="primary" data-rh-link ${rh.linking?"disabled":""}>${rh.linking?"Opening SnapTrade…":"Link Robinhood"}</button>`
+        :`<button class="primary" data-go-fin>Set it up</button>`}
+      ${rh.err?`<div class="usage-note" style="color:var(--warn)">⚠ ${esc(rh.err)}</div>`:""}`;
+    return; }
+  box.innerHTML=`<h3>📈 ${esc(rhTitle())} <button class="rowbtn" data-go-fin style="float:right;text-transform:none;letter-spacing:0">Details →</button></h3>
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:2px 0 4px">
+      <div style="font-size:24px;font-weight:700">${usd(d.total,0)}</div>
+      ${d.gain!=null?`<div class="${d.gain>=0?"gain":"loss"}" style="font-size:13px;font-weight:600">${d.gain>=0?"▲":"▼"} ${usd(Math.abs(d.gain),0)} (${signedPct(d.gainPct)}) all time</div>`:""}</div>
+    <div class="muted" style="font-size:12px;margin-bottom:4px">${usd(d.cash,0)} cash · ${d.positions.length} position${d.positions.length===1?"":"s"}</div>
+    ${d.positions.slice(0,5).map(p=>`<div class="arow"><div class="tt"><b>${esc(p.symbol)}</b>
+        <span class="muted" style="font-size:12px">${p.name!==p.symbol?esc(p.name):""}</span></div>
+      <span class="num">${usd(p.value,0)}</span>
+      <span class="num ${p.gainPct==null?"":p.gainPct>=0?"gain":"loss"}" style="width:62px">${signedPct(p.gainPct)}</span></div>`).join("")}
+    <div class="usage-note">${rhFreshness(d)}${rh.err?` <span style="color:var(--warn)">⚠ ${esc(rh.err)}</span>`:""}</div>`;
+}
+function rhSetupHtml(){
+  return `<h3>📈 Connect Robinhood</h3>
+    <p style="font-size:13px;margin:4px 0 8px">Robinhood has no public API for stock accounts, and signing in with your password through unofficial tools breaks its terms.
+      The clean way in is <b>SnapTrade</b>, a brokerage-connection service with a free personal plan. It's read-only, and you sign in to Robinhood on SnapTrade's page, never in SARAH.</p>
+    <ol class="steps">
+      <li>Create a free personal account at <a href="https://dashboard.snaptrade.com" target="_blank" rel="noopener">dashboard.snaptrade.com</a>.</li>
+      <li>Copy your <b>Client ID</b> and <b>Consumer Key</b> from the dashboard and paste them here.</li>
+      <li>Press <b>Link Robinhood</b>, choose Robinhood in SnapTrade's window and sign in.</li></ol>
+    <div class="tkadd">
+      <input data-rh-cid placeholder="Client ID" autocomplete="off" style="flex:1;min-width:180px"/>
+      <input data-rh-ck type="password" placeholder="Consumer Key" autocomplete="off" style="flex:1;min-width:180px"/>
+      <button class="primary" data-rh-save ${rh.busy?"disabled":""}>${rh.busy?"Checking…":"Save keys"}</button></div>
+    ${rh.err?`<p style="color:var(--rejected);font-size:12.5px;margin:6px 0 0">⚠ ${esc(rh.err)}</p>`:""}
+    <div class="usage-note">Saved in snaptrade_keys.json in the app folder: never sent to the browser, never committed to git.</div>`;
+}
+function rhPortfolioHtml(){
+  const d=rh.data;
+  const head=`<h3>📈 ${d?esc(rhTitle()):"Robinhood"}
+      <span style="float:right;text-transform:none;letter-spacing:0">
+        ${d?`<button class="rowbtn" data-rh-refresh ${rh.busy?"disabled":""}>${rh.busy?"Refreshing…":"Refresh"}</button>`:""}
+        <button class="rowbtn" data-rh-link ${rh.linking?"disabled":""}>${rh.linking?"Opening…":d?"Link another account":"Link Robinhood"}</button>
+        <button class="rowbtn" data-rh-disconnect>Disconnect</button></span></h3>`;
+  const portal=rh.portal?`<p style="font-size:13px">Your browser blocked the window. <a href="${esc(rh.portal)}" target="_blank" rel="noopener">Open SnapTrade's portal ↗</a> (the link works for five minutes).</p>`:"";
+  const err=rh.err?`<p style="color:var(--warn);font-size:12.5px;margin:4px 0">⚠ ${esc(rh.err)}</p>`:"";
+  if(!d) return head+portal+err+`<p class="muted" style="font-size:13px">Keys saved. Press <b>Link Robinhood</b>, choose Robinhood in SnapTrade's window and sign in. This card fills in once you're done.</p>`;
+  const rows=d.positions.map(p=>`<tr><td><b>${esc(p.symbol)}</b><div class="muted" style="font-size:11px">${
+      esc([p.name!==p.symbol?p.name:"",p.kind!=="stock"?p.kind:""].filter(Boolean).join(" · "))}</div></td>
+      <td class="num">${p.units==null?"—":(+p.units).toLocaleString(undefined,{maximumFractionDigits:4})}</td>
+      <td class="num">${usd(p.price)}</td><td class="num">${usd(p.value,0)}</td>
+      <td class="num ${p.gain==null?"":p.gain>=0?"gain":"loss"}">${p.gain==null?"—":`${usd(p.gain,0)} · ${signedPct(p.gainPct)}`}</td></tr>`).join("");
+  return head+portal+err+`
+    <div class="imetrics" style="margin-top:6px">
+      <div class="imetric"><div class="n">${usd(d.total,0)}</div><div class="l">Total value</div></div>
+      <div class="imetric"><div class="n">${usd(d.invested,0)}</div><div class="l">In positions</div></div>
+      <div class="imetric"><div class="n">${usd(d.cash,0)}</div><div class="l">Cash</div></div>
+      ${d.gain!=null?`<div class="imetric"><div class="n ${d.gain>=0?"gain":"loss"}">${usd(d.gain,0)}</div><div class="l">Gain, all time · ${signedPct(d.gainPct)}</div></div>`:""}
+    </div>
+    ${d.positions.length?`<table class="revhist"><thead><tr><th>Position</th><th class="num">Shares</th><th class="num">Price</th><th class="num">Value</th><th class="num">Gain</th></tr></thead><tbody>${rows}</tbody></table>`
+      :`<p class="muted">No positions in the linked account${d.accounts.length===1?"":"s"}.</p>`}
+    <div class="usage-note">${d.accounts.map(a=>esc(rhAccountName(a))+(a.number?` ···${esc(a.number)}`:"")).join(" · ")} · ${rhFreshness(d)}</div>`;
+}
+function renderFinRh(){
+  const box=$("finRh"); if(!box) return;
+  keepInputs(["data-rh-cid","data-rh-ck"],()=>{ box.innerHTML=rh.keys?rhPortfolioHtml():rhSetupHtml(); });
+}
+document.addEventListener("click",e=>{
+  if(e.target.closest("[data-go-fin]")){ switchTab("fin"); return; }
+  const b=e.target.closest("[data-rh-save],[data-rh-link],[data-rh-refresh],[data-rh-disconnect]");
+  if(!b||b.disabled) return;
+  if(b.matches("[data-rh-save]")) rhSaveKeys();
+  else if(b.matches("[data-rh-link]")) rhLink();
+  else if(b.matches("[data-rh-refresh]")) loadRobinhood(true);
+  else rhDisconnect();
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&e.target.matches&&e.target.matches("[data-rh-cid],[data-rh-ck]")){
+    const b=document.querySelector("[data-rh-save]"); if(b) b.click(); }
+});
+// SnapTrade's portal finishes on /api/robinhood/linked, which tells this tab to reload
+const rhChannel=(()=>{ try{ const c=new BroadcastChannel("sarah");
+  c.onmessage=e=>{ if(e.data==="rh-linked"){ toast("Robinhood linked. Loading your portfolio…"); loadRobinhood(true); } };
+  return c; }catch(e){ return null; } })();
+window.addEventListener("storage",e=>{ if(e.key==="sarah_rh_linked") loadRobinhood(true); });
+// Canvas and the portfolio refresh on their own while the app is open, and on the way back to it
+setInterval(()=>loadCanvas(false),15*60*1000);
+setInterval(()=>{ if(rh.keys) loadRobinhood(false); },10*60*1000);
+document.addEventListener("visibilitychange",()=>{ if(document.hidden) return;
+  if(Date.now()-cv.loadedAt>5*60*1000) loadCanvas(false);
+  if(rh.keys&&(!rh.data||Date.now()-rh.loadedAt>5*60*1000)) loadRobinhood(!rh.data);
+});
+
 /* ==================================================================
    Calendar sync. Tasks with a date live on a separate "SARAH" calendar.
    Check one off here and it shows ✓ there; move it there and it moves
@@ -3203,13 +3573,16 @@ function calErrLink(){ return calState.errUrl?`<a class="rowbtn" href="${esc(cal
 const BLOCK_DEFAULTS=[
   {key:"morning",title:"Quran + sales study",days:["MO","TU","WE","TH","FR"],start:"07:00",mins:40,enabled:true,
     hint:"Fajr, then Quran, then 30 minutes of sales study. The block nobody can take."},
-  {key:"outreach",title:"Outreach · 15 conversations",days:["MO","TU","WE","TH","FR"],start:"12:15",mins:60,enabled:true,
-    hint:"Before the 1:30 shift. The appointment you never cancel."},
-  {key:"review",title:"Sunday review · 5 numbers + 1 line",days:["SU"],start:"20:00",mins:30,enabled:true,
+  {key:"review",title:"Sunday review · 4 numbers + 1 line",days:["SU"],start:"20:00",mins:30,enabled:true,
     hint:"Thirty minutes, every Sunday."}];
-function blocksCfg(){ const s=OS.settings&&OS.settings.blocks;
-  if(Array.isArray(s)&&s.length) return s;
-  return BLOCK_DEFAULTS.map(b=>({...b,days:[...b.days]})); }
+// Blocks that no longer exist. Each push sends them switched off, which takes them off Google.
+const RETIRED_BLOCKS=["outreach"];
+// Titles and hints always come from the defaults, so a renamed block updates and a
+// retired one disappears; your on/off choices and times come from what you saved.
+function blocksCfg(){ const s=OS.settings&&OS.settings.blocks, saved=Array.isArray(s)?s:[];
+  return BLOCK_DEFAULTS.map(b=>{ const m=saved.find(x=>x&&x.key===b.key);
+    return {...b,days:[...b.days],...(m?{enabled:!!m.enabled,start:m.start||b.start,mins:+m.mins||b.mins}:{})}; }); }
+function retiredBlocks(){ return RETIRED_BLOCKS.map(key=>({key,enabled:false})); }
 function agoLabel(ms){ const m=Math.round((Date.now()-ms)/60000); return m<1?"just now":m<60?`${m}m ago`:`${Math.round(m/60)}h ago`; }
 function calSyncChip(){
   const st='style="float:right;text-transform:none;letter-spacing:0"';
@@ -3278,7 +3651,7 @@ async function pushBlocks(){
   if(!OS.settings.calSync&&!(await calConnect())) return;
   let j;
   try{ j=await fetch("/api/calsync/blocks",{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({blocks:blocksCfg()})}).then(r=>r.json()); }
+    body:JSON.stringify({blocks:[...blocksCfg(),...retiredBlocks()]})}).then(r=>r.json()); }
   catch(e){ j={error:"net",message:"Couldn't reach the app server."}; }
   if(j.error){ toast(j.message||j.error); if(j.url){ calState.err=j.message; calState.errUrl=j.url; renderOS(); } return; }
   OS.settings.blocksOn=j.blocks||{}; osSave();
@@ -3335,8 +3708,26 @@ async function calStatusCheck(){
   try{ const j=await fetch("/api/calsync/status",{cache:"no-store"}).then(r=>r.json());
     calState.write=!!j.write;
     if(OS.settings.calSync&&!j.write) calState.err="Google access needs approving again. Press Reconnect.";
-    else if(OS.settings.calSync) runCalSync();
+    else if(OS.settings.calSync){ runCalSync(); migrateBlocks(); }
   }catch(e){}
+}
+// Once after an update: blocks already on the calendar get their new titles, and
+// retired ones (the midday outreach block) come off. Blocks you never pushed stay off.
+async function migrateBlocks(){
+  if((OS.settings.blocksVer||0)>=2) return;
+  const on=OS.settings.blocksOn||{};
+  const live=blocksCfg().filter(b=>on[b.key]).map(b=>({...b,enabled:true}));
+  const gone=retiredBlocks().filter(b=>on[b.key]);
+  if(live.length||gone.length){
+    let j;
+    try{ j=await fetch("/api/calsync/blocks",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({blocks:[...live,...gone]})}).then(r=>r.json()); }
+    catch(e){ return; }
+    if(!j||j.error) return;   // try again the next time the app opens
+    OS.settings.blocksOn={...on,...(j.blocks||{})};
+    if(gone.length) toast("The midday outreach block is off your calendar.");
+  }
+  OS.settings.blocksVer=2; osSave();
 }
 
 /* ---- Markets: BTC, SOL, S&P 500 with sparkline graphs ---- */
@@ -3456,13 +3847,10 @@ function localIntent(t){
   if(isQuestion){
     if(/(workout|session|lift|training) (today|for today)|what('s| is) my (workout|training|session)/.test(l))
       return trainingTodaySpeech();
+    if(/\b(due|homework|assignments?|hw|coursework|canvas|grades?|classes|courses?)\b/.test(l)) return courseworkSpeech(l);
+    if(/\b(call(ed)?|talk(ed)?|spoke)\b.*\b(mom|mum|dad|parents|family|home)\b/.test(l)) return familySpeech();
+    if(/\b(portfolio|robinhood|stocks?|investments?|holdings|positions)\b/.test(l)) return portfolioSpeech();
     if(/(left|remaining|still (need|have|got) to|to ?do)/.test(l)) return leftSummarySpeech();
-    if(/(outreach|conversations|dms|how many.*(sent|messaged))/.test(l)){
-      const o=outToday(), w=weekStatsFor(0), tgt=outreachTarget(todayKey());
-      return `You've started ${o.sent} conversation${o.sent===1?"":"s"} today${tgt?` out of ${tgt}`:""}, and ${w.outreach} of ${OUTREACH_WEEKLY} this week. ${convoTotal()} total toward a thousand.`;
-    }
-    if(/how much.*(made|earned|make)/.test(l))
-      return `You've made $${incomeToday().toLocaleString()} today and $${incomeInMonth(monthKey(0)).toLocaleString()} this month. All time you're at $${incomeTotal().toLocaleString()}.`;
     if(/how much.*(spent|spend(ing)?)/.test(l)){
       const mk=monthKey(0), sp=spendInMonth(mk), top=spendByCat(mk)[0];
       return `You've spent $${sp.toLocaleString()} this month${top?`, most of it on ${top[0].toLowerCase()} at $${top[1].toLocaleString()}`:""}.`+
@@ -3477,22 +3865,13 @@ function localIntent(t){
   const acted=[];
   const lp=t.match(/^\s*(?:later|new idea|idea)\s*[:\-]\s*(.+)$/i);
   if(lp){ parkIdea(lp[1]); acted.push("that idea parked in Later"); }
-  // money first so "spent 35" can't be read as outreach
+  // cash spending: "spent 12 on lunch"
   const sm=l.match(/\bspent\D{0,10}?(\d+(?:\.\d+)?)(?:\s*(?:dollars?|bucks?))?(?:\s*(?:on|for)\s+([a-z ]{2,30}))?/);
   if(sm){ const cat=guessCat(sm[2]||"");
     logExpense(sm[1],cat,sm[2]||"");
     acted.push(`$${(+sm[1]).toLocaleString()} spent on ${cat.toLowerCase()}`); }
-  const m=l.match(/(?:made|earned|got paid)\D{0,12}?(\d+(?:\.\d+)?)/)||l.match(/\blog(?:ged)?\s*\$\s*(\d+(?:\.\d+)?)/)
-    ||l.match(/\blog(?:ged)?\s*(\d+(?:\.\d+)?)\s*(?:dollars?|bucks)/);
-  if(m){ const v=Math.round(parseFloat(m[1])*100)/100;
-    OS.incomeLog.push({id:uid(),date:todayKey(),amount:v});
-    acted.push(`$${v.toLocaleString()} logged`); }
-  // outreach: "sent 15 DMs", "reached out to 10 people", "12 conversations"
-  const om=l.match(/\b(?:sent|did|messaged|contacted|reached out to|called|emailed|dm'?d)\s+(\d{1,3})\b(?!\s*(?:dollars?|bucks))/)
-    ||l.match(/\b(\d{1,3})\s+(?:dms?|conversations?|convos?|outreach(?:es)?|cold (?:emails?|calls?|messages?)|leads?)\b/);
-  if(om&&!sm){ bumpOutreach("sent",+om[1]); acted.push(`${om[1]} conversation${+om[1]===1?"":"s"}`); }
-  const rm=l.match(/\b(\d{1,3})\s+repl(?:y|ies)\b/);
-  if(rm){ bumpOutreach("replies",+rm[1]); acted.push(`${rm[1]} repl${+rm[1]===1?"y":"ies"}`); }
+  const calls=heardCalls(l);
+  if(calls.length){ calls.forEach(k=>checkDaily(k)); acted.push(`your call with ${callNames(calls)}`); }
   if(/all (five |5 )?(of my |my )?prayers/.test(l)){ PRAYERS.forEach(([k])=>checkDaily(k)); acted.push("all five prayers"); }
   else PRAYERS.forEach(([k,n])=>{ if(PRAYER_HEARD[k].test(l)){ checkDaily(k); acted.push(n); } });
   if(/\b(quran|qur'?an|koran)\b/.test(l)){ checkDaily("quran"); acted.push("Quran"); }
@@ -3502,7 +3881,6 @@ function localIntent(t){
   const sl=l.match(/\bslept\s+(\d{1,2}(?:\.\d)?)|(\d{1,2}(?:\.\d)?)\s+hours? of sleep|\bgot\s+(\d{1,2}(?:\.\d)?)\s+hours?/);
   if(sl){ const h=+(sl[1]||sl[2]||sl[3]);
     if(h>=7){ checkDaily("sleep"); acted.push(`${h} hours of sleep`); } else acted.push(`${h} hours of sleep, short of seven`); }
-  if(/\bcall(ed)? (my )?(parents|mom|mum|dad|home|family)\b|\bcalled home\b/.test(l)){ setWeekly("callHome",true); acted.push("the call home"); }
   if(/\b(went out|hung out|social evening|night out|out with (friends|the boys))\b/.test(l)){ setWeekly("social",true); acted.push("your social evening"); }
   if(/(bjj|jiu.?jitsu|jujitsu)/.test(l)){ checkDaily("bjj"); markTrainingTask("bjj"); acted.push("BJJ"); }
   if(/(muay ?thai|my tie|moy tai)/.test(l)){ checkDaily("muaythai"); markTrainingTask("muaythai"); acted.push("Muay Thai"); }
@@ -3523,25 +3901,26 @@ function localIntent(t){
   return `Got it: ${acted.join(", and ")}. `+(bits.length?`Still open: ${bits.slice(0,3).join(", ")}.`:`And that's every number for today. Perfect day.`);
 }
 function voiceState(){
-  const dd=dayChecks(), all=jobRows(), tk=todayKey(), w=weekStatsFor(0), v=venture(), o=outToday();
+  const dd=dayChecks(), all=jobRows(), tk=todayKey(), w=weekStatsFor(0), v=venture();
   return { prayersLeft:PRAYERS.filter(([k])=>!dd[k]).map(([,n])=>n),
-    leadMeasuresToday:{quran:!!dd.quran,salesStudy:!!dd.study,sleep7plus:!!dd.sleep,
-      outreachSent:o.sent,outreachTarget:outreachTarget(tk),replies:o.replies},
-    thisWeek:{martialArts:`${w.martial}/4`,lifts:`${w.lifts}/3`,outreach:`${w.outreach}/${OUTREACH_WEEKLY}`,
-      callHome:w.callHome,socialEvening:w.social,sundayReviewDone:!!w.review},
-    venture:{name:v.name,lockDay:lockDay(),payingCustomers:v.customers.length,parkedIdeas:v.later.length,
-      conversationsTotal:convoTotal(),conversationGoal:CONVO_GOAL},
+    leadMeasuresToday:{quran:!!dd.quran,salesStudy:!!dd.study,sleep7plus:!!dd.sleep},
+    thisWeek:{martialArts:`${w.martial}/4`,lifts:`${w.lifts}/3`,callsWithMom:w.mom,callsWithDad:w.dad,
+      socialEvening:w.social,sundayReviewDone:!!w.review},
+    callsHome:{everyDays:FAMILY_EVERY,...Object.fromEntries(FAMILY.map(([k,n])=>{ const s=familyStatus(k);
+      return [n.toLowerCase(),{lastCallDaysAgo:s.ago??null,status:s.text}]; }))},
+    venture:{name:v.name,lockDay:lockDay(),payingCustomers:v.customers.length,parkedIdeas:v.later.length},
     trainingLeft:trainingToday().filter(([k])=>!dd[k]).map(([,n])=>n),
     mindLeft:mindItems().filter(([k])=>!dd[k]).map(([,n])=>n),
     bodyLeft:bodyItems(tk).filter(([k])=>!dd[k]).map(([,n])=>n),
-    incomeToday:incomeToday(), incomeThisMonth:incomeInMonth(monthKey(0)), incomeAllTime:incomeTotal(),
+    coursework:courseworkState(),
     appsToday:all.filter(isToday).length, appsGoal:Object.values(TARGETS).reduce((a,b)=>a+b,0),
     interviewsInPlay:all.filter(a=>a.status==="Interview Scheduled").map(a=>a.company).slice(0,5),
     calendarToday:todayCalEvents().map(ev=>ev.title).slice(0,8),
     topTasks:openTasks().slice(0,6).map(t=>t.title+(t.due?` (${taskWhen(t)})`:"")),
     learnedPatterns:computePatterns().facts.slice(0,8),
-    finance:{monthIncome:incomeInMonth(monthKey(0)),monthSpend:spendInMonth(monthKey(0)),
+    finance:{monthSpend:spendInMonth(monthKey(0)),
       subscriptionsPerMonth:subsMonthly(),netWorth:netWorth(),notes:finInsights()},
+    portfolio:portfolioState(),
     trainingPlan:(()=>{try{const sp=todaySplit(), p=perfPair("training");
       return {today:sp.rest?"rest day":scheduledFor(tk).map(([,n])=>n).join(" + "),
         checkedOffToday:trainingToday().filter(([k])=>dd[k]).map(([,n])=>n),
@@ -3553,13 +3932,12 @@ const AI_ACTIONS={
   check_training:a=>{ if(["bjj","muaythai","training","lift"].includes(a.key)){ checkDaily(a.key); markTrainingTask(a.key); } },
   check_body:a=>{ if(["sleep",...BODY.map(([k])=>k)].includes(a.key)) checkDaily(a.key); },
   check_system:a=>{ if(["quran","study","jummah"].includes(a.key)) checkDaily(a.key);
-    else if(["callHome","social"].includes(a.key)) setWeekly(a.key,true); },
-  log_outreach:a=>{ const n=Math.round(+a.amount); if(n>0&&n<1000) bumpOutreach("sent",n); },
-  log_replies:a=>{ const n=Math.round(+a.amount); if(n>0&&n<1000) bumpOutreach("replies",n); },
+    else if(a.key==="social") setWeekly("social",true); },
+  log_call:a=>{ const who=String(a.key||"").toLowerCase();
+    FAMILY.forEach(([k,n])=>{ if(who==="both"||who===n.toLowerCase()) checkDaily(k); }); },
   check_mind:a=>{ const keys=mindItems().map(([k])=>k);
     if(keys.includes(a.key)) checkDaily(a.key);
     else if(a.key==="narcos") checkDaily(keys[1]||"immersion"); },
-  log_income:a=>{ const v=+a.amount; if(v>0) OS.incomeLog.push({id:uid(),date:todayKey(),amount:Math.round(v*100)/100}); },
   log_expense:a=>{ if(+a.amount>0) logExpense(a.amount,a.key||a.title,a.title); },
   add_task:a=>{ if(!a.title) return; const w=parseWhen(a.title); addTask(w.title||a.title,w.due,w.time); calSyncSoon(); },
   complete_task:a=>{ if(!a.title) return; const l=a.title.toLowerCase();
@@ -3591,7 +3969,7 @@ async function voiceExchange(heard){
   }
   if(reply==null) reply=await aiAssist(heard);  // full conversation when Claude is connected
   if(reply==null) reply=localIntent(heard);     // offline pattern matching otherwise
-  if(reply==null) reply="I heard you, but my full brain isn't connected yet, so I can only handle simple updates. Add an Anthropic API key to the app folder and we can actually talk. For now try: I prayed fajr, I made 40 dollars, or, what's left today.";
+  if(reply==null) reply="I heard you, but my full brain isn't connected yet, so I can only handle simple updates. Add an Anthropic API key to the app folder and we can actually talk. For now try: I prayed fajr, I called mom, or, what's due this week.";
   voiceHist.push({role:"user",content:heard},{role:"assistant",content:cleanSpeech(reply)});
   if(voiceHist.length>16) voiceHist=voiceHist.slice(-16);
   showBubble(`"${heard}"`,reply);
@@ -3640,7 +4018,8 @@ $("micBtn").addEventListener("click",()=>{
   next();
 })();
 
-osLoad().then(()=>{ switchTab("today"); loadCal(); loadMarkets(); calStatusCheck(); }); setInterval(loadCal,5*60*1000);
+osLoad().then(()=>{ switchTab("today"); loadCal(); loadMarkets(); calStatusCheck(); loadCanvas(false); loadRobinhood(false); });
+setInterval(loadCal,5*60*1000);
 </script>
 </body>
 </html>
