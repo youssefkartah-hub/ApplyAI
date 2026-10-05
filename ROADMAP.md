@@ -167,8 +167,9 @@ deliberately minimal: show up and check the box, exactly like prayers.
   Claude log_call action.
 - **Removed:** the outreach conversation counter (daily 15 / weekly 75 /
   toward 1,000, replies, the midday outreach calendar block and the two
-  outreach rules) and the income log. The sales study block, 90-day lock,
-  customers and Later list stay. Old outreach and income entries remain in
+  outreach rules) and the income log. Then the whole venture system: Onset
+  Listings, the sales study block, the 90-day lock, paying customers, the
+  Later list and the money rule. Old outreach and income entries remain in
   personal_data.json, unread. The Sunday review is now four numbers: prayers,
   training, calls home, assignments done.
 - **Canvas.** 🎓 Courses tab: courses with current grades and every assignment

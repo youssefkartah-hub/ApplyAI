@@ -2,7 +2,7 @@
 
 **The complete guide to everything the app does.**
 
-Sarah is a personal operating system that runs entirely on your Mac. It is built on one rule: **you only ever score yourself on inputs you control, never on outcomes.** Customers, belts and money are lagging results; your job is to hit the daily numbers and let the results arrive on their own schedule. Sarah tracks those numbers, your calls home, your job search (live from Notion), your coursework (from Canvas), your calendar (both ways), your spending (from Rocket Money), your Robinhood portfolio (through SnapTrade), and talks to you out loud like a real assistant. One Python file is the server, one HTML file is the entire interface, and all your data stays on your machine.
+Sarah is a personal operating system that runs entirely on your Mac. It is built on one rule: **you only ever score yourself on inputs you control, never on outcomes.** Belts, grades and money are lagging results; your job is to hit the daily numbers and let the results arrive on their own schedule. Sarah tracks those numbers, your calls home, your job search (live from Notion), your coursework (from Canvas), your calendar (both ways), your spending (from Rocket Money), your Robinhood portfolio (through SnapTrade), and talks to you out loud like a real assistant. One Python file is the server, one HTML file is the entire interface, and all your data stays on your machine.
 
 ---
 
@@ -46,8 +46,8 @@ Click **🎤 Talk** and speak. Chrome transcribes you, Sarah figures out what yo
 
 **Two brains, in order:**
 
-1. **Claude (when `anthropic_key.txt` is present).** Everything you say goes to Claude with a snapshot of your day and your system — today's lead measures, this week's numbers, when Mom and Dad were last called, the venture and its 90-day lock, training, tasks, applications, coursework due and your grades, spending and your portfolio — plus recent conversation memory. She knows your rules and holds you to them, reminds you by name when a call home is due, and names anything past due in Canvas. She'll talk about your portfolio but never gives buy or sell advice. When you report something done, she applies it: prayers, Quran, sales study, sleep, training, calls with Mom and Dad, a social evening, expenses, tasks.
-2. **Pattern matching (always available, no key).** Understands the common phrases: "I prayed fajr and dhuhr" (or "all five"), "read Quran", "studied sales", "slept 8 hours", "called mom", "talked to my parents" (both), "went out with friends", "just finished BJJ", "took my creatine", "spent 12 on lunch", "later: drone mapping idea", "remind me to call dad tomorrow at 3pm" (a task, not a call), and questions like "what's left?", "what's due this week?", "what are my grades?", "when did I last call mom?", "how's my portfolio?", "what do my subscriptions cost?".
+1. **Claude (when `anthropic_key.txt` is present).** Everything you say goes to Claude with a snapshot of your day and your system — today's lead measures, this week's numbers, when Mom and Dad were last called, training, tasks, applications, coursework due and your grades, spending and your portfolio — plus recent conversation memory. She knows your rules and holds you to them, reminds you by name when a call home is due, and names anything past due in Canvas. She'll talk about your portfolio but never gives buy or sell advice. When you report something done, she applies it: prayers, Quran, sleep, training, calls with Mom and Dad, a social evening, expenses, tasks.
+2. **Pattern matching (always available, no key).** Understands the common phrases: "I prayed fajr and dhuhr" (or "all five"), "read Quran", "slept 8 hours", "called mom", "talked to my parents" (both), "went out with friends", "just finished BJJ", "took my creatine", "spent 12 on lunch", "remind me to call dad tomorrow at 3pm" (a task, not a call), and questions like "what's left?", "what's due this week?", "what are my grades?", "when did I last call mom?", "how's my portfolio?", "what do my subscriptions cost?".
 
 **The "Read it to me" button** on the rundown speaks it. If ElevenLabs is unreachable it falls back to the browser's built-in voice.
 
@@ -59,7 +59,6 @@ Click **🎤 Talk** and speak. Chrome transcribes you, Sarah figures out what yo
 |---|---|
 | `email the recruiter tomorrow at 3pm` | A task, due tomorrow at 3:00 PM, titled "email the recruiter". Understands today, tonight, tomorrow, weekday names, and times like `3pm` or `at 15:30`. |
 | `called mom` / `talked to dad` / `called my parents` | Logs today's call with Mom, Dad, or both, and restarts their four-day clock |
-| `later: drone mapping startup` | Parks a new business idea in Later (the 90-day lock) |
 | `review` | Opens the Scoreboard |
 | `goal: get a Boeing internship` | Jumps to Goals and generates a phased plan |
 | `find airbus` / `?spacex` | Jumps to Applications filtered to that search |
@@ -78,7 +77,6 @@ Click **🎤 Talk** and speak. Chrome transcribes you, Sarah figures out what yo
 One overall percentage (also the header's **day %**) and a card per area, each with its own bar, Monday-to-Sunday dots, and this-week and 30-day percentages. Click any dot to fix a past day.
 
 - **🕌 Faith** — five prayers on the ring, then Quran (10 min). On Fridays, Jummah.
-- **💼 The venture** (Onset Listings by default) — 30 minutes of sales study.
 - **🥋 Training** — today's sessions from the weekly plan.
 - **🧴 Body** — slept 7+ hours, creatine, skincare.
 - **🧠 Mind** — language lesson and immersion.
@@ -90,19 +88,15 @@ New measures only count from the day they went live (the system on its start dat
 
 Martial arts against 4 and lifting against 3 — coloured by pace, never red early in the week — plus a checkbox for a social evening out, and a link to the Sunday review.
 
-### 6.4 The venture card
-
-Day X of 90 on the lock, paying customers (add them by name; three lifts the lock), and **Later**, where new business ideas go to be parked and closed.
-
-### 6.5 Tasks and today's schedule
+### 6.4 Tasks and today's schedule
 
 Add a task with a date and optional time; check it off; delete it. With calendar sync on, every dated task also lives on your SARAH calendar (section 8). Beside it, today's schedule from every calendar, with SARAH's own blocks tagged.
 
-### 6.6 Due soon and Robinhood
+### 6.5 Due soon and Robinhood
 
 **🎓 Due soon** lists what's due in the next seven days by day, with anything past due on top, from Canvas (section 16). **📈 Robinhood** shows the portfolio total, all-time gain, cash and the five biggest positions (section 17). Until each is connected, the card is a one-click way to set it up.
 
-### 6.7 Markets
+### 6.6 Markets
 
 Bitcoin, Solana and the S&P 500 with small graphs, refreshed every minute.
 
@@ -111,9 +105,9 @@ Bitcoin, Solana and the S&P 500 with small graphs, refreshed every minute.
 ## 7. The Scoreboard tab
 
 - **🗒 Sunday review** — the four numbers for the week, filled in automatically: prayers on time, training sessions, calls home (Mom and Dad counted separately, with how much of the week each was on schedule), and assignments done out of those due that week (from Canvas). Write one line on what to change, save it. Step back through past weeks with ‹ ›, and see the last eight weeks in a table; weeks before calls were tracked per parent show a dash. 🔊 reads it aloud.
-- **🧭 Destination · September 2027** — every domain, with live progress where the data exists: Faith (30-day prayers, Quran, Jummah, a knowledge area), Body (blue belt, no-gi competitions, weeks hitting 4 + 3), Money (paying customers), Degree (assignments done so far from Canvas, capstone, graduation countdown), People (Mom and Dad each on schedule over 30 days, social evenings), Place (relocation plan and savings).
-- **🗺 Milestones to graduation** — Now → December, January → April, May 2027, Summer 2027, with the current quarter highlighted and a live bar for paying customers; the rest are checkboxes.
-- **🛡 The rules** — the 90-day lock (with its live status), faith / training / sleep never traded for work, and the money rule.
+- **🧭 Destination · September 2027** — every domain, with live progress where the data exists: Faith (30-day prayers, Quran, Jummah, a knowledge area), Body (blue belt, no-gi competitions, weeks hitting 4 + 3), Degree (assignments done so far from Canvas, capstone, graduation countdown), People (Mom and Dad each on schedule over 30 days, social evenings), Place (relocation plan and savings).
+- **🗺 Milestones to graduation** — Now → December, January → April, May 2027, Summer 2027, with the current quarter highlighted; each is a checkbox (fall semester, capstone, graduation, the summer trip).
+- **🛡 The rules** — faith / training / sleep are never traded for work.
 - **🗓 Calendar** — connect sync and set up your daily blocks (section 8).
 
 ---
@@ -132,7 +126,7 @@ Bitcoin, Solana and the S&P 500 with small graphs, refreshed every minute.
 - **Delete it in the app** → it's removed from Google. **Delete it in Google** → the task stays in the app but comes off the calendar.
 - If both sides changed, the most recent edit wins. Sync runs a couple of seconds after any change, every 5 minutes, and on **Sync now**.
 
-**Daily blocks** put the system itself on your calendar as recurring events, with times you choose: Quran + sales study (Mon–Fri, 7:00 for 40 min) and the Sunday review (Sunday 8:00 PM, 30 min). Change the times and press Update; untick one to remove it. The midday outreach block is retired: if it was on your calendar, the app takes it off by itself the first time it opens with sync on, and renames the Sunday review block to its four numbers at the same time.
+**Daily blocks** put the system itself on your calendar as recurring events, with times you choose: Fajr + Quran (Mon–Fri, 7:00 for 15 min) and the Sunday review (Sunday 8:00 PM, 30 min). Change the times and press Update; untick one to remove it. The midday outreach block is retired: if it was on your calendar, the app takes it off by itself the first time it opens with sync on, and renames the morning and Sunday review blocks to their new names at the same time.
 
 ---
 
@@ -223,7 +217,7 @@ The server is threaded, so a slow market fetch or the one-time Google approval n
 
 ## 14. Everyday flow
 
-Morning, before class: Fajr, then Quran, then 30 minutes of sales study (the morning block). Open Sarah; the rundown tells you what's left and what's due in your courses. After 5:30: training, already on the plan. When a call home is due, the Family card and the rundown say so by name; after you hang up, tell Sarah "called mom" or tick the box. Through the day, tell Sarah "slept 8 hours" or "talked to my parents" instead of clicking. New business idea? `later:` it and close it. Sunday: open the Scoreboard, read the four numbers, write one line, save. That's the whole system.
+Morning, before class: Fajr, then Quran (the morning block). Open Sarah; the rundown tells you what's left and what's due in your courses. After 5:30: training, already on the plan. When a call home is due, the Family card and the rundown say so by name; after you hang up, tell Sarah "called mom" or tick the box. Through the day, tell Sarah "slept 8 hours" or "talked to my parents" instead of clicking. Sunday: open the Scoreboard, read the four numbers, write one line, save. That's the whole system.
 
 ---
 

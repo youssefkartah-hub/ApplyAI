@@ -292,7 +292,7 @@
   .pill2[data-tgl-sess]{cursor:pointer}
   .pill2[data-tgl-sess]:hover{border-color:var(--accent)}
   .fixbox{margin-top:7px;padding:8px 9px;border:1px dashed var(--line);border-radius:9px}
-  /* ---- The system: rundown, scoreboard, venture, tasks ---- */
+  /* ---- The system: rundown, scoreboard, tasks ---- */
   .blist{margin:6px 0 0;padding-left:18px;font-size:13.5px;line-height:1.65}
   .blist li{margin:1px 0}
   .blist li::marker{color:var(--accent)}
@@ -407,7 +407,7 @@
     </div>
     <div class="headright">
     <div class="cmdwrap"><input id="cmdbar" class="cmdbar"
-      placeholder='Add a task or log anything…  ("email the recruiter tomorrow at 3pm", "called mom", "later: drone idea")'/></div>
+      placeholder='Add a task or log anything…  ("email the recruiter tomorrow at 3pm", "called mom", "goal: get a Boeing internship")'/></div>
     <div class="controls">
       <span id="hudClock"></span>
       <span class="live"><span id="livedot"></span><span id="connText">Live</span></span>
@@ -468,16 +468,12 @@
       </div>
       <div class="icard" id="dailyBox" style="margin-bottom:14px"></div>
       <div class="charts">
-        <div class="icard" id="weekBox"></div>
-        <div class="icard" id="ventureBox"></div>
-      </div>
-      <div class="charts" style="margin-top:14px">
         <div class="icard" id="tasksBox"></div>
         <div class="icard" id="agendaBox"></div>
       </div>
       <div class="charts" style="margin-top:14px">
         <div class="icard" id="schoolBox"></div>
-        <div class="icard" id="rhBox"></div>
+        <div><div class="icard" id="weekBox" style="margin-bottom:14px"></div><div class="icard" id="rhBox"></div></div>
       </div>
       <div class="icard" id="mktBox" style="margin-top:14px"></div>
     </div>
@@ -1336,7 +1332,7 @@ function addTask(title,due,time){
   OS.tasks.push(t); return t;
 }
 function renderToday(){
-  renderDaily(); renderWeek(); renderVenture(); renderTasks(); renderAgenda(); renderSchool(); renderRhCard(); renderMarkets();
+  renderDaily(); renderWeek(); renderTasks(); renderAgenda(); renderSchool(); renderRhCard(); renderMarkets();
   const all=jobRows(), tk=todayKey();
   const appsToday=all.filter(isToday).length, goal=Object.values(TARGETS).reduce((a,b)=>a+b,0);
   const interviews=all.filter(a=>a.status==="Interview Scheduled").length;
@@ -1449,7 +1445,6 @@ function lifeSections(){
   const tk=todayKey();
   return [
     {id:"faith",name:"Faith",icon:"🕌",ring:true,items:faithItems(tk)},
-    {id:"venture",name:venture().name,icon:"💼",items:[STUDY]},
     {id:"training",name:"Training",icon:"🥋",cal:true,items:trainingToday(),
       rest:"Rest day. No sessions on the plan."},
     {id:"body",name:"Body",icon:"🧴",items:bodyItems(tk)},
@@ -1483,7 +1478,6 @@ function dailyLeftBits(){
   faithItems(tk).filter(([k])=>!isPrayer(k)&&!dd[k]).forEach(([,n])=>bits.push(n.split(" · ")[0]));
   const calls=FAMILY.filter(([k])=>!familyCovered(k,tk)).map(([,n])=>n);
   if(calls.length) bits.push(`call ${calls.join(" and ")}`);
-  if(!dd.study) bits.push("sales study");
   trainingToday().filter(([k])=>!dd[k]).forEach(([,n])=>bits.push(n));
   bodyItems(tk).filter(([k])=>!dd[k]).forEach(([k,n])=>bits.push(k==="sleep"?"sleep check":n.split(" · ")[0].toLowerCase()));
   mindItems().forEach(([k,n])=>{ if(!dd[k]) bits.push(n.split(":")[0].toLowerCase()); });
@@ -1525,7 +1519,7 @@ function renderDaily(){
       <div class="lhead"><span class="lname">${sec.icon} ${esc(sec.name)}</span><span class="lpct">${pct==null?"":complete?"Done ✓":pct+"%"}</span></div>
       ${pct!=null?`<div class="lifebar"><span style="width:${pct}%"></span></div>`:""}
       ${body}
-      ${["faith","venture","training","body","mind","family"].includes(sec.id)?perfLine(sec.id):""}</div>`;
+      ${["faith","training","body","mind","family"].includes(sec.id)?perfLine(sec.id):""}</div>`;
   }).join("");
   const msg=overall>=100?"Every daily number hit. That's the whole job. 💯"
     :overall>=75?"Almost there. Finish strong.":overall>=40?"Good momentum, keep it going."
@@ -1539,10 +1533,10 @@ function renderDaily(){
 
 /* ==================================================================
    The system. Score only inputs you control, never outcomes.
-   Daily and weekly lead measures, one venture under a 90-day lock,
-   a four-number Sunday review, and the 12-month destination.
+   Daily and weekly lead measures, a four-number Sunday review, and
+   the 12-month destination.
    ================================================================== */
-const QURAN=["quran","Quran · 10 min"], JUMMAH=["jummah","Jummah"], STUDY=["study","Sales study · 30 min"];
+const QURAN=["quran","Quran · 10 min"], JUMMAH=["jummah","Jummah"];
 // New lead measures start counting the day the system went live, so they
 // never drag down scores for days before they existed.
 function systemStart(){ return (OS.settings&&OS.settings.systemStart)||todayKey(); }
@@ -1598,12 +1592,6 @@ function heardCalls(l){
   return FAMILY.map(([k])=>k).filter(k=>both||(k==="callMom"?MOM_RE:DAD_RE).test(l));
 }
 function callNames(keys){ return keys.map(k=>FAMILY.find(([x])=>x===k)[1]).join(" and "); }
-function venture(){
-  if(!OS.venture||typeof OS.venture!=="object"||Array.isArray(OS.venture))
-    OS.venture={name:"Onset Listings",lockStart:systemStart(),customers:[],later:[]};
-  const v=OS.venture; v.customers=v.customers||[]; v.later=v.later||[]; v.lockStart=v.lockStart||systemStart();
-  return v; }
-function lockDay(){ return Math.max(1,Math.min(90,Math.floor((Date.parse(todayKey())-Date.parse(venture().lockStart))/86400000)+1)); }
 function setWeekly(k,val,back=0){
   if(!OS.weekly||Array.isArray(OS.weekly)) OS.weekly={};
   const wk=weekDates(back)[0], w=OS.weekly[wk]=OS.weekly[wk]||{};
@@ -1646,25 +1634,6 @@ function renderWeek(){
     <button class="rowbtn" data-go-review style="margin-top:6px;text-transform:none;letter-spacing:0">
       ${s.review?"✓ Sunday review done":"Sunday review →"}</button>`;
 }
-function renderVenture(){
-  const box=$("ventureBox"); if(!box) return;
-  const keep={}; ["data-cust-in","data-later-in"].forEach(a=>{ const el=document.querySelector(`[${a}]`);
-    if(el) keep[a]={v:el.value,f:document.activeElement===el}; });
-  const v=venture(), n=v.customers.length;
-  box.innerHTML=`<h3>💼 ${esc(v.name)} <button class="rowbtn" data-v-rename title="Rename or switch venture" style="padding:1px 7px">✎</button>
-      <span style="float:right;text-transform:none;letter-spacing:0">Day ${lockDay()} of 90 ${n<3?"🔒":"🔓"}</span></h3>
-    <div class="areahead">Paying customers · ${n}/3</div>
-    <div class="chiplist">${v.customers.map(c=>`<span class="tagpill ok">${esc(c.name)} <span class="x" data-cust-del="${c.id}" title="Remove">✕</span></span>`).join("")}</div>
-    <div class="tkadd"><input data-cust-in placeholder="Customer name" style="flex:1"/><button class="rowbtn" data-cust-add>Add</button></div>
-    <div class="areahead">Later · ${v.later.length} parked</div>
-    <div class="tkadd"><input data-later-in placeholder="New business idea? Park it here and close it." style="flex:1"/><button class="rowbtn" data-later-add>Park</button></div>
-    ${v.later.length?`<details><summary class="muted" style="cursor:pointer;font-size:12px">Open the Later list</summary>
-      ${v.later.slice().reverse().map(i=>`<div class="trow"><div class="tt">${esc(i.text)}<div class="sub">${i.date}</div></div>
-        <span class="x" data-later-del="${i.id}">✕</span></div>`).join("")}</details>`:""}
-    <div class="usage-note">${n<3?"One venture until three paying customers. New ideas wait in Later.":"Three paying customers. The lock is lifted."}</div>`;
-  Object.entries(keep).forEach(([a,k])=>{ const el=document.querySelector(`[${a}]`); if(el){ el.value=k.v; if(k.f) el.focus(); } });
-}
-
 /* ---- Scoreboard tab ---- */
 let reviewBack=0;
 function cwText(cw){ return cw?`${cw.done}/${cw.total}`:"—"; }
@@ -1713,7 +1682,7 @@ function pctOver(days,fn){ let done=0,tot=0; days.forEach(dk=>{ const r=fn(dk); 
   return tot?Math.round(100*done/tot):null; }
 function renderDest(){
   const box=$("destBox"); if(!box) return;
-  const D=dest(), v=venture(), start=systemStart();
+  const D=dest(), start=systemStart();
   const last30=Array.from({length:30},(_,i)=>dkOffset(i));
   const prayer30=pctOver(last30,dk=>[PRAYERS.filter(([k])=>((OS.daily||{})[dk]||{})[k]).length,5]);
   const quran=pctOver(last30.filter(dk=>dk>=start),dk=>[((OS.daily||{})[dk]||{}).quran?1:0,1]);
@@ -1738,8 +1707,6 @@ function renderDest(){
     <div class="mrow"><div class="ml">No-gi competitions</div><div style="flex:1"></div>
       <button class="rowbtn" data-comp="-1">−</button><div class="mval">${D.comps||0}/2</div><button class="rowbtn" data-comp="1">+1</button></div>
     ${row("4 martial arts + 3 lifts",bodyWeeks,4,`${bodyWeeks}/4 wks`)}
-    <div class="areahead">Money</div>
-    ${row("Paying customers",v.customers.length,3,`${v.customers.length}/3`)}
     <div class="areahead">Degree</div>
     ${cw&&cw.total?row("Assignments done so far",cw.done,cw.total,`${cw.done}/${cw.total}`):""}
     ${chk("capstone","Capstone finished")}${chk("graduated",`Graduated${grad>0?` · about ${grad} days to May 2027`:""}`)}
@@ -1754,67 +1721,38 @@ function renderDest(){
 }
 const MILESTONES=[
   {label:"Now → December 2026",end:"2026-12-31",items:[
-    ["venture","One venture only"],["auto:customers","First 3 paying clients",3],
     ["fall","Fall semester finished clean"]]},
   {label:"January → April 2027",end:"2027-04-30",items:[
-    ["revenue","$1–2k a month"],["systematize","Repeated parts systematized"],["capstone","Capstone delivered"]]},
+    ["capstone","Capstone delivered"]]},
   {label:"May 2027",end:"2027-05-31",items:[
-    ["graduated","Graduate"],["decided","Decide deliberately: a job as runway, or full time on the business"]]},
+    ["graduated","Graduate"]]},
   {label:"Summer 2027",end:"2027-08-31",items:[
     ["trip","First trip to your target base, with a real plan"],["drone","Talk to people on the ground about the drone opportunity"]]},
 ];
 function renderMilestones(){
   const box=$("milestoneBox"); if(!box) return;
-  const D=dest(), v=venture(), tk=todayKey();
+  const D=dest(), tk=todayKey();
   const cur=MILESTONES.findIndex(q=>q.end>=tk);
-  const auto={customers:v.customers.length};
   box.innerHTML=`<h3>🗺 Milestones to graduation</h3>`+MILESTONES.map((q,i)=>{
     const now=i===cur, past=i<cur;
     return `<div class="mstone ${now?"now":""} ${past?"past":""}"><div class="mslbl">${q.label}${now?' <span class="tagpill ok" style="font-size:10px">now</span>':""}</div>`+
-      q.items.map(([k,label,max])=>{
-        if(k==="venture") return `<div class="muted" style="font-size:12.5px;padding:3px 0">${esc(v.name)} only. No second venture.</div>`;
-        if(k.startsWith("auto:")){ const val=auto[k.slice(5)];
-          return `<div class="mrow"><div class="ml" style="flex:0 0 190px;width:190px">${label}</div>
-            <div class="mbar"><span style="width:${Math.min(100,Math.round(100*val/max))}%"></span></div>
-            <div class="mval">${val.toLocaleString()}</div></div>`; }
+      q.items.map(([k,label])=>{
         return `<label class="lchk ${D[k]?"on":""}"><input type="checkbox" data-dest="${k}" ${D[k]?"checked":""}/><span class="lbl">${label}</span></label>`;
       }).join("")+`</div>`;
   }).join("");
 }
 function renderRules(){
   const box=$("rulesBox"); if(!box) return;
-  const v=venture(), n=v.customers.length;
-  box.innerHTML=`<h3>🛡 The rules that protect the system</h3>
+  box.innerHTML=`<h3>🛡 The rule that protects the system</h3>
     <ol class="rules">
-      <li><b>The 90-day lock.</b> One venture. Until it has three paying customers, you don't start, plan or research a new idea. It goes in Later.
-        <div class="muted" style="font-size:12px">Day ${lockDay()} of 90 · ${n}/3 customers · ${v.later.length} idea${v.later.length===1?"":"s"} parked</div></li>
       <li><b>Faith, training and sleep are never traded for work.</b> A system that burns them collapses in a month.</li>
-    </ol>
-    <div class="areahead">The money rule</div>
-    <div style="font-size:13px;line-height:1.6">Keep the emergency cushion untouched. Spend only on things that put you in front of customers, never on more tools or more building. Once there's revenue, a fixed percentage of every month's profit goes into long-term investments before any of it is spent.</div>
-    <div class="usage-note">Get proper financial guidance before making real investment decisions.</div>`;
+    </ol>`;
 }
 function renderScoreboard(){ renderReview(); renderDest(); renderMilestones(); renderRules(); renderBlocks(); }
 
 document.addEventListener("click",e=>{
   const wb=e.target.closest("[data-weekly]"); if(wb){ setWeekly(wb.dataset.weekly,wb.checked); osSave(); renderOS(); return; }
   if(e.target.closest("[data-go-review]")){ reviewBack=0; switchTab("score"); return; }
-  if(e.target.closest("[data-v-rename]")){ const v=venture();
-    const n=prompt("Which venture gets the 90 days?",v.name); if(!n||!n.trim()||n.trim()===v.name) return;
-    v.name=n.trim();
-    if(confirm("Restart the 90-day lock from today for this venture?")) v.lockStart=todayKey();
-    osSave(); renderOS(); return; }
-  if(e.target.closest("[data-cust-add]")){ const i=document.querySelector("[data-cust-in]"), n=i&&i.value.trim();
-    if(!n){ toast("Type the customer's name"); return; }
-    const v=venture(); v.customers.push({id:uid(),name:n,date:todayKey()}); i.value="";
-    osSave(); renderOS();
-    toast(v.customers.length===3?"Three paying customers. The lock lifts. 🔓":`Paying customer #${v.customers.length}. 🎉`); return; }
-  const cd=e.target.closest("[data-cust-del]"); if(cd){ const v=venture();
-    v.customers=v.customers.filter(c=>c.id!==cd.dataset.custDel); osSave(); renderOS(); return; }
-  if(e.target.closest("[data-later-add]")){ const i=document.querySelector("[data-later-in]");
-    if(parkIdea(i&&i.value)){ i.value=""; osSave(); renderOS(); toast("Parked in Later. Back to the one venture. 🔒"); } return; }
-  const ld=e.target.closest("[data-later-del]"); if(ld){ const v=venture();
-    v.later=v.later.filter(x=>x.id!==ld.dataset.laterDel); osSave(); renderOS(); return; }
   if(e.target.closest("[data-review-save]")){
     const s=weekStatsFor(reviewBack), note=(document.querySelector("[data-review-note]")||{}).value||"";
     if(!OS.weekly||Array.isArray(OS.weekly)) OS.weekly={};
@@ -1835,8 +1773,6 @@ document.addEventListener("change",e=>{
 });
 document.addEventListener("keydown",e=>{
   if(e.key!=="Enter"||!e.target.matches) return;
-  if(e.target.matches("[data-cust-in]")){ const b=document.querySelector("[data-cust-add]"); if(b) b.click(); }
-  if(e.target.matches("[data-later-in]")){ const b=document.querySelector("[data-later-add]"); if(b) b.click(); }
   if(e.target.matches("[data-review-note]")){ const b=document.querySelector("[data-review-save]"); if(b) b.click(); }
 });
 
@@ -1958,11 +1894,6 @@ function parseWhen(v){
     .replace(/\s{2,}/g," ").trim();
   return {due,time,title};
 }
-function parkIdea(text){
-  text=(text||"").trim(); if(!text) return false;
-  venture().later.push({id:uid(),text,date:todayKey()});
-  return true;
-}
 function runCmd(v){
   track("act:cmd");
   const l=v.toLowerCase().trim();
@@ -1971,8 +1902,6 @@ function runCmd(v){
   if((m=pref("goal:"))||(m=pref("goal "))){ $("gTitle").value=m; switchTab("goals"); createGoal(); return; }
   if((m=pref("find "))||(m=pref("search "))||(m=pref("?"))){
     switchTab("apps"); $("search").value=m; searchTerm=m.toLowerCase(); render(); toast(`Searching "${m}"`); return; }
-  if((m=pref("later:"))!==null||(m=pref("idea:"))!==null){
-    if(parkIdea(m)){ osSave(); renderOS(); toast("Parked in Later. Back to the one venture. 🔒"); } return; }
   if(["review","weekly review","sunday review","scoreboard"].includes(l)){ switchTab("score"); return; }
   if((m=pref("mind:"))){ OS.settings.mindItems=[["lesson","Language lesson"],["immersion",m]];
     osSave(); renderOS(); toast(`Mind item set: ${m}`); return; }
@@ -2168,10 +2097,6 @@ function dayScoreFor(kind,dk){
     if(d.training&&done<sch.length) done++;
     return {done,total:sch.length};
   }
-  if(kind==="venture"){   // the venture's daily input is the sales study block
-    if(dk<systemStart()) return null;
-    return {done:d.study?1:0,total:1};
-  }
   if(kind==="family"){    // each parent counts once they were called within the last four days
     if(dk<familyStart()) return null;
     return {done:FAMILY.filter(([k])=>familyCovered(k,dk)).length,total:FAMILY.length};
@@ -2209,7 +2134,7 @@ let dayFix=null; // {kind, dk}
 function fixDayEditor(kind){
   const dk=dayFix.dk, d=(OS.daily||{})[dk]||{};
   const items=kind==="training"?scheduledFor(dk):kind==="faith"?faithItems(dk)
-    :kind==="body"?bodyItems(dk):kind==="venture"?[STUDY]
+    :kind==="body"?bodyItems(dk)
     :kind==="family"?FAMILY.map(([k,n])=>[k,"Called "+n]):mindItems();
   const label=new Date(dk+"T12:00:00").toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
   const canFwd=dk<todayKey();
@@ -3066,7 +2991,7 @@ function renderFinSubs(){
       ${subs.map(s=>`<div class="trow" style="padding:5px 2px"><div class="tt">${esc(s.name)}
           <div class="sub">$${s.amount.toLocaleString()} ${s.cadence}${s.next?` · next about ${fmtShortDate(s.next)}`:""}</div></div>
         <span class="pill2">$${s.monthly.toLocaleString()}/mo</span></div>`).join("")}
-      <div class="usage-note">Found from repeat charges at a steady cadence. Anything that stopped charging is treated as cancelled. The money rule: keep only what puts you in front of customers.</div>`
+      <div class="usage-note">Found from repeat charges at a steady cadence. Anything that stopped charging is treated as cancelled.</div>`
     :`<p class="muted" style="font-size:13px">No recurring charges found in the imported range. A longer export (three months or more) makes this sharper.</p>`);
 }
 function renderFinGoals(){
@@ -3571,8 +3496,8 @@ const calState={write:false,syncing:false,pending:false,connecting:false,last:0,
 // Shown when Google says the Calendar API is switched off for the user's Cloud project.
 function calErrLink(){ return calState.errUrl?`<a class="rowbtn" href="${esc(calState.errUrl)}" target="_blank" rel="noopener" style="text-transform:none;letter-spacing:0;text-decoration:none">Enable Calendar API ↗</a>`:""; }
 const BLOCK_DEFAULTS=[
-  {key:"morning",title:"Quran + sales study",days:["MO","TU","WE","TH","FR"],start:"07:00",mins:40,enabled:true,
-    hint:"Fajr, then Quran, then 30 minutes of sales study. The block nobody can take."},
+  {key:"morning",title:"Fajr + Quran",days:["MO","TU","WE","TH","FR"],start:"07:00",mins:15,enabled:true,
+    hint:"Fajr, then ten minutes of Quran. The block nobody can take."},
   {key:"review",title:"Sunday review · 4 numbers + 1 line",days:["SU"],start:"20:00",mins:30,enabled:true,
     hint:"Thirty minutes, every Sunday."}];
 // Blocks that no longer exist. Each push sends them switched off, which takes them off Google.
@@ -3714,7 +3639,7 @@ async function calStatusCheck(){
 // Once after an update: blocks already on the calendar get their new titles, and
 // retired ones (the midday outreach block) come off. Blocks you never pushed stay off.
 async function migrateBlocks(){
-  if((OS.settings.blocksVer||0)>=2) return;
+  if((OS.settings.blocksVer||0)>=3) return;
   const on=OS.settings.blocksOn||{};
   const live=blocksCfg().filter(b=>on[b.key]).map(b=>({...b,enabled:true}));
   const gone=retiredBlocks().filter(b=>on[b.key]);
@@ -3727,7 +3652,7 @@ async function migrateBlocks(){
     OS.settings.blocksOn={...on,...(j.blocks||{})};
     if(gone.length) toast("The midday outreach block is off your calendar.");
   }
-  OS.settings.blocksVer=2; osSave();
+  OS.settings.blocksVer=3; osSave();
 }
 
 /* ---- Markets: BTC, SOL, S&P 500 with sparkline graphs ---- */
@@ -3863,8 +3788,6 @@ function localIntent(t){
     return null;
   }
   const acted=[];
-  const lp=t.match(/^\s*(?:later|new idea|idea)\s*[:\-]\s*(.+)$/i);
-  if(lp){ parkIdea(lp[1]); acted.push("that idea parked in Later"); }
   // cash spending: "spent 12 on lunch"
   const sm=l.match(/\bspent\D{0,10}?(\d+(?:\.\d+)?)(?:\s*(?:dollars?|bucks?))?(?:\s*(?:on|for)\s+([a-z ]{2,30}))?/);
   if(sm){ const cat=guessCat(sm[2]||"");
@@ -3876,8 +3799,6 @@ function localIntent(t){
   else PRAYERS.forEach(([k,n])=>{ if(PRAYER_HEARD[k].test(l)){ checkDaily(k); acted.push(n); } });
   if(/\b(quran|qur'?an|koran)\b/.test(l)){ checkDaily("quran"); acted.push("Quran"); }
   if(/\b(jumm?ah|juma|friday prayer)\b/.test(l)){ checkDaily("jummah"); acted.push("Jummah"); }
-  if(/(sales|selling|distribution) (study|studied|reading|book|course)|stud(y|ied) (sales|selling|distribution)/.test(l)){
-    checkDaily("study"); acted.push("sales study"); }
   const sl=l.match(/\bslept\s+(\d{1,2}(?:\.\d)?)|(\d{1,2}(?:\.\d)?)\s+hours? of sleep|\bgot\s+(\d{1,2}(?:\.\d)?)\s+hours?/);
   if(sl){ const h=+(sl[1]||sl[2]||sl[3]);
     if(h>=7){ checkDaily("sleep"); acted.push(`${h} hours of sleep`); } else acted.push(`${h} hours of sleep, short of seven`); }
@@ -3901,14 +3822,13 @@ function localIntent(t){
   return `Got it: ${acted.join(", and ")}. `+(bits.length?`Still open: ${bits.slice(0,3).join(", ")}.`:`And that's every number for today. Perfect day.`);
 }
 function voiceState(){
-  const dd=dayChecks(), all=jobRows(), tk=todayKey(), w=weekStatsFor(0), v=venture();
+  const dd=dayChecks(), all=jobRows(), tk=todayKey(), w=weekStatsFor(0);
   return { prayersLeft:PRAYERS.filter(([k])=>!dd[k]).map(([,n])=>n),
-    leadMeasuresToday:{quran:!!dd.quran,salesStudy:!!dd.study,sleep7plus:!!dd.sleep},
+    leadMeasuresToday:{quran:!!dd.quran,sleep7plus:!!dd.sleep},
     thisWeek:{martialArts:`${w.martial}/4`,lifts:`${w.lifts}/3`,callsWithMom:w.mom,callsWithDad:w.dad,
       socialEvening:w.social,sundayReviewDone:!!w.review},
     callsHome:{everyDays:FAMILY_EVERY,...Object.fromEntries(FAMILY.map(([k,n])=>{ const s=familyStatus(k);
       return [n.toLowerCase(),{lastCallDaysAgo:s.ago??null,status:s.text}]; }))},
-    venture:{name:v.name,lockDay:lockDay(),payingCustomers:v.customers.length,parkedIdeas:v.later.length},
     trainingLeft:trainingToday().filter(([k])=>!dd[k]).map(([,n])=>n),
     mindLeft:mindItems().filter(([k])=>!dd[k]).map(([,n])=>n),
     bodyLeft:bodyItems(tk).filter(([k])=>!dd[k]).map(([,n])=>n),
@@ -3931,7 +3851,7 @@ const AI_ACTIONS={
   check_prayer:a=>{ if(PRAYERS.some(([k])=>k===a.key)) checkDaily(a.key); },
   check_training:a=>{ if(["bjj","muaythai","training","lift"].includes(a.key)){ checkDaily(a.key); markTrainingTask(a.key); } },
   check_body:a=>{ if(["sleep",...BODY.map(([k])=>k)].includes(a.key)) checkDaily(a.key); },
-  check_system:a=>{ if(["quran","study","jummah"].includes(a.key)) checkDaily(a.key);
+  check_system:a=>{ if(["quran","jummah"].includes(a.key)) checkDaily(a.key);
     else if(a.key==="social") setWeekly("social",true); },
   log_call:a=>{ const who=String(a.key||"").toLowerCase();
     FAMILY.forEach(([k,n])=>{ if(who==="both"||who===n.toLowerCase()) checkDaily(k); }); },
