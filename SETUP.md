@@ -58,7 +58,7 @@ Useful flags: `--days 7` (wider lookback), `--no-ai` (skip Claude).
 Historical notes on the original Gmail-fed dashboard (see SARAH.md for the current app):
 
 - **Stats header** — totals per status, response rate, follow-up count.
-- **Targets by region** — progress bars vs. your `targets`.
+- **Daily goal** — 10 applications a day: 8 in the US, 2 outside it.
 - **Filters** — status chips, search, sort, a "Follow-up" view for applications
   with no response in N days, and a "show archived" toggle.
 - **Edit any row** — change status/country, edit the note, or archive a

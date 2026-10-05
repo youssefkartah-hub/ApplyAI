@@ -78,11 +78,12 @@ One overall percentage (also the header's **day %**) and a card per area, each w
 
 - **🕌 Faith** — five prayers on the ring, then Quran (10 min). On Fridays, Jummah.
 - **🥋 Training** — today's sessions from the weekly plan.
-- **🧴 Body** — slept 7+ hours, creatine, skincare.
-- **🧠 Mind** — language lesson and immersion.
+- **🧴 Body** — slept 7+ hours, creatine.
+- **🧠 Mind** — immersion (one episode or podcast in your target language).
 - **👪 Family** — a call with Mom and a call with Dad, each at least once every four days. Tick a parent the day you call; the row says when the next call is due ("called today · next Tue", "due today", "2 days overdue"). A parent called in the last four days counts as done, so the card stays green between calls and only asks for something when a call is actually due. Calling Monday covers you through Thursday; Friday is due. Click a week dot to log a call you forgot to tick.
+- **💼 Applications** — 10 a day: **8 in the US** and **2 outside the US** (any other country). Counted live from the Notion tracker, so there is nothing to tick. Extra US applications don't cover the two outside ones. Week dots show each day's count on hover; to fix a day, fix the date in Notion.
 
-New measures only count from the day they went live (the system on its start date, calls home from October 2026), so older days aren't dragged down retroactively.
+New measures only count from the day they went live (the system on its start date, calls home and the applications goal from October 2026), so older days aren't dragged down retroactively.
 
 ### 6.3 This week
 
@@ -141,8 +142,8 @@ The dashboard polls on your chosen interval (default 60 s) with a countdown, fla
 ### 9.2 Job Insights tab
 
 - **Stat tiles**: total all-time, applied today vs the 20/day goal, per-status counts, response rate, and how many need follow-up.
-- **Daily goal by region**: progress bars for USA 10, Australia 3, UK 3, UAE 3, Europe 1 — resets every day.
-- **Today's pace and what to do about it**: a pace bar, week-over-week comparison, and concrete recommendations — how many more to send, which regions are furthest behind, which role keywords are earning you interviews ("Lean into *propulsion* roles"), which get auto-rejected fastest ("Tailor or skip *analyst* roles"), and how many applications have been quiet over a week.
+- **Daily goal**: 10 applications a day, two progress bars: USA 8 and outside the US 2 (with the countries you hit listed under it) — resets every day. Applications with no country count as outside the US.
+- **Today's pace and what to do about it**: a pace bar, week-over-week comparison, and concrete recommendations — how many more to send, split into US and outside the US, which role keywords are earning you interviews ("Lean into *propulsion* roles"), which get auto-rejected fastest ("Tailor or skip *analyst* roles"), and how many applications have been quiet over a week.
 - **Follow-up worklist**: every application silent past your threshold (configurable 5/7/10/14 days), sorted oldest first, each with a **Copy email** button that puts a ready-to-send, personalized follow-up email on your clipboard.
 - **Pipeline funnel**: Applied → Interviewed → Offers with conversion percentages.
 - **Applications per week**: a 10-week bar chart.

@@ -182,6 +182,11 @@ deliberately minimal: show up and check the box, exactly like prayers.
 - **Hardening.** The server listens on 127.0.0.1 only and rejects foreign Host
   headers (DNS rebinding); new key files are 0600, gitignored, never served.
 
+- **Trimmed and retargeted.** Skincare (Body) and the language lesson (Mind)
+  are gone; immersion stays. The daily application goal is now 10: 8 in the US
+  and 2 outside it, shown in Job Insights and scored as a 💼 Applications card
+  in Today's numbers, counted live from the Notion tracker.
+
 ## Later ideas (unscheduled)
 
 - Journal, spaced-repetition flashcards, richer language stats, deeper knowledge

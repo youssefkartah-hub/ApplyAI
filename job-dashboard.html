@@ -621,7 +621,14 @@ const STATUS_META={"Applied":{cls:"Applied"},"Interview Scheduled":{cls:"Intervi
   "Offer Received":{cls:"Offer"},"Rejected":{cls:"Rejected"},"Withdrawn":{cls:"Other"}};
 const STATUS_OPTS=["Applied","Interview Scheduled","Offer Received","Rejected","Withdrawn"];
 const FLAGS={USA:"🇺🇸",UK:"🇬🇧",UAE:"🇦🇪",Australia:"🇦🇺",Europe:"🇪🇺",Other:"🌐"};
-const TARGETS={USA:10,Australia:3,UK:3,UAE:3,Europe:1};
+// daily application goal: 10 a day, 8 in the US and 2 anywhere outside it
+const APP_GOAL={USA:8,Outside:2}, APP_GOAL_TOTAL=APP_GOAL.USA+APP_GOAL.Outside;
+const APP_GOAL_NAMES={USA:"USA",Outside:"Outside the US"};
+function appBucket(a){ return a.country==="USA"?"USA":"Outside"; }
+function appsByBucket(list){ const o={USA:0,Outside:0}; list.forEach(a=>o[appBucket(a)]++); return o; }
+// what's still owed today per bucket; extra US apps don't cover the outside ones
+function appsLeft(list){ const h=appsByBucket(list);
+  return {USA:Math.max(0,APP_GOAL.USA-h.USA),Outside:Math.max(0,APP_GOAL.Outside-h.Outside)}; }
 
 let rowsData=[], overrides=JSON.parse(localStorage.getItem("jd_overrides")||"{}");
 let activeFilter="all", searchTerm="", sortKey="date", sortDir=-1;
@@ -684,6 +691,8 @@ async function loadData(flash){
     $("setup").style.display="none"; $("main").style.display="grid";
     if(flash) flashDot();
     render();
+    // Today's applications card reads the same rows, so refresh it with them
+    try{ if(typeof renderDaily==="function") renderDaily(); }catch(_){}
   }catch(e){
     setConnected(false);
     showSetup({error:"server",message:"Can't reach the local app. Make sure notion_server.py is running, then refresh."});
@@ -718,11 +727,11 @@ function render(){
   const heard=all.filter(a=>a.status!=="Applied").length;
   const rate=all.length?Math.round(100*heard/all.length):0;
   const fu=all.filter(isFollowUp).length;
-  const appliedToday=all.filter(isToday).length;
-  const dailyGoal=Object.values(TARGETS).reduce((a,b)=>a+b,0);
+  const appliedToday=all.filter(isToday).length, todayLeft=appsLeft(all.filter(isToday));
+  const goalMet=!todayLeft.USA&&!todayLeft.Outside;
   $("stats").innerHTML=[
     {n:all.length,l:"Total (all time)",cls:""},
-    {n:`${appliedToday}/${dailyGoal}`,l:"Applied today",cls:appliedToday>=dailyGoal?"offer":"applied"},
+    {n:`${appliedToday}/${APP_GOAL_TOTAL}`,l:"Applied today",cls:goalMet?"offer":"applied"},
     {n:c("Applied"),l:"Applied",cls:"applied"},
     {n:c("Interview Scheduled"),l:"Interviews",cls:"interview"},{n:c("Offer Received"),l:"Offers",cls:"offer"},
     {n:c("Rejected"),l:"Rejected",cls:"rejected"},{n:rate+"%",l:"Response rate",cls:""},
@@ -735,10 +744,14 @@ function render(){
     (hidden>0?` (+${hidden} archived)`:"");
 
   const todays=all.filter(isToday);
-  $("targetsBox").innerHTML=`<h3>Daily goal by region · today (${todayStr()}) · resets each day</h3><div class="tgrid">`+Object.keys(TARGETS).map(k=>{
-    const have=todays.filter(a=>a.country===k).length, goal=TARGETS[k], pct=goal?Math.min(100,Math.round(100*have/goal)):0;
-    return `<div class="tcell"><div class="tlabel"><span>${FLAGS[k]||""} ${k}</span><span class="muted">${have}/${goal}</span></div>
-      <div class="bar"><span class="${have>=goal?'done':''}" style="width:${pct}%"></span></div></div>`; }).join("")+`</div>`;
+  const tHave=appsByBucket(todays), abroad={};
+  todays.filter(a=>appBucket(a)==="Outside").forEach(a=>abroad[a.country]=(abroad[a.country]||0)+1);
+  const abroadTxt=Object.entries(abroad).map(([k,n])=>`${FLAGS[k]||""} ${esc(k)} ${n}`).join(" · ");
+  $("targetsBox").innerHTML=`<h3>Daily goal · ${APP_GOAL_TOTAL} applications: ${APP_GOAL.USA} in the US, ${APP_GOAL.Outside} outside · today (${todayStr()}) · resets each day</h3><div class="tgrid">`+Object.keys(APP_GOAL).map(k=>{
+    const have=tHave[k], goal=APP_GOAL[k], pct=Math.min(100,Math.round(100*have/goal));
+    return `<div class="tcell"><div class="tlabel"><span>${k==="USA"?FLAGS.USA:"🌍"} ${APP_GOAL_NAMES[k]}</span><span class="muted">${have}/${goal}</span></div>
+      <div class="bar"><span class="${have>=goal?'done':''}" style="width:${pct}%"></span></div>
+      ${k==="Outside"&&abroadTxt?`<div class="muted" style="font-size:11px;margin-top:3px">${abroadTxt}</div>`:""}</div>`; }).join("")+`</div>`;
 
   renderPace(all);
   renderFollowups(all);
@@ -844,10 +857,8 @@ function renderInsights(all){
 
 function renderPace(all){
   const todays=all.filter(isToday);
-  const dailyGoal=Object.values(TARGETS).reduce((a,b)=>a+b,0);
-  const got=todays.length, remaining=Math.max(0,dailyGoal-got);
-  const behind=Object.keys(TARGETS).map(k=>({k,left:Math.max(0,TARGETS[k]-todays.filter(a=>a.country===k).length)}))
-    .filter(r=>r.left>0).sort((a,b)=>b.left-a.left);
+  const dailyGoal=APP_GOAL_TOTAL, left=appsLeft(todays);
+  const got=todays.length, remaining=left.USA+left.Outside;
   const now=Date.now(), wk=7*86400000;
   const thisWeek=all.filter(a=>a.date&&now-a.date<wk).length;
   const lastWeek=all.filter(a=>a.date&&now-a.date>=wk&&now-a.date<2*wk).length;
@@ -861,17 +872,17 @@ function renderPace(all){
   const worst=Object.entries(kw).filter(([,o])=>o.q>0).sort((a,b)=>b[1].q-a[1].q)[0];
   const silent=all.filter(a=>a.status==="Applied"&&a.date&&daysSince(a.date)>=7).length;
   const recs=[];
-  recs.push(remaining>0?`You need <b>${remaining}</b> more application${remaining>1?"s":""} to hit today\'s goal. You\'re at ${got} of ${dailyGoal}.`
-    :`Daily goal reached, <b>${got}/${dailyGoal}</b> today. 🎉`);
-  if(behind.length) recs.push(`Focus regions today: ${behind.slice(0,3).map(r=>`<b>${r.k}</b> (${r.left})`).join(", ")}.`);
+  const owed=[left.USA?`<b>${left.USA}</b> in the US`:"",left.Outside?`<b>${left.Outside}</b> outside the US`:""].filter(Boolean).join(" and ");
+  recs.push(remaining>0?`You need ${owed} to hit today\'s goal of ${APP_GOAL.USA} US + ${APP_GOAL.Outside} outside. You\'re at ${got} so far.`
+    :`Daily goal reached, <b>${got}</b> today (${APP_GOAL.USA} US + ${APP_GOAL.Outside} outside covered). 🎉`);
   if(best) recs.push(`Lean into <b>${esc(best[0])}</b> roles. They get you the most interviews.`);
   if(worst) recs.push(`Tailor or skip <b>${esc(worst[0])}</b> roles. They auto reject the fastest.`);
   if(silent) recs.push(`<b>${silent}</b> application${silent>1?"s have":" has"} been quiet for over a week. Time to follow up.`);
-  const pct=Math.min(100,Math.round(100*got/dailyGoal));
+  const pct=Math.round(100*(dailyGoal-remaining)/dailyGoal);
   $("paceBox").innerHTML=`<div class="icard">
     <h3>⚡ Today's pace and what to do about it</h3>
     <div class="pacebar"><div class="pacefill" style="width:${pct}%"></div></div>
-    <div class="muted" style="margin:6px 0 10px">${got}/${dailyGoal} today · ${thisWeek} this week${wow!=null?` (${wow>=0?"+":""}${wow}% vs last week)`:""}</div>
+    <div class="muted" style="margin:6px 0 10px">${got}/${dailyGoal} today (US ${appsByBucket(todays).USA}/${APP_GOAL.USA} · outside ${appsByBucket(todays).Outside}/${APP_GOAL.Outside}) · ${thisWeek} this week${wow!=null?` (${wow>=0?"+":""}${wow}% vs last week)`:""}</div>
     <ul class="obs">${recs.map(r=>`<li>${r}</li>`).join("")}</ul></div>`;
 }
 
@@ -1120,6 +1131,7 @@ async function osLoad(){
   OS.settings=OS.settings||{};
   if(!OS.settings.systemStart){ OS.settings.systemStart=todayKey(); osSave(); }
   if(!OS.settings.familyStart){ OS.settings.familyStart=todayKey(); osSave(); }
+  if(!OS.settings.appsStart){ OS.settings.appsStart=todayKey(); osSave(); }
   if(OS.settings.theme==="light") document.documentElement.dataset.theme="light";
   renderOS();
 }
@@ -1334,7 +1346,7 @@ function addTask(title,due,time){
 function renderToday(){
   renderDaily(); renderWeek(); renderTasks(); renderAgenda(); renderSchool(); renderRhCard(); renderMarkets();
   const all=jobRows(), tk=todayKey();
-  const appsToday=all.filter(isToday).length, goal=Object.values(TARGETS).reduce((a,b)=>a+b,0);
+  const appsToday=all.filter(isToday).length, goal=APP_GOAL_TOTAL, ab=appsByBucket(all.filter(isToday));
   const interviews=all.filter(a=>a.status==="Interview Scheduled").length;
   const b=[];
   const evs=todayCalEvents(), next=evs.find(ev=>!ev.allday&&Date.parse(ev.start)>Date.now());
@@ -1347,7 +1359,7 @@ function renderToday(){
   b.push(left.length?`Still open: ${left.join(" · ")}`:"Every daily number is hit. Perfect day. 💯");
   const due=openTasks().filter(t=>t.due&&t.due<=tk).sort(byWhen);
   if(due.length) b.push(`Tasks due: <b>${due.length}</b> · first up: ${esc(due[0].title)}${due[0].time?` at ${fmtHM(due[0].time)}`:""}`);
-  b.push(`Applications <b>${appsToday}/${goal}</b> today${interviews?` · ${interviews} interview${interviews>1?"s":""} in play`:""}`);
+  b.push(`Applications <b>${appsToday}/${goal}</b> today (US ${ab.USA}/${APP_GOAL.USA} · outside ${ab.Outside}/${APP_GOAL.Outside})${interviews?` · ${interviews} interview${interviews>1?"s":""} in play`:""}`);
   if(new Date().getDay()===0&&!wk.review) b.push(`<b>Sunday review is due.</b> Four numbers and one line, on the Scoreboard.`);
   $("briefBox").innerHTML=`<h3>☀️ Your rundown
     <button class="rowbtn" data-speak style="float:right;text-transform:none;letter-spacing:0">🔊 Read it to me</button></h3>
@@ -1436,11 +1448,12 @@ function trainingToday(){
   return out;
 }
 function mindItems(){
-  const s=OS.settings&&OS.settings.mindItems;
-  if(Array.isArray(s)&&s.length) return s;
-  return [["lesson","Language lesson"],["immersion","Immersion: one episode or podcast in your target language"]];
+  // the language lesson was retired; older saved settings may still carry it
+  const s=((OS.settings&&OS.settings.mindItems)||[]).filter(it=>Array.isArray(it)&&it[0]!=="lesson");
+  if(s.length) return s;
+  return [["immersion","Immersion: one episode or podcast in your target language"]];
 }
-const BODY=[["creatine","Creatine · 5 g"],["skincare","Skincare · night routine"]];
+const BODY=[["creatine","Creatine · 5 g"]];
 function lifeSections(){
   const tk=todayKey();
   return [
@@ -1450,9 +1463,22 @@ function lifeSections(){
     {id:"body",name:"Body",icon:"🧴",items:bodyItems(tk)},
     {id:"mind",name:"Mind",icon:"🧠",items:mindItems()},
     {id:"family",name:"Family",icon:"👪",family:true,items:FAMILY},
+    {id:"apps",name:"Applications",icon:"💼",apps:true,items:APP_ITEMS},
   ];
 }
+/* ---- Applications: 10 a day, 8 in the US and 2 outside it ----
+   Counted straight from the job tracker (Notion), so there's nothing to tick.
+   Extra US applications never stand in for the two outside ones. */
+const APP_ITEMS=[["USA","Applications in the US"],["Outside","Applications outside the US"]];
+function appsStart(){ return (OS.settings&&OS.settings.appsStart)||todayKey(); }
+function appsOnDay(dk){ return jobRows().filter(a=>(a.rawDate||"").slice(0,10)===dk); }
+function appsRow(k,name,have){
+  const goal=APP_GOAL[k], ok=have>=goal;
+  return `<div class="lchk ${ok?"on":""}" style="cursor:default"><span class="lbl">${esc(name)}</span>
+    <span class="famst ${ok?"ok":have?"warn":""}">${have}/${goal}${ok?" ✓":""}</span></div>`;
+}
 function secPct(sec,d){
+  if(sec.apps){ const s=dayScoreFor("apps",todayKey()); return s?Math.round(100*s.done/s.total):null; }
   // a parent called within the last four days counts as done, whether or not it was today
   if(sec.family){ const s=dayScoreFor("family",todayKey()); return s?Math.round(100*s.done/s.total):null; }
   if(!sec.items.length) return null;
@@ -1481,6 +1507,9 @@ function dailyLeftBits(){
   trainingToday().filter(([k])=>!dd[k]).forEach(([,n])=>bits.push(n));
   bodyItems(tk).filter(([k])=>!dd[k]).forEach(([k,n])=>bits.push(k==="sleep"?"sleep check":n.split(" · ")[0].toLowerCase()));
   mindItems().forEach(([k,n])=>{ if(!dd[k]) bits.push(n.split(":")[0].toLowerCase()); });
+  const al=appsLeft(appsOnDay(tk));
+  if(al.USA) bits.push(`${al.USA} US application${al.USA>1?"s":""}`);
+  if(al.Outside) bits.push(`${al.Outside} application${al.Outside>1?"s":""} outside the US`);
   return bits;
 }
 function overallPct(){
@@ -1506,7 +1535,10 @@ function renderDaily(){
   const cards=secs.map(sec=>{
     const pct=secPct(sec,d), complete=pct===100;
     let body;
-    if(sec.family) body=FAMILY.map(([k,n])=>familyRow(k,n,d[k])).join("")+
+    if(sec.apps){ const h=appsByBucket(appsOnDay(todayKey()));
+      body=APP_ITEMS.map(([k,n])=>appsRow(k,n,h[k])).join("")+
+      `<div class="usage-note" style="margin-top:4px">${APP_GOAL_TOTAL} a day, counted live from the job tracker.</div>`; }
+    else if(sec.family) body=FAMILY.map(([k,n])=>familyRow(k,n,d[k])).join("")+
       `<div class="usage-note" style="margin-top:4px">Each of them, at least once every ${FAMILY_EVERY} days.</div>`;
     else if(!sec.items.length) body=`<p class="muted" style="font-size:12px;margin:6px 0 0">${sec.rest||"Nothing here today."}</p>`;
     else if(sec.ring){
@@ -1519,7 +1551,7 @@ function renderDaily(){
       <div class="lhead"><span class="lname">${sec.icon} ${esc(sec.name)}</span><span class="lpct">${pct==null?"":complete?"Done ✓":pct+"%"}</span></div>
       ${pct!=null?`<div class="lifebar"><span style="width:${pct}%"></span></div>`:""}
       ${body}
-      ${["faith","training","body","mind","family"].includes(sec.id)?perfLine(sec.id):""}</div>`;
+      ${["faith","training","body","mind","family","apps"].includes(sec.id)?perfLine(sec.id):""}</div>`;
   }).join("");
   const msg=overall>=100?"Every daily number hit. That's the whole job. 💯"
     :overall>=75?"Almost there. Finish strong.":overall>=40?"Good momentum, keep it going."
@@ -1903,7 +1935,7 @@ function runCmd(v){
   if((m=pref("find "))||(m=pref("search "))||(m=pref("?"))){
     switchTab("apps"); $("search").value=m; searchTerm=m.toLowerCase(); render(); toast(`Searching "${m}"`); return; }
   if(["review","weekly review","sunday review","scoreboard"].includes(l)){ switchTab("score"); return; }
-  if((m=pref("mind:"))){ OS.settings.mindItems=[["lesson","Language lesson"],["immersion",m]];
+  if((m=pref("mind:"))){ OS.settings.mindItems=[["immersion",m]];
     osSave(); renderOS(); toast(`Mind item set: ${m}`); return; }
   const calls=heardCalls(l);
   if(calls.length){ calls.forEach(k=>checkDaily(k)); osSave(); renderOS();
@@ -2097,6 +2129,11 @@ function dayScoreFor(kind,dk){
     if(d.training&&done<sch.length) done++;
     return {done,total:sch.length};
   }
+  if(kind==="apps"){      // live from the tracker; each application up to its bucket's goal counts
+    if(dk<appsStart()) return null;
+    const h=appsByBucket(appsOnDay(dk));
+    return {done:Math.min(h.USA,APP_GOAL.USA)+Math.min(h.Outside,APP_GOAL.Outside),total:APP_GOAL_TOTAL};
+  }
   if(kind==="family"){    // each parent counts once they were called within the last four days
     if(dk<familyStart()) return null;
     return {done:FAMILY.filter(([k])=>familyCovered(k,dk)).length,total:FAMILY.length};
@@ -2125,8 +2162,9 @@ function weekDots(kind){
     else if(s.done>=s.total) cls="hit";
     else if(s.done>0) cls="part";
     else cls=dk===tk?"off":"miss";
-    const canFix=dk<=tk?` data-fixday="${kind}|${dk}"`:"";
-    return `<span class="wd ${cls}"${canFix} title="${WEEK_NAMES[i]}${dk<=tk?" · click to fix":""}">${WEEK_NAMES[i][0]}</span>`;
+    const fixable=dk<=tk&&kind!=="apps", canFix=fixable?` data-fixday="${kind}|${dk}"`:"";
+    const tip=kind==="apps"&&s?` · ${s.done}/${s.total}`:"";
+    return `<span class="wd ${cls}"${canFix} title="${WEEK_NAMES[i]}${tip}${fixable?" · click to fix":""}">${WEEK_NAMES[i][0]}</span>`;
   }).join("")+`</div>`;
 }
 /* fixing a past day: click a week dot, tick what actually happened */
@@ -3809,10 +3847,8 @@ function localIntent(t){
     checkDaily("training"); markTrainingTask("training"); acted.push("training"); }
   if(/\b(lifted|lifting|hit the gym|gym session)\b/.test(l)){ checkDaily("lift"); acted.push("your lift"); }
   if(/creatine|creatin/.test(l)){ checkDaily("creatine"); acted.push("your creatine"); }
-  if(/skin ?care|face wash|washed my face|moisturi[sz]/.test(l)){ checkDaily("skincare"); acted.push("your skincare"); }
-  if(/(language lesson|my lesson|duolingo)/.test(l)){ checkDaily("lesson"); acted.push("your lesson"); }
   if(/(narcos|episode|podcast|immersion)/.test(l)&&/watch(ed)?|did|done|finish|listen/.test(l)){
-    const k=mindItems()[1]?mindItems()[1][0]:"immersion"; checkDaily(k); acted.push("your immersion time"); }
+    const k=mindItems()[0][0]; checkDaily(k); acted.push("your immersion time"); }
   const task=t.match(/(?:remind me to|add (?:a )?task(?: to)?|i need to remember to)\s+(.+)/i);
   if(task){ const w=parseWhen(task[1].trim()), nt=addTask(w.title||task[1].trim(),w.due,w.time);
     if(nt){ calSyncSoon(); acted.push(`a task for ${nt.title}`); } }
@@ -3833,7 +3869,8 @@ function voiceState(){
     mindLeft:mindItems().filter(([k])=>!dd[k]).map(([,n])=>n),
     bodyLeft:bodyItems(tk).filter(([k])=>!dd[k]).map(([,n])=>n),
     coursework:courseworkState(),
-    appsToday:all.filter(isToday).length, appsGoal:Object.values(TARGETS).reduce((a,b)=>a+b,0),
+    appsToday:all.filter(isToday).length, appsGoal:APP_GOAL_TOTAL,
+    appsTodayByRegion:{...appsByBucket(all.filter(isToday)),goal:{usa:APP_GOAL.USA,outsideUS:APP_GOAL.Outside}},
     interviewsInPlay:all.filter(a=>a.status==="Interview Scheduled").map(a=>a.company).slice(0,5),
     calendarToday:todayCalEvents().map(ev=>ev.title).slice(0,8),
     topTasks:openTasks().slice(0,6).map(t=>t.title+(t.due?` (${taskWhen(t)})`:"")),
@@ -3857,7 +3894,7 @@ const AI_ACTIONS={
     FAMILY.forEach(([k,n])=>{ if(who==="both"||who===n.toLowerCase()) checkDaily(k); }); },
   check_mind:a=>{ const keys=mindItems().map(([k])=>k);
     if(keys.includes(a.key)) checkDaily(a.key);
-    else if(a.key==="narcos") checkDaily(keys[1]||"immersion"); },
+    else if(a.key==="narcos"||a.key==="immersion") checkDaily(keys[0]); },
   log_expense:a=>{ if(+a.amount>0) logExpense(a.amount,a.key||a.title,a.title); },
   add_task:a=>{ if(!a.title) return; const w=parseWhen(a.title); addTask(w.title||a.title,w.due,w.time); calSyncSoon(); },
   complete_task:a=>{ if(!a.title) return; const l=a.title.toLowerCase();
