@@ -187,6 +187,13 @@ deliberately minimal: show up and check the box, exactly like prayers.
   and 2 outside it, shown in Job Insights and scored as a 💼 Applications card
   in Today's numbers, counted live from the Notion tracker.
 
+- **Today's list.** A sidebar on every tab: add what you want done today in
+  plain English, tick it off, push it to tomorrow; unfinished items carry over
+  marked with their day. Timed items remind you when their time comes (in-app,
+  tab title, optional pop-up). Same tasks as the command bar, voice and calendar
+  sync; it replaces the Tasks card on Today. Past calendar imports no longer
+  linger as open tasks.
+
 ## Later ideas (unscheduled)
 
 - Journal, spaced-repetition flashcards, richer language stats, deeper knowledge

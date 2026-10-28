@@ -30,13 +30,27 @@ The whole interface is a JARVIS-style HUD: deep navy background with a faint cya
 
 ---
 
-## 3. The header
+## 3. The header and today's list
 
 - **SARAH ▾** — hover over the name (or click it) and the navigation menu slides down: System (Today, Scoreboard, Goals, Docs), Career (Job Insights, Applications, Calendar, Interviews·CRM, Resume Match), Life (Courses, Train, Finance, Projects). It closes when you pick a destination, move away, or press Escape.
 - **Command bar** (top right) — one input for everything. See section 5.
 - **Live clock**, a **connection dot** (green = Notion feed live, red = offline), **day %** (today's lead measures), when data last refreshed, an auto-refresh interval picker (30s / 60s / 5m), **Refresh**, **Export CSV**, **🎤 Talk**, and the theme toggle.
 
-**Keyboard shortcuts:** `Cmd+K` focuses the command bar. Keys `1–9` jump between tabs (1 Today, 2 Scoreboard, 3 Job Insights, 4 Applications, 5 Calendar, 6 Interviews·CRM, 7 Train, 8 Finance, 9 Courses). `N` jumps to a new task. `Escape` closes menus and popups.
+**Keyboard shortcuts:** `Cmd+K` focuses the command bar. Keys `1–9` jump between tabs (1 Today, 2 Scoreboard, 3 Job Insights, 4 Applications, 5 Calendar, 6 Interviews·CRM, 7 Train, 8 Finance, 9 Courses). `N` opens today's list with the cursor in the add box. `Escape` closes menus, popups and the slide-in list.
+
+### 3.1 Today's list (right side, on every tab)
+
+A checklist for the day that stays on screen whichever tab you're on.
+
+- **Add**: type in the box and press Enter. It goes on today's list. Plain English works like the command bar: `call the bank at 3pm` sets a time, `dentist friday 10am` files it under that day instead.
+- **Reminders**: anything with a time pings you when the time comes. A message shows inside SARAH, the row turns amber, and the browser tab shows ⏰ until it's done. Click **🔔 Pop up on screen when one is due** once and they also pop up on your screen when SARAH is in the background. SARAH has to be open in a browser tab for any of this. With calendar sync on, timed items also sit on your SARAH calendar at their time (section 8).
+- **Tick it off**: click the box or anywhere on the row. Done items stay on the list, struck through, for the rest of the day, and the bar at the top fills as you go.
+- **Didn't get to it?** It stays on the list the next day, marked "from Tue", at the top. Hover a row for **Tomorrow** (push it a day) or **✕** (delete). Anything without a date sits at the bottom until it's done.
+- **🗓 From your calendar**: today's events from your calendars, in their own group so they don't crowd your list. Ones that already ended fade out.
+- **Coming up**: things with a later date, with **Today** to pull one forward. It starts collapsed; SARAH remembers which groups you leave open.
+- **Hide it** with ⟩ when you want the full width. The 📝 button at the bottom right (showing how many are left) brings it back, and so does `N`. In a narrow window it slides in from the right instead of taking a column.
+
+It's the same task list as everywhere else: tasks from the command bar, voice ("remind me to…"), Claude and calendar sync all show up here. It replaced the Tasks card that used to sit on the Today tab.
 
 ---
 
@@ -62,7 +76,7 @@ Click **🎤 Talk** and speak. Chrome transcribes you, Sarah figures out what yo
 | `review` | Opens the Scoreboard |
 | `goal: get a Boeing internship` | Jumps to Goals and generates a phased plan |
 | `find airbus` / `?spacex` | Jumps to Applications filtered to that search |
-| anything else | Becomes a task |
+| anything else | Becomes a task on today's list (section 3.1) |
 
 ---
 
@@ -70,7 +84,7 @@ Click **🎤 Talk** and speak. Chrome transcribes you, Sarah figures out what yo
 
 ### 6.1 Your next move + rundown
 
-**Your next move** is the single highest-value open task or goal action. **Your rundown** is five to seven short bullets, rebuilt live: the date and what's next on the calendar; coursework due in the next seven days and anything past due (once Canvas is connected); today's training; everything still open, by name, including a call home that's due; tasks due; applications today; and on Sundays, a reminder that the review is due.
+**Your next move** is the single highest-value open task or goal action. **Your rundown** is five to seven short bullets, rebuilt live: the date and what's next on the calendar; coursework due in the next seven days and anything past due (once Canvas is connected); today's training; everything still open, by name, including a call home that's due; how much of today's list is left and what's first up; applications today; and on Sundays, a reminder that the review is due.
 
 ### 6.2 Today's numbers — the daily lead measures
 
@@ -89,9 +103,9 @@ New measures only count from the day they went live (the system on its start dat
 
 Martial arts against 4 and lifting against 3 — coloured by pace, never red early in the week — plus a checkbox for a social evening out, and a link to the Sunday review.
 
-### 6.4 Tasks and today's schedule
+### 6.4 Today's schedule
 
-Add a task with a date and optional time; check it off; delete it. With calendar sync on, every dated task also lives on your SARAH calendar (section 8). Beside it, today's schedule from every calendar, with SARAH's own blocks tagged.
+Today's events from every calendar, with SARAH's own blocks tagged. Your tasks live in today's list on the right (section 3.1). With calendar sync on, every dated task also goes on your SARAH calendar (section 8).
 
 ### 6.5 Due soon and Robinhood
 
@@ -115,7 +129,7 @@ Bitcoin, Solana and the S&P 500 with small graphs, refreshed every minute.
 
 ## 8. Calendar (both ways)
 
-**Reading** works as before: every calendar on your account is read every 5 minutes, and today's events from your other calendars become tasks once each.
+**Reading** works as before: every calendar on your account is read every 5 minutes, and today's events from your other calendars become tasks once each (the **From your calendar** group in today's list). An event from an earlier day isn't carried over as something still to do.
 
 **Writing** is new and opt-in. Press **Connect** once and Google asks for permission to write to your calendars (one approval in the browser). From then on:
 

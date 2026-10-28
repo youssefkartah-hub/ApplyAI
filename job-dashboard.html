@@ -20,7 +20,7 @@
     background-size:auto,auto,44px 44px,44px 44px;
     color:var(--txt);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   a{color:var(--accent)}
-  .wrap{max-width:1180px;margin:0 auto;padding:24px 20px 60px}
+  .wrap{max-width:var(--wrapw);margin:0 auto;padding:24px 20px 60px}
   header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
   h1{font-size:21px;margin:0;letter-spacing:.2px;display:flex;align-items:center;gap:9px}
   .sub{color:var(--muted);font-size:12px;margin-top:2px}
@@ -82,7 +82,7 @@
   .rank li:last-child{border-bottom:none} .rank .v{color:var(--muted)}
   .pill2{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:2px 8px;margin:3px 4px 0 0;font-size:12px}
   #main{display:block}
-  .tabs{display:flex;flex-direction:column;gap:2px;position:fixed;top:66px;left:max(20px,calc(50vw - 590px));
+  .tabs{display:flex;flex-direction:column;gap:2px;position:fixed;top:66px;left:max(20px,calc(50vw - var(--wrapw)/2));
     z-index:60;width:224px;max-height:calc(100vh - 90px);overflow:auto;
     background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;
     opacity:0;transform:translateY(-14px);pointer-events:none;
@@ -384,6 +384,64 @@
   .mcell .mc{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
   .mcell .mc.up{color:var(--offer)} .mcell .mc.down{color:var(--rejected)}
   .mcell svg{width:100%;height:46px;margin-top:8px;display:block}
+  /* ===== Today's list: the sidebar on every tab ===== */
+  body{--wrapw:1180px;--sidew:292px}
+  .side{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 13px 12px;
+    display:flex;flex-direction:column;gap:9px;overflow-y:auto;overscroll-behavior:contain;
+    box-shadow:0 0 0 1px rgba(34,211,238,.04),0 10px 34px rgba(0,0,0,.4)}
+  .sidehead{display:flex;align-items:flex-start;gap:8px}
+  .sidehead h3{margin:0;font-size:13px;color:#7dd3fc;text-transform:uppercase;letter-spacing:.5px}
+  .sdate{font-size:12px;color:var(--muted)}
+  .sideleft{margin-left:auto;font-size:12px;color:var(--muted);white-space:nowrap;padding-top:1px}
+  .sideleft.alldone{color:var(--offer)}
+  .sideadd{width:100%;padding:9px 11px;border-radius:10px}
+  .sideadd:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,211,238,.15)}
+  .sidehint{font-size:11px;color:var(--muted);margin-top:-4px}
+  .srow{position:relative;display:flex;align-items:flex-start;gap:8px;padding:6px 7px;margin:1px 0;border-radius:8px;
+    border:1px solid transparent;font-size:13px;cursor:pointer;transition:background .15s,border-color .15s}
+  .srow:hover{border-color:var(--line);background:var(--panel2)}
+  .srow input{width:15px;height:15px;margin:2px 0 0;padding:0;flex:none;accent-color:var(--offer);cursor:pointer}
+  .srow .st{flex:1;min-width:0;overflow-wrap:anywhere}
+  .srow .ss{display:block;font-size:11px;color:var(--muted)}
+  .srow .ss.late{color:var(--warn)}
+  .srow.done .st{text-decoration:line-through;opacity:.55}
+  .srow.due{border-color:rgba(245,158,11,.55);background:rgba(245,158,11,.08)}
+  .srow.past{opacity:.45}
+  /* row actions float over the end of the row on hover, so titles keep the full width */
+  .sacts{position:absolute;right:5px;top:4px;display:flex;gap:2px;padding-left:14px;opacity:0;pointer-events:none;
+    background:linear-gradient(90deg,transparent,var(--panel2) 12px);transition:opacity .15s}
+  .srow:hover .sacts,.srow:focus-within .sacts{opacity:1;pointer-events:auto}
+  @media(hover:none){.sacts{position:static;opacity:1;pointer-events:auto;background:none;padding:0}}
+  .sact{background:none;border:none;padding:1px 4px;font-size:11px;color:var(--muted);border-radius:5px}
+  .sact:hover{color:var(--txt);background:var(--panel)}
+  .sgroup{border-top:1px solid var(--line);padding-top:6px;margin-top:4px}
+  .sgroup>summary{cursor:pointer;list-style:none;font-size:11px;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.6px;padding:3px 2px}
+  .sgroup>summary::-webkit-details-marker{display:none}
+  .sgroup>summary::before{content:"▸ "} .sgroup[open]>summary::before{content:"▾ "}
+  .sidetab{position:fixed;right:18px;bottom:18px;z-index:44;display:none;align-items:center;gap:6px;
+    border-radius:999px;padding:8px 14px;background:var(--panel);border:1px solid rgba(34,211,238,.45);
+    box-shadow:0 10px 30px rgba(0,0,0,.45)}
+  .sidetab b:empty{display:none}
+  #sideFoot{display:flex;flex-direction:column;gap:6px}
+  .sidesync{display:flex;justify-content:flex-end}
+  html[data-theme="light"] .sidehead h3{color:#0e7490}
+  /* wide screens: a column beside the page; narrower ones: a panel that slides in */
+  @media(min-width:1180px){
+    body:not(.sidehidden){--wrapw:1490px}
+    body:not(.sidehidden) .wrap{padding-right:calc(var(--sidew) + 40px)}
+    .side{position:fixed;z-index:40;top:24px;max-height:calc(100vh - 48px);width:var(--sidew);
+      right:max(20px,calc(50vw - var(--wrapw)/2 + 20px))}
+    body.sidehidden .side{display:none}
+    body.sidehidden .sidetab{display:flex}
+    body:not(.sidehidden) #voiceBubble{right:calc(max(20px,calc(50vw - var(--wrapw)/2 + 20px)) + var(--sidew) + 14px)}
+  }
+  @media(max-width:1179.98px){
+    .side{position:fixed;z-index:45;top:0;right:0;bottom:0;width:min(340px,92vw);border-radius:0;
+      transform:translateX(104%);visibility:hidden;transition:transform .3s cubic-bezier(.22,1,.36,1),visibility 0s .3s}
+    body.sideopen .side{transform:none;visibility:visible;transition:transform .3s cubic-bezier(.22,1,.36,1)}
+    body:not(.sideopen) .sidetab{display:flex}
+  }
   /* ===== Voice assistant ===== */
   #micBtn.listening{border-color:var(--rejected);animation:micpulse 1.3s ease infinite}
   @keyframes micpulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.45)}50%{box-shadow:0 0 0 9px rgba(239,68,68,0)}}
@@ -468,12 +526,12 @@
       </div>
       <div class="icard" id="dailyBox" style="margin-bottom:14px"></div>
       <div class="charts">
-        <div class="icard" id="tasksBox"></div>
         <div class="icard" id="agendaBox"></div>
+        <div class="icard" id="schoolBox"></div>
       </div>
       <div class="charts" style="margin-top:14px">
-        <div class="icard" id="schoolBox"></div>
-        <div><div class="icard" id="weekBox" style="margin-bottom:14px"></div><div class="icard" id="rhBox"></div></div>
+        <div class="icard" id="weekBox"></div>
+        <div class="icard" id="rhBox"></div>
       </div>
       <div class="icard" id="mktBox" style="margin-top:14px"></div>
     </div>
@@ -612,6 +670,20 @@
     </div>
   </div>
 </div>
+<aside class="side" id="side" aria-label="Today's list">
+  <div class="sidehead">
+    <div><h3>📝 Today's list</h3><div class="sdate" id="sideDate"></div></div>
+    <span class="sideleft" id="sideLeft"></span>
+    <button class="rowbtn" id="sideHide" title="Hide the list (N brings it back)" aria-label="Hide today's list">⟩</button>
+  </div>
+  <div class="lifebar" style="margin:0"><span id="sideBar" style="width:0%"></span></div>
+  <input id="sideAdd" class="sideadd" maxlength="200" autocomplete="off"
+    placeholder="Add something for today…" aria-label="Add something for today"/>
+  <div class="sidehint">Add a time to get a reminder: "gym at 6pm".</div>
+  <div id="sideList"></div>
+  <div id="sideFoot"></div>
+</aside>
+<button class="sidetab" id="sideTab" aria-label="Show today's list">📝 <b id="sideTabN"></b></button>
 <div class="modal" id="modal" hidden><div class="modal-card" id="modalCard"></div></div>
 <div class="toast" id="toast"></div>
 
@@ -1002,8 +1074,8 @@ function startTicking(){ if(tickTimer) clearInterval(tickTimer);
   tickTimer=setInterval(()=>{ secsLeft--; updateSyncAgo();
     if(secsLeft<=0){ loadData(false); resetTimer(); } else $("countdown").textContent=secsLeft+"s"; },1000); }
 let toastTimer=null;
-function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show");
-  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),2400); }
+function toast(m,ms){ const t=$("toast"); t.textContent=m; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),ms||2400); }
 
 function exportCsv(){
   const r=visibleRows(), cols=["company","position","country","status","note","rawDate"];
@@ -1133,7 +1205,7 @@ async function osLoad(){
   if(!OS.settings.familyStart){ OS.settings.familyStart=todayKey(); osSave(); }
   if(!OS.settings.appsStart){ OS.settings.appsStart=todayKey(); osSave(); }
   if(OS.settings.theme==="light") document.documentElement.dataset.theme="light";
-  renderOS();
+  renderOS(); remCheck();
 }
 function osSave(){
   localStorage.setItem("jd_os",JSON.stringify(OS));
@@ -1156,7 +1228,9 @@ function pScore(t){
   s+=Math.min(8,age);                                   // don't let things rot
   return Math.min(100,Math.round(s));
 }
-function openTasks(){ return OS.tasks.filter(t=>!t.done).map(t=>({...t,score:pScore(t)})).sort((a,b)=>b.score-a.score); }
+// an event imported from your calendar on an earlier day already happened: it isn't left to do
+function staleCal(t){ return !!t.fromCal&&!t.done&&!!t.due&&t.due<todayKey(); }
+function openTasks(){ return OS.tasks.filter(t=>!t.done&&!staleCal(t)).map(t=>({...t,score:pScore(t)})).sort((a,b)=>b.score-a.score); }
 
 /* ---- quick capture auto-categorization ---- */
 function categorize(txt){
@@ -1316,27 +1390,131 @@ function renderAgenda(){
   }).join("");
   box.innerHTML=`<h3>🗓 Today's schedule</h3>${body}`;
 }
-function renderTasks(){
-  const box=$("tasksBox"); if(!box) return;
-  const prev=document.querySelector("[data-tk-title]");
-  const keep=prev?{v:prev.value,f:document.activeElement===prev}:null;
-  const tk=todayKey();
-  const open=OS.tasks.filter(t=>!t.done).sort(byWhen);
-  const doneToday=OS.tasks.filter(t=>t.done&&t.doneAt&&dkFor(new Date(t.doneAt))===tk);
-  const links=OS.calLinks||{};
-  const row=t=>`<div class="trow ${t.done?"done":""}"><input type="checkbox" data-task="${t.id}" ${t.done?"checked":""}/>
-    <div class="tt">${esc(t.title)}<div class="sub">${taskWhen(t)}${t.fromCal?" · from calendar":links[t.id]?" · 📅 on calendar":""}</div></div>
-    <span class="x" data-del-task="${t.id}" title="Delete">✕</span></div>`;
-  box.innerHTML=`<h3>✅ Tasks ${calSyncChip()}</h3>
-    <div class="tkadd">
-      <input data-tk-title placeholder="New task…" style="flex:1;min-width:140px"/>
-      <input data-tk-date type="date" value="${tk}" title="Date"/>
-      <input data-tk-time type="time" title="Time (optional)"/>
-      <button class="primary" data-tk-add>Add</button></div>
-    ${open.length?open.map(row).join(""):`<p class="muted">Nothing open. Add a task above.</p>`}
-    ${doneToday.length?`<details style="margin-top:8px"><summary class="muted" style="cursor:pointer;font-size:12px">Done today · ${doneToday.length}</summary>${doneToday.map(row).join("")}</details>`:""}`;
-  if(keep){ const n=document.querySelector("[data-tk-title]"); if(n){ n.value=keep.v; if(keep.f) n.focus(); } }
+/* ---- Today's list: the sidebar on every tab ----
+   The same tasks as everywhere else (command bar, voice, calendar sync), laid out
+   for the day: what's on today, with anything that slipped from an earlier day and
+   anything without a date; today's calendar events; and what's coming up.
+   Whatever you add here is for today unless you name another day. */
+const sideUI=(()=>{ try{ return JSON.parse(localStorage.getItem("jd_side")||"{}")||{}; }catch(e){ return {}; } })();
+function sideSave(){ try{ localStorage.setItem("jd_side",JSON.stringify(sideUI)); }catch(e){} }
+function sideNarrow(){ return window.matchMedia("(max-width:1179.98px)").matches; }
+function sideShow(on){
+  if(sideNarrow()) document.body.classList.toggle("sideopen",on);
+  else { document.body.classList.toggle("sidehidden",!on); sideUI.hidden=!on; sideSave(); }
 }
+function doneOn(t,dk){ return !!(t.done&&t.doneAt&&dkFor(new Date(t.doneAt))===dk); }
+function sideGroups(){
+  const tk=todayKey(), mine=OS.tasks.filter(t=>!t.fromCal);
+  // slipped from an earlier day first, then today's by time, then the rest in the order you added them
+  const rank=t=>!t.due?3:t.due<tk?0:t.time?1:2;
+  const order=(a,b)=>rank(a)-rank(b)||byWhen(a,b)||(a.createdAt||0)-(b.createdAt||0);
+  return {today:mine.filter(t=>!t.done&&(!t.due||t.due<=tk)).sort(order),
+    done:mine.filter(t=>doneOn(t,tk)).sort((a,b)=>a.doneAt-b.doneAt),
+    cal:OS.tasks.filter(t=>t.fromCal&&t.due===tk&&(!t.done||doneOn(t,tk))).sort(byWhen),
+    later:mine.filter(t=>!t.done&&t.due&&t.due>tk).sort(byWhen)};
+}
+function remAt(t){ return new Date(`${t.due}T${t.time}:00`).getTime(); }
+// a timed item on today's list whose time has come and that isn't done yet
+function remDue(t){ return !t.done&&!t.fromCal&&!!t.time&&t.due===todayKey()&&remAt(t)<=Date.now(); }
+function sideRow(t,later){
+  const id=esc(t.id), tk=todayKey(), slipped=!t.done&&!!t.due&&t.due<tk, due=remDue(t);
+  const sub=later?taskWhen(t)
+    :slipped?`from ${fmtShortDate(t.due)}${t.time?` · ${fmtHM(t.time)}`:""}`
+    :t.time&&t.due===tk?fmtHM(t.time):"";
+  const move=t.done||t.fromCal?"":later
+    ?`<button class="sact" data-side-move="${id}" data-to="0" title="Move it to today">Today</button>`
+    :`<button class="sact" data-side-move="${id}" data-to="1" title="Move it to tomorrow">Tomorrow</button>`;
+  const over=t.fromCal&&!!t.time&&t.due===tk&&remAt(t)+(+t.dur||60)*60000<Date.now();
+  return `<label class="srow${t.done?" done":""}${due?" due":""}${over?" past":""}">
+    <input type="checkbox" data-task="${id}" ${t.done?"checked":""}/>
+    <span class="st">${esc(t.title)}${sub?`<span class="ss${slipped||due?" late":""}">${esc(sub)}</span>`:""}</span>
+    <span class="sacts">${move}<button class="sact" data-del-task="${id}" title="Delete" aria-label="Delete">✕</button></span></label>`;
+}
+function alertsOffer(){
+  if(!("Notification" in window)||Notification.permission!=="default") return "";
+  if(!OS.tasks.some(t=>!t.done&&!t.fromCal&&t.time&&t.due&&t.due>=todayKey())) return "";
+  return `<button class="rowbtn" data-side-alerts style="width:100%;padding:6px 8px">🔔 Pop up on screen when one is due</button>`;
+}
+const BASE_TITLE=document.title;
+function renderSide(){
+  const list=$("sideList"); if(!list) return;
+  const g=sideGroups(), left=g.today.length, total=left+g.done.length;
+  $("sideDate").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
+  const sl=$("sideLeft"); sl.textContent=!total?"":left?`${left} left`:"all done ✓"; sl.classList.toggle("alldone",!!total&&!left);
+  $("sideBar").style.width=(total?Math.round(100*g.done.length/total):0)+"%";
+  $("sideTabN").textContent=left?String(left):"";
+  const group=(key,title,items,later,openByDefault)=>{ if(!items.length) return "";
+    const open=sideUI.groups&&key in sideUI.groups?sideUI.groups[key]:openByDefault, shown=items.slice(0,15);
+    return `<details class="sgroup" data-side-group="${key}"${open?" open":""}><summary>${title} · ${items.length}</summary>
+      ${shown.map(t=>sideRow(t,later)).join("")}${items.length>shown.length?`<div class="usage-note">+${items.length-shown.length} more</div>`:""}</details>`; };
+  list.innerHTML=(total?[...g.today,...g.done].map(t=>sideRow(t,false)).join("")
+      :`<p class="muted" style="font-size:12.5px;margin:2px">Nothing on your list yet. What do you want to get done today?</p>`)
+    +group("cal","🗓 From your calendar",g.cal,false,true)
+    +group("later","Coming up",g.later,true,false);
+  $("sideFoot").innerHTML=alertsOffer()+`<div class="sidesync">${calSyncChip()}</div>`;
+  const due=OS.tasks.filter(remDue).length;
+  document.title=(due?`⏰ ${due} · `:"")+BASE_TITLE;
+}
+$("sideAdd").addEventListener("keydown",e=>{
+  if(e.key!=="Enter"||e.isComposing) return;
+  const v=e.target.value.trim(); if(!v) return;
+  const w=parseWhen(v), t=addTask(w.title||v,w.due||todayKey(),w.time);
+  if(!t) return;
+  e.target.value=""; track("act:side-add");
+  osSave(); renderOS(); calSyncSoon();
+  toast(t.due!==todayKey()?`Added for ${taskWhen(t)}`
+    :t.time?`On today's list. Reminder at ${fmtHM(t.time)} ⏰`:"On today's list ✅");
+});
+$("side").addEventListener("click",e=>{
+  const mv=e.target.closest("[data-side-move]");
+  if(mv){ e.preventDefault();   // the button sits inside the row's label: don't tick the box
+    const t=OS.tasks.find(x=>x.id===mv.dataset.sideMove); if(!t) return;
+    const tomorrow=mv.dataset.to==="1";
+    t.due=tomorrow?dkShift(todayKey(),1):todayKey(); t.updatedAt=Date.now();
+    osSave(); renderOS(); calSyncSoon(); toast(tomorrow?"Moved to tomorrow":"Moved to today"); return; }
+  if(e.target.closest("[data-side-alerts]")){
+    let asked; try{ asked=Notification.requestPermission(); }catch(err){}
+    Promise.resolve(asked).catch(()=>{}).then(()=>{
+      toast(Notification.permission==="granted"?"Pop-up alerts are on 🔔":"Reminders will show inside SARAH only");
+      renderSide(); }); }
+});
+$("sideList").addEventListener("toggle",e=>{ const key=e.target.dataset&&e.target.dataset.sideGroup; if(!key) return;
+  sideUI.groups=sideUI.groups||{}; if(sideUI.groups[key]===e.target.open) return;
+  sideUI.groups[key]=e.target.open; sideSave(); },true);
+$("sideHide").addEventListener("click",()=>sideShow(false));
+$("sideTab").addEventListener("click",()=>{ sideShow(true);
+  if(!window.matchMedia("(hover:none)").matches) setTimeout(()=>$("sideAdd").focus(),60); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") document.body.classList.remove("sideopen"); });
+if(sideUI.hidden) document.body.classList.add("sidehidden");
+
+/* ---- reminders: a timed item on today's list pings you when its time comes ----
+   A toast inside SARAH, plus a pop-up on screen once you allow it. Each one fires
+   once; SARAH has to be open somewhere for it to happen. */
+let remSeen=(()=>{ try{ const j=JSON.parse(localStorage.getItem("jd_rem")||"null");
+  if(j&&Array.isArray(j.ids)) return j; }catch(e){} return {day:"",ids:[]}; })();
+function remCheck(){
+  const tk=todayKey(), now=Date.now(), fresh=[];
+  if(remSeen.day!==tk) remSeen={day:tk,ids:[]};
+  let changed=false;
+  OS.tasks.forEach(t=>{
+    if(!remDue(t)) return;
+    const key=t.id+"@"+t.time; if(remSeen.ids.includes(key)) return;
+    remSeen.ids.push(key); changed=true;
+    const at=remAt(t);
+    // set for a time that had already passed, or SARAH was closed for hours: no late ping
+    if((t.createdAt||0)<at&&now-at<2*3600000) fresh.push(t);
+  });
+  if(!changed) return;
+  try{ localStorage.setItem("jd_rem",JSON.stringify(remSeen)); }catch(e){}
+  renderSide();
+  if(!fresh.length) return;
+  toast("⏰ "+fresh.map(t=>t.title).join(" · "),9000);
+  if("Notification" in window&&Notification.permission==="granted") fresh.forEach(t=>{ try{
+    const n=new Notification("SARAH · reminder",{body:`${t.title} · ${fmtHM(t.time)}`,tag:"sarah-"+t.id});
+    n.onclick=()=>{ window.focus(); sideShow(true); n.close(); }; }catch(e){} });
+}
+setInterval(remCheck,20000);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden){ remCheck(); renderSide(); } });
 function addTask(title,due,time){
   title=(title||"").trim(); if(!title) return null;
   const t={id:uid(),title,area:categorize(title).area,due:due||null,time:time||null,dur:30,imp:2,
@@ -1344,7 +1522,7 @@ function addTask(title,due,time){
   OS.tasks.push(t); return t;
 }
 function renderToday(){
-  renderDaily(); renderWeek(); renderTasks(); renderAgenda(); renderSchool(); renderRhCard(); renderMarkets();
+  renderDaily(); renderWeek(); renderAgenda(); renderSchool(); renderRhCard(); renderMarkets();
   const all=jobRows(), tk=todayKey();
   const appsToday=all.filter(isToday).length, goal=APP_GOAL_TOTAL, ab=appsByBucket(all.filter(isToday));
   const interviews=all.filter(a=>a.status==="Interview Scheduled").length;
@@ -1357,8 +1535,8 @@ function renderToday(){
   b.push(tr.length?`Training: <b>${tr.map(x=>esc(x[1])).join(" + ")}</b>`:"Training: rest day");
   const left=dailyLeftBits();
   b.push(left.length?`Still open: ${left.join(" · ")}`:"Every daily number is hit. Perfect day. 💯");
-  const due=openTasks().filter(t=>t.due&&t.due<=tk).sort(byWhen);
-  if(due.length) b.push(`Tasks due: <b>${due.length}</b> · first up: ${esc(due[0].title)}${due[0].time?` at ${fmtHM(due[0].time)}`:""}`);
+  const list=sideGroups().today;
+  if(list.length) b.push(`Today's list: <b>${list.length} left</b> · first up: ${esc(list[0].title)}${list[0].time&&list[0].due===tk?` at ${fmtHM(list[0].time)}`:""}`);
   b.push(`Applications <b>${appsToday}/${goal}</b> today (US ${ab.USA}/${APP_GOAL.USA} · outside ${ab.Outside}/${APP_GOAL.Outside})${interviews?` · ${interviews} interview${interviews>1?"s":""} in play`:""}`);
   if(new Date().getDay()===0&&!wk.review) b.push(`<b>Sunday review is due.</b> Four numbers and one line, on the Scoreboard.`);
   $("briefBox").innerHTML=`<h3>☀️ Your rundown
@@ -1896,7 +2074,7 @@ let heroItem=null, currentTab="today";
 const PANE_R={today:[renderToday],score:[renderScoreboard],crm:[renderCRM],
   proj:[renderProjects],goals:[renderGoals],train:[renderTrain,renderBjj],fin:[renderFin],
   kb:[renderKB],match:[renderMatch],courses:[renderCourses]};
-function renderOS(){ try{
+function renderOS(){ try{ renderSide(); }catch(e){ console.error(e); } try{
   // Only rebuild what's on screen: the Today pane rerenders when visible,
   // other tabs get their own renderers, and the header day % stays fresh
   // everywhere. Hidden panes rebuild on next visit instead of every change.
@@ -1956,17 +2134,6 @@ document.addEventListener("click",e=>{
       osSave(); renderOS(); calSyncSoon(); } return; }
   const dt=e.target.closest("[data-del-task]"); if(dt){
     OS.tasks=OS.tasks.filter(x=>x.id!==dt.dataset.delTask); osSave(); renderOS(); calSyncSoon(); return; }
-  if(e.target.closest("[data-tk-add]")){
-    const ti=document.querySelector("[data-tk-title]"), di=document.querySelector("[data-tk-date]"),
-      tm=document.querySelector("[data-tk-time]");
-    const t=addTask(ti&&ti.value,di&&di.value,tm&&tm.value);
-    if(!t){ toast("Type a task first"); return; }
-    ti.value=""; if(tm) tm.value="";
-    osSave(); renderOS(); calSyncSoon(); toast(`Task added · ${taskWhen(t)}`); return; }
-});
-document.addEventListener("keydown",e=>{
-  if(e.key==="Enter"&&e.target.matches&&e.target.matches("[data-tk-title]")){
-    const b=document.querySelector("[data-tk-add]"); if(b) b.click(); }
 });
 $("themeBtn").addEventListener("click",()=>{
   const light=document.documentElement.dataset.theme==="light";
@@ -1978,8 +2145,8 @@ document.addEventListener("keydown",e=>{
   if(e.target.tagName==="INPUT"||e.target.tagName==="SELECT"||e.target.tagName==="TEXTAREA") return;
   const map={"1":"today","2":"score","3":"overview","4":"apps","5":"calendar","6":"crm","7":"train","8":"fin","9":"courses"};
   if(map[e.key]){ switchTab(map[e.key]); return; }
-  if(e.key==="n"||e.key==="N"){ switchTab("today");
-    setTimeout(()=>{ const i=document.querySelector("[data-tk-title]"); if(i) i.focus(); },60); }
+  if((e.key==="n"||e.key==="N")&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
+    e.preventDefault(); sideShow(true); setTimeout(()=>$("sideAdd").focus(),60); }
 });
 /* ---- module events ---- */
 function bindAdd(btn,fn){ $(btn).addEventListener("click",()=>{ fn(); osSave(); renderOS(); }); }
@@ -3548,7 +3715,7 @@ function blocksCfg(){ const s=OS.settings&&OS.settings.blocks, saved=Array.isArr
 function retiredBlocks(){ return RETIRED_BLOCKS.map(key=>({key,enabled:false})); }
 function agoLabel(ms){ const m=Math.round((Date.now()-ms)/60000); return m<1?"just now":m<60?`${m}m ago`:`${Math.round(m/60)}h ago`; }
 function calSyncChip(){
-  const st='style="float:right;text-transform:none;letter-spacing:0"';
+  const st='style="text-transform:none;letter-spacing:0"';
   if(calState.errUrl) return `<a class="rowbtn" href="${esc(calState.errUrl)}" target="_blank" rel="noopener" ${st} title="${esc(calState.err)}">📅 ⚠ Enable Calendar API</a>`;
   if(!OS.settings.calSync) return `<button class="rowbtn" data-cal-connect ${st}>${calState.connecting?"Waiting for approval…":"📅 Sync to calendar"}</button>`;
   if(calState.err) return `<button class="rowbtn" data-cal-connect ${st} title="${esc(calState.err)}">📅 ⚠ Reconnect</button>`;
