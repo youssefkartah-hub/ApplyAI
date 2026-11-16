@@ -1,0 +1,168 @@
+<!--
+section: home
+-->
+<section class="hero" aria-labelledby="name">
+  <div class="wrap">
+    <div class="hero-text">
+      <p class="kicker"><span>Aerospace engineering</span><span>Penn State</span><span>May 2027</span></p>
+      <h1 id="name">Youssef Kartah</h1>
+      <p class="position">I design and build hardware for small autonomous aircraft, and I check it with analysis and test before I trust it.</p>
+      <p class="avail">{{site.availability}}</p>
+      <div class="btn-row">
+        <a class="btn btn-primary" href="#work">See selected work</a>
+        <a class="btn" href="resume.html">View résumé</a>
+        <a class="mail" href="mailto:{{site.email}}">{{site.email}}</a>
+      </div>
+    </div>
+    <figure class="hero-fig">
+      <div class="plate">
+        <video src="assets/media/uav-build.mp4" poster="assets/media/uav-build-poster.jpg" width="960" height="632" muted loop playsinline controls preload="none" data-autoplay aria-label="Timelapse of me assembling a quadcopter airframe at my desk"></video>
+        <button class="vbtn" type="button" data-state="paused" aria-label="Play video"><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9-5.5z"/></svg><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 1.5h3v11h-3zM8.5 1.5h3v11h-3z"/></svg><span>Play</span></button>
+      </div>
+      <figcaption class="plate-cap"><span>Fig. 00</span><span>Assembling the airframe for my current UAV build, at my desk.</span><span>Timelapse · 0:28</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="proof" aria-label="Evidence at a glance">
+  <div class="wrap">
+    <ul>
+      <li><span class="big">36.3<small>g</small></span><p>Payload pickup mechanism for our capstone quadcopter, against an 80 g mass budget.</p>{{ev cad}}<a href="work/marv.html">Capstone pickup</a></li>
+      <li><span class="big">+30.5<small>± 0.6%</small></span><p>Bending stiffness added by carbon reinforcement, five runs per beam.</p>{{ev measured}}<a href="work/analysis.html#beam">Beam test</a></li>
+      <li><span class="big">0.4<small>%</small></span><p>Gap between two independent lift calculations on a transonic airfoil.</p>{{ev calculated}}<a href="work/analysis.html#airfoil">Airfoil forces</a></li>
+      <li><span class="big">≈110</span><p>Production tests across 6 fuel-system part numbers at Safran Aerosystems.</p><span class="ev ev-plain">Internship · 2024</span><a href="#experience">Experience</a></li>
+    </ul>
+  </div>
+</section>
+
+<section class="band" id="work" aria-labelledby="work-h">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="label">Selected work</p>
+      <h2 id="work-h">Four projects, with the evidence attached</h2>
+      <p>Each case study opens with where the project stands today, then shows the decisions, the analysis and the checks behind it.</p>
+    </div>
+    {{work-list}}
+  </div>
+</section>
+
+<section class="band" id="experience" aria-labelledby="xp-h" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="label">Experience</p>
+      <h2 id="xp-h">A production test floor and a composites lab</h2>
+      <p>Where I learned what it takes to make a part, test it and leave a record that proves it.</p>
+    </div>
+
+    <article class="xp">
+      <div>
+        <h3>Safran Aerosystems</h3>
+        <p class="role">Engineering intern, Fluids &amp; Fuel Systems</p>
+        <p class="kicker"><span>Jun to Aug 2024</span><span>Morocco</span></p>
+      </div>
+      <ul>
+        <li>Assisted with production and acceptance testing of kerosene temperature probes and fuel-gauging devices: <b>about 110 tests across 6 part numbers</b>.</li>
+        <li>Standardized the MATLAB and Excel test logs and the traveler fields, saving <b>about 3 minutes of data entry per test</b>, 5 to 8% of the test.</li>
+        <li>Worked with production staff to update work instructions, checklists and margin-of-safety checks, which led to <b>about 10 fewer repeat-test and hold tags</b>.</li>
+        <li>Compiled root-cause data packs within 24 to 48 hours of a failure (test traces, as-built against spec, photos). They <b>helped close 2 nonconformance reports</b>.</li>
+      </ul>
+    </article>
+
+    <article class="xp">
+      <div>
+        <h3>Nittany Rocket Labs</h3>
+        <p class="role">Structures team, Penn State's student rocketry team</p>
+        <p class="kicker"><span>Sep 2025 to present</span><span>Team</span></p>
+      </div>
+      <div class="cq">
+        <ul>
+          <li>With the structures team, <b>lay up, vacuum bag, cure, demold and trim</b> the rocket's carbon-fiber body tubes and flat plates.</li>
+          <li>Modeled parts in SolidWorks for manufacturability, with fasteners and GD&amp;T, and <b>checked fit with 3D-printed and laser-cut prototypes</b> before any carbon was cut.</li>
+          <li>Ran stiffness and buckling checks in ANSYS Discovery against deflection limits, and <b>compared simple panel and beam models with hand calculations</b> before trusting them.</li>
+          <li>Researched nondestructive evaluation for composites, ran a cost and capability trade study for a new curing oven, and evaluated reinforcement for the tail cone.</li>
+        </ul>
+        <div class="xp-figs">
+          <div class="plate">{{pic src="nrl-layup.jpg" alt="Gloved hands rolling carbon fiber onto a mandrel on a lab table covered in release film, with a cut sheet of carbon cloth beside them" sizes="(min-width: 900px) 46vw, 72vw"}}</div>
+          <div class="plate">{{pic src="nrl-tube.jpg" alt="A rotary tool trimming the ragged end of a cured carbon-fiber tube still on its aluminum mandrel" sizes="(min-width: 900px) 16vw, 26vw"}}</div>
+        </div>
+        <p class="plate-cap"><span>Fig. E1</span><span>A layup in progress, and trimming a cured tube on its mandrel. Team photos from my end-of-semester structures review.</span><span>Photos</span></p>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="band" id="more" aria-labelledby="more-h" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="label">Also built</p>
+      <h2 id="more-h">Two software projects</h2>
+      <p>Outside the hardware work, I build tools when I need them. Both are working prototypes rather than finished products.</p>
+    </div>
+    <div class="mini-grid">
+      {{more-work}}
+    </div>
+  </div>
+</section>
+
+<section class="band" id="about" aria-labelledby="about-h" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="label">About</p>
+      <h2 id="about-h">How I work</h2>
+    </div>
+    <div class="about-grid">
+      <div class="about-photo plate">{{pic src="portrait.jpg" alt="Portrait of Youssef Kartah" sizes="300px"}}</div>
+      <div class="about-text">
+        <p>I am a senior in aerospace engineering at Penn State, on the autonomous vehicles track, graduating in May 2027.</p>
+        <p>Most of what I know about drones I learned by buying the parts myself and getting them to fly. My habits come from there: settle the trade study before spending the money, keep a manual override on anything that flies itself, and tune from the flight log instead of from how the flight felt.</p>
+        <p>A summer in production test at Safran Aerosystems showed me why aerospace procedures are as strict as they are. It also showed me something about myself. I went out of my way to ask my supervisor for feedback only three times in three months, and I should have asked far more often.</p>
+        <div class="facts-line">
+          <span><b>Based in</b>{{site.location}}</span>
+          <span><b>Languages</b>Arabic, English and French (fluent) · Spanish (intermediate)</span>
+          <span><b>Next</b>Full-time roles after May 2027 · open to relocating</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbox">
+      <h3>Tools, and where I used them</h3>
+      <table class="tooltable">
+        <tbody>
+          <tr><th scope="row">SolidWorks</th><td>Rocket airframe parts and fit prototypes at Nittany Rocket Labs; three iterations of a <a href="work/uav-builds.html#frame">quadcopter frame</a>.</td></tr>
+          <tr><th scope="row">ANSYS Discovery</th><td>Stiffness and buckling checks on rocket parts; arm-root stress on the quadcopter frame.</td></tr>
+          <tr><th scope="row">ANSYS Fluent</th><td>Steady RANS <a href="work/analysis.html#ev">drag study of an EV body</a>: 7 variants, each on 3 meshes.</td></tr>
+          <tr><th scope="row">MATLAB and Simulink</th><td>PID retune from flight logs in Simulink; CFD post-processing scripts; test logs at Safran.</td></tr>
+          <tr><th scope="row">Python and MicroPython</th><td>A <a href="work/analysis.html#solver">root solver</a> and transonic airfoil post-processing; the <a href="work/line-follower.html">line follower's</a> race program.</td></tr>
+          <tr><th scope="row">Pixhawk and Mission Planner</th><td>Autonomous waypoint and grid missions on the <a href="work/uav-builds.html">mapping UAV</a>.</td></tr>
+          <tr><th scope="row">Composite layup, vacuum bagging</th><td>Carbon-fiber tubes and plates at Nittany Rocket Labs.</td></tr>
+          <tr><th scope="row">GD&amp;T, 3D printing, laser cutting</th><td>Fit prototypes for rocket parts; the PLA <a href="work/marv.html">payload pickup</a>.</td></tr>
+          <tr><th scope="row">Production test records</th><td>Work instructions, travelers, nonconformance reports and root-cause data packs at Safran.</td></tr>
+        </tbody>
+      </table>
+      <p class="also">Also used, without a project on this site to show for it: CATIA, OpenFOAM, SU2, XFOIL, C and C++, wind tunnel testing, LaTeX and Git.</p>
+    </div>
+  </div>
+</section>
+
+<section class="contact" id="contact" aria-labelledby="contact-h">
+  <div class="wrap">
+    <div class="contact-grid">
+      <div>
+        <p class="label">Contact</p>
+        <h2 id="contact-h">Get in touch.</h2>
+        <p>{{site.availability}}</p>
+      </div>
+      <ul class="contact-list">
+        <li><span class="k">Email</span><a href="mailto:{{site.email}}">{{site.email}}</a></li>
+        <li><span class="k">LinkedIn</span><a href="{{site.linkedin}}" rel="me noopener">{{site.linkedinLabel}}</a></li>
+        {{if site.phone}}<li><span class="k">Phone</span><a href="tel:{{site.phone}}">{{site.phone}}</a></li>{{/if}}
+        <li><span class="k">Résumé</span><a href="resume.html">View or print the résumé</a></li>
+        <li><span class="k">Based in</span><span class="v">{{site.location}}</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Person","name":"{{site.name}}","description":"{{site.tagline}}","email":"mailto:{{site.email}}","sameAs":["{{site.linkedin}}"],"affiliation":{"@type":"CollegeOrUniversity","name":"The Pennsylvania State University"}}
+</script>

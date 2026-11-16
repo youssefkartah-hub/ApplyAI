@@ -1,0 +1,168 @@
+{
+  "flagship": [
+    {
+      "slug": "marv",
+      "number": "01",
+      "title": "A payload pickup for an autonomous quadcopter",
+      "navTitle": "M.A.R.V. payload pickup",
+      "kicker": [
+        "Senior capstone",
+        "AERSP 403A/B",
+        "Fall 2026 to Spring 2027"
+      ],
+      "status": {
+        "kind": "progress",
+        "label": "In progress",
+        "detail": "preliminary design review complete"
+      },
+      "summary": "Our capstone quadcopter, M.A.R.V., flies under motion capture and has to collect a 100 g package with a magnet.",
+      "myPart": "I designed the pickup mechanism, from a passive ratchet to a servo winch, and produced the stability and control analysis for the design review.",
+      "team": "Team of 4. Each of us owns part of the vehicle; these two pieces are mine.",
+      "result": {
+        "value": "36.3 g",
+        "text": "for the ratchet pickup, against an 80 g mass budget",
+        "evidence": "cad"
+      },
+      "tools": [
+        "CAD",
+        "Onshape (team frame model)",
+        "FDM printing in PLA",
+        "Mass-properties analysis"
+      ],
+      "figure": "figures/marv-pickups.html",
+      "figureCaption": "The two pickup concepts, v4 and v5.",
+      "figureKind": "Schematic · not to scale",
+      "og": "og-marv.jpg",
+      "figureClass": "pad"
+    },
+    {
+      "slug": "uav-builds",
+      "number": "02",
+      "title": "Three UAVs, designed and built on my own",
+      "navTitle": "Self-built UAVs",
+      "kicker": [
+        "Personal projects",
+        "Self-funded",
+        "Ongoing"
+      ],
+      "status": {
+        "kind": "progress",
+        "label": "Ongoing",
+        "detail": "third build in assembly"
+      },
+      "summary": "An autonomous mapping UAV, a quadcopter frame with its control tuning, and a thermal-imaging drone for crop irrigation that I am assembling now.",
+      "myPart": "All of it: component trade studies, frame design and FEA, Pixhawk integration, mission planning, and tuning from flight logs.",
+      "team": "Solo. Nobody assigns these; I set the problem and pay for the parts.",
+      "result": {
+        "value": "12 logs",
+        "text": "of flight data behind the PID retune that removed a persistent hover oscillation",
+        "evidence": "measured"
+      },
+      "tools": [
+        "Pixhawk",
+        "Mission Planner",
+        "SolidWorks",
+        "ANSYS Discovery",
+        "Simulink",
+        "MATLAB"
+      ],
+      "figure": "figures/home-uav.html",
+      "figureCaption": "Avionics for the current build, on my desk.",
+      "figureKind": "Photo",
+      "og": "og-uav-builds.jpg",
+      "figureClass": ""
+    },
+    {
+      "slug": "analysis",
+      "number": "03",
+      "title": "Four analyses, each checked a second way",
+      "navTitle": "Analysis, checked twice",
+      "kicker": [
+        "Coursework and independent study",
+        "AERSP 305W · AERSP 424",
+        "2025 to 2026"
+      ],
+      "status": {
+        "kind": "done",
+        "label": "Completed",
+        "detail": "one measured, three computed"
+      },
+      "summary": "A structures lab, a transonic airfoil rebuilt from raw CFD data, a CFD drag study and a root solver. Each has a check built in that could have proved me wrong.",
+      "myPart": "My own work throughout, except the root solver, which I wrote with one teammate.",
+      "team": "Individual, except the root solver (two of us).",
+      "result": {
+        "value": "+30.5 ± 0.6%",
+        "text": "bending stiffness from carbon reinforcement, for 18.6% more weight",
+        "evidence": "measured"
+      },
+      "tools": [
+        "ANSYS Fluent",
+        "Python",
+        "MATLAB",
+        "Uncertainty analysis"
+      ],
+      "figure": "figures/home-analysis.html",
+      "figureCaption": "Flexural rigidity of the plain and reinforced beams, from deflection.",
+      "figureKind": "Chart · measured data",
+      "og": "og-analysis.jpg",
+      "figureClass": "pad"
+    },
+    {
+      "slug": "line-follower",
+      "number": "04",
+      "title": "A line-following robot with a hand-written turn",
+      "navTitle": "Line-following race robot",
+      "kicker": [
+        "Course project",
+        "Team",
+        "November 2026"
+      ],
+      "status": {
+        "kind": "done",
+        "label": "Completed",
+        "detail": "raced 13 November 2026"
+      },
+      "summary": "Follow 1.5 m of tape through an S-bend, turn around at a wall and race the next lane home. The library's turn command was banned, so the 180° turn runs on the gyro and the line sensors.",
+      "myPart": "I worked on the race program and its tuning with my team.",
+      "team": "Course team. The robot is an XRP kit; the program is ours.",
+      "result": {
+        "value": "4 states",
+        "text": "in a race program that ran hands-off in head-to-head races",
+        "evidence": "tested"
+      },
+      "tools": [
+        "MicroPython",
+        "XRP robot kit",
+        "Feedback control",
+        "State machine"
+      ],
+      "figure": "figures/home-lf.html",
+      "figureCaption": "The robot on the bench, plugged in for programming.",
+      "figureKind": "Photo",
+      "og": "og-line-follower.jpg",
+      "figureClass": ""
+    }
+  ],
+  "more": [
+    {
+      "title": "Roomly",
+      "kind": "Web app · solo build · 2026",
+      "status": "Working prototype",
+      "text": "A move-out marketplace where the room is the listing. The seller photographs the room once, a vision model drafts a priced listing for each item, and buyers browse the room in 3D.",
+      "result": "Six photos of my own bedroom became 15 priced items in one pass. I also costed in-app payments before building them: about $0.87 kept on a $120 sale, so I argued for in-person handoff.",
+      "tools": "Next.js · React Three Fiber · Claude vision",
+      "image": "roomly-room.jpg",
+      "alt": "A student apartment rebuilt in 3D inside the Roomly app, with a price tag floating over each piece of furniture"
+    },
+    {
+      "title": "SARAH",
+      "kind": "Personal software · June to October 2026",
+      "status": "In personal use",
+      "text": "A dashboard that runs on my laptop and keeps my job search and daily routine on one screen: one Python server, one HTML page, 47 commits. Built with Claude Code as a pair programmer.",
+      "result": "Traced a bug that hid several records at once to rows being keyed by company and role, and re-keyed them by unique ID. Replaced the server's file blocklist with an allowlist, so it serves one page and nothing else.",
+      "tools": "Python · Notion, Gmail and Calendar APIs",
+      "image": "sarah-today.jpg",
+      "alt": "The SARAH dashboard's Today screen with sample data: the next task, the day's numbers and a task list"
+    }
+  ]
+}

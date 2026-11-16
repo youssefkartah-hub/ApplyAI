@@ -1,0 +1,274 @@
+<!--
+title: A payload pickup for an autonomous quadcopter
+description: Capstone case study. A magnetic payload pickup taken from a 36 g passive ratchet to a 150 mm servo winch, with the mass-properties analysis of what a 100 g package does to a 630 g quadcopter.
+lede: Our senior capstone, M.A.R.V., is a 630 g quadcopter that flies itself under motion capture and has to collect a 100 g package with a magnet. I own two pieces of it: the mechanism that grabs the package, and the analysis of what carrying it does to the vehicle.
+-->
+{{case-head}}
+
+<section class="standing" aria-labelledby="standing-h">
+  <div class="wrap">
+    <p class="label">Where it stands · November 2026</p>
+    <h2 id="standing-h">The pickup is at revision 5.2 and inside its mass budget in CAD. Its holding forces are still model estimates.</h2>
+    <ul>
+      <li><span class="big">36.3<small>g</small></span><p>v4 ratchet pickup, against an 80 g mass budget</p>{{ev cad}}</li>
+      <li><span class="big">150<small>mm</small></span><p>reach of the v5 winch, five times the ratchet's 30 mm stroke</p>{{ev cad}}</li>
+      <li><span class="big">≈6.7<small>mm</small></span><p>package to battery tray in v5.2, up from 3.9 mm in v5.1</p>{{ev cad}}</li>
+      <li><span class="big">+21<small>%</small></span><p>pitch inertia with the 100 g package aboard</p>{{ev cad}}</li>
+    </ul>
+    <p class="open"><b>Still open:</b> the ratchet's pawl forces come from a beam model and have not been measured, and the release at drop-off is not designed yet. Both are covered under <a href="#open">open items</a>.</p>
+  </div>
+</section>
+
+<div class="case-body">
+<div class="wrap">
+  <nav class="toc" aria-label="On this page">
+    <p class="label">On this page</p>
+    <ol>
+      <li><a href="#job">The job</a></li>
+      <li><a href="#ratchet">Decision 1: passive first</a></li>
+      <li><a href="#winch">Decision 2: reach</a></li>
+      <li><a href="#rev">A 0.2 mm problem</a></li>
+      <li><a href="#mass">Mass properties</a></li>
+      <li><a href="#compass">Magnet and compass</a></li>
+      <li><a href="#open">Open items</a></li>
+      <li><a href="#lessons">What I took from it</a></li>
+    </ol>
+  </nav>
+
+  <div class="case-main">
+
+  <section class="sec" id="job">
+    <p class="label"><b>01</b>The job</p>
+    <h2>A magnet, a 100 g package and an 80 g allowance</h2>
+    <div class="cols mid">
+      <div class="prose">
+        <p>M.A.R.V. flies inside a motion-capture lab. Position and heading come from the lab's OptiTrack cameras, a Raspberry Pi 4 with a Navio2 board runs the flight software, and an MLX90640 thermal camera is the sensor payload. The mission adds one physical task: collect a 100 g package and carry it.</p>
+        <p>Four of us split the vehicle. My share answers two questions. How does the vehicle get hold of the package? And what does carrying it do to the way the vehicle flies?</p>
+      </div>
+      <figure class="fig">
+        <div class="plate pad">{{include figures/marv-system.html}}</div>
+        <figcaption class="plate-cap"><span>Fig. 1.1</span><span>Where the pickup sits in the vehicle. The highlighted block is mine.</span><span>Diagram · conceptual</span></figcaption>
+      </figure>
+    </div>
+    <ul class="reqs">
+      <li><b>100 g</b>Package, with a steel plate on top for the magnet to hold.</li>
+      <li><b>80 g</b>Mass budget for the whole pickup mechanism.</li>
+      <li><b>630 g</b>Vehicle mass, empty.</li>
+      <li><b>45 mm</b>Pickup mounting point, forward of frame centre.</li>
+    </ul>
+  </section>
+
+  <section class="sec" id="ratchet">
+    <p class="label"><b>02</b>Decision 1 · October 2026</p>
+    <h2>Let the landing do the work</h2>
+    <div class="prose">
+      <p>The earlier pickup left 1.7 mm to the battery tray and 1.3 mm to the camera. A package that swings in flight needs more room than that, so the mechanism had to get slimmer and still come in under 80 g.</p>
+    </div>
+
+    <div class="decision">
+      <p class="decision-h">Passive or powered? <span>Options I weighed</span></p>
+      <div class="opts">
+        <div class="opt">
+          <h3 class="opt-h">Passive ratchet <em>Chosen for v4</em></h3>
+          <ul>
+            <li>No servo, no wiring and nothing to command.</li>
+            <li>Landing on the package does the lifting.</li>
+            <li class="con">The vehicle has to land squarely on the package.</li>
+            <li class="con">Travel is limited to the stroke of the tube.</li>
+          </ul>
+        </div>
+        <div class="opt">
+          <h3 class="opt-h">Servo-driven pickup</h3>
+          <ul>
+            <li>Can reach down to a package from a hover.</li>
+            <li class="con">A servo, a spool and wiring, inside the same 80 g.</li>
+            <li class="con">Needs a way to put the magnet back in the same place every cycle.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="why"><b>Why passive first:</b> it removes the most parts. If landing on the package could do the job, the servo's mass and wiring never had to enter the budget.</p>
+    </div>
+
+    <div class="prose">
+      <p>v4 is two tubes printed in PLA around a 30 mm N52 magnet. When the vehicle lands on the package, the package pushes the inner tube up through ten clicks of 3 mm, and pawls hold it at each click. A firm tug resets it.</p>
+    </div>
+
+    <figure class="fig">
+      <div class="plate pad">{{include figures/marv-pickups.html}}</div>
+      <figcaption class="plate-cap"><span>Fig. 1.2</span><span>The two pickup concepts, hung from the same arm plate. v4 lifts the package 30 mm as the vehicle lands on it. v5 lowers a magnet puck 150 mm and winds it back into a dock.</span><span>Schematic · not to scale</span></figcaption>
+    </figure>
+
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Clearances before and after v4">
+      <table class="data">
+        <caption>What v4 bought {{ev cad}}</caption>
+        <thead><tr><th scope="col">Check</th><th scope="col" class="n">Earlier pickup</th><th scope="col" class="n">v4 ratchet</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Clearance to battery tray</th><td class="n">1.7 mm</td><td class="n hi">4.5 mm</td></tr>
+          <tr><th scope="row">Clearance to camera</th><td class="n">1.3 mm</td><td class="n hi">4.3 mm</td></tr>
+          <tr><th scope="row">Mechanism mass, against an 80 g budget</th><td class="n">n/a</td><td class="n hi">36.3 g</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">The package also rides up to 30 mm closer to the frame once the ratchet has climbed, so it has less room to swing.</p>
+  </section>
+
+  <section class="sec" id="winch">
+    <p class="label"><b>03</b>Decision 2 · November 2026</p>
+    <h2>Spend a servo to buy reach</h2>
+    <div class="prose">
+      <p>The ratchet has one hard requirement: the vehicle has to land squarely on the package, with 30 mm of stroke to work with. Picking up without landing means sending the magnet down to the package.</p>
+    </div>
+
+    <div class="decision">
+      <p class="decision-h">Keep the ratchet or build a winch? <span>Options I weighed</span></p>
+      <div class="opts">
+        <div class="opt">
+          <h3 class="opt-h">v4 ratchet</h3>
+          <ul>
+            <li>36.3 g and no actuator.</li>
+            <li class="con">Only works on a square landing.</li>
+            <li class="con">30 mm of stroke.</li>
+          </ul>
+        </div>
+        <div class="opt">
+          <h3 class="opt-h">v5 servo winch <em>Chosen</em></h3>
+          <ul>
+            <li>150 mm of reach, five times the ratchet's.</li>
+            <li>The puck is designed to seat itself in its dock.</li>
+            <li class="con">Adds an FS90R servo, a spool and braided line.</li>
+            <li class="con">One more thing to command in flight.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="why"><b>Why the winch:</b> reach costs a servo, a spool and some way to return the magnet to the same place after every cycle. The seat was the part I cared about most, so the puck has a cone on top and winding it in pulls it into a matching conical dock.</p>
+    </div>
+
+    <div class="prose">
+      <p>An FS90R continuous-rotation servo turns the spool about 5.3 times to pay out 150 mm of braided line through a line guide. The right-hand drawing in Fig. 1.2 shows the puck at full reach, with the docked position dashed.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="rev">
+    <p class="label"><b>04</b>Iteration · v5.1 to v5.2</p>
+    <h2>0.2 mm in the wrong place</h2>
+    <div class="cols mid">
+      <div class="prose">
+        <p>In v5.1 the magnet face sat only 0.2 mm below the rim of its printed housing. That is close enough to flush that the package's steel plate pressed on the plastic rim.</p>
+        <p>I wanted the magnet to carry the package and the print to carry nothing. In v5.2 I dropped the magnet to 3 mm below the rim, then checked the change against the team's Onshape frame model and the FS90R drawing.</p>
+        <p>The change bought clearance under the battery tray and cost something too: the rim no longer braces the package.</p>
+      </div>
+      <figure class="fig" data-toggle data-rev="51">
+        <div class="fig-head">
+          <p>Docked puck, side view</p>
+          <div class="seg" role="group" aria-label="Winch revision"><button type="button" data-set="rev:51" aria-pressed="true">v5.1</button><button type="button" data-set="rev:52" aria-pressed="false">v5.2</button></div>
+        </div>
+        <div class="plate pad">{{include figures/marv-rev.html}}</div>
+        <figcaption class="plate-cap"><span>Fig. 1.3</span><span>Switch between revisions to see the magnet and package move down.</span><span>Schematic · not to scale</span></figcaption>
+      </figure>
+    </div>
+
+    <div class="table-wrap" tabindex="0" role="region" aria-label="v5.1 compared with v5.2">
+      <table class="data">
+        <caption>What changed {{ev cad}}</caption>
+        <thead><tr><th scope="col">Check</th><th scope="col" class="n">v5.1</th><th scope="col" class="n">v5.2</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Magnet face below housing rim</th><td class="n">0.2 mm</td><td class="n hi">3 mm</td></tr>
+          <tr><th scope="row">Package to battery tray</th><td class="n">3.9 mm</td><td class="n hi">≈ 6.7 mm</td></tr>
+          <tr><th scope="row">What the steel plate rests on</th><td class="n">printed rim</td><td class="n hi">magnet only</td></tr>
+          <tr><th scope="row">Rim braces the package</th><td class="n">yes</td><td class="n">no</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="mass">
+    <p class="label"><b>05</b>Analysis · stability and control</p>
+    <h2>What a 100 g package does to a 630 g vehicle</h2>
+    <div class="prose">
+      <p>The package is 16% of the vehicle's mass, hung 45 mm ahead of centre and well below the rotors. One set of mass properties would hide what that does. I built the mass budget, pulled the CG and inertias from the CAD model for both cases, and presented them as the stability and control section of our preliminary design review.</p>
+    </div>
+
+    <figure class="fig" data-toggle data-state="loaded">
+      <div class="fig-head">
+        <p>Mass properties, empty and loaded</p>
+        <div class="seg" role="group" aria-label="Vehicle loading"><button type="button" data-set="state:empty" aria-pressed="false">Empty</button><button type="button" data-set="state:loaded" aria-pressed="true">Package aboard</button></div>
+      </div>
+      <div class="cols mid">
+        <div class="plate pad">{{include figures/marv-cg.html}}</div>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Mass properties table">
+          <table class="data">
+            <thead><tr><th scope="col">Property</th><th scope="col" class="n c-empty">Empty</th><th scope="col" class="n c-loaded">Loaded</th><th scope="col" class="n">Change</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Mass</th><td class="n c-empty">630 g</td><td class="n c-loaded">730 g</td><td class="n">+16%</td></tr>
+              <tr><th scope="row">CG forward of frame centre</th><td class="n c-empty">1.8 mm</td><td class="n c-loaded">7.7 mm</td><td class="n">+5.9 mm</td></tr>
+              <tr><th scope="row">CG below rotor plane</th><td class="n c-empty">28.2 mm</td><td class="n c-loaded">38.7 mm</td><td class="n">+10.5 mm</td></tr>
+              <tr><th scope="row">Pitch inertia<span class="u">×10⁻⁴ kg·m²</span></th><td class="n c-empty">35.3</td><td class="n c-loaded">42.8</td><td class="n hi">+21%</td></tr>
+              <tr><th scope="row">Roll inertia</th><td class="n c-empty">35.8</td><td class="n c-loaded">41.7</td><td class="n hi">+17%</td></tr>
+              <tr><th scope="row">Yaw inertia</th><td class="n c-empty">57.1</td><td class="n c-loaded">59.3</td><td class="n">+4%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <figcaption class="plate-cap" style="border-top:1px solid var(--ink);margin-top:16px"><span>Fig. 1.4</span><span>Values from the CAD model and our mass budget, with the v4 pickup fitted. In the drawing the CG shift is exaggerated so it can be seen.</span><span>From CAD · drawing schematic</span></figcaption>
+    </figure>
+
+    <h3>What the numbers mean for the vehicle</h3>
+    <div class="prose">
+      <ul>
+        <li><b>The CG moves about 6 mm forward and 10 mm down.</b> In a level hover the front rotors have to carry more of the weight than the rear pair.</li>
+        <li><b>Pitch and roll inertia rise 21% and 17%.</b> The same control torque turns the loaded vehicle more slowly, so gains chosen for the empty vehicle will respond more sluggishly with the package aboard.</li>
+        <li><b>Yaw inertia barely moves.</b> The package hangs close to the yaw axis, so it adds only 4%.</li>
+      </ul>
+      <p>These values are for the v4 pickup. The winch has a different mass in a different place, so it needs its own pair of cases.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="compass">
+    <p class="label"><b>06</b>A check that avoided a redesign</p>
+    <h2>A strong magnet, 14 cm from a compass</h2>
+    <div class="prose">
+      <p>The pickup magnet sits 13 to 15 cm from the Navio2's magnetometer. I estimated its field at the board at roughly 3 to 6 times Earth's {{ev estimate "Estimate"}}, far too much for a compass heading to survive.</p>
+      <p>Before changing anything I checked whether the vehicle depends on that sensor. It does not. Heading comes from motion capture, and the project leaves the magnetometer unused. A fix for a sensor nobody reads would have spent mass for nothing, so the pickup stayed where it was.</p>
+    </div>
+    <div class="callout">
+      <p class="label">Limit of this conclusion</p>
+      <p>It holds for this vehicle in this lab. On an aircraft that steers by compass, the same pickup would need rework.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="open">
+    <p class="label"><b>07</b>Results and limits</p>
+    <h2>What is still an estimate</h2>
+    <div class="prose">
+      <p>A model is enough to choose a geometry. It is too little to promise a force. The design review reported the pawl forces as estimates, and this page does the same.</p>
+    </div>
+    <div class="table-wrap fig" tabindex="0" role="region" aria-label="Open items">
+      <table class="data stack">
+        <thead><tr><th scope="col">Item</th><th scope="col">What I have today</th><th scope="col">What closes it</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Force to push the ratchet up one click</th><td class="txt" data-label="What I have today">≈ 1.5 N, from a beam model of the pawls {{ev estimate "Estimate"}}</td><td class="txt" data-label="What closes it">A measurement on a printed pair of tubes, planned</td></tr>
+          <tr><th scope="row">Force to pull the ratchet free</th><td class="txt" data-label="What I have today">≈ 5 N, from the same model {{ev estimate "Estimate"}}</td><td class="txt" data-label="What closes it">The same test</td></tr>
+          <tr><th scope="row">Releasing the package at drop-off</th><td class="txt" data-label="What I have today">Not designed yet</td><td class="txt" data-label="What closes it">A release concept</td></tr>
+          <tr><th scope="row">Mass properties with the winch</th><td class="txt" data-label="What I have today">The current set is for v4</td><td class="txt" data-label="What closes it">Empty and loaded cases for v5.2</td></tr>
+          <tr><th scope="row">Package bracing in v5.2</th><td class="txt" data-label="What I have today">The rim no longer steadies the package</td><td class="txt" data-label="What closes it">Accepted as the cost of the clearance</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="lessons">
+    <p class="label"><b>08</b>What I took from it</p>
+    <h2>Four things I will carry into the next design</h2>
+    <ol class="lessons">
+      <li><b>Put the numbers first.</b>A mass budget and two clearances decided the v4 design before anything was printed.</li>
+      <li><b>Check what a change touches.</b>A magnet is a payload part until it sits 14 cm from a compass. Asking early turned a possible redesign into a note.</li>
+      <li><b>Every fix costs something.</b>Dropping the magnet 3 mm bought clearance and gave up the rim's support. Writing the trade down matters as much as making it.</li>
+      <li><b>Say what is measured and what is estimated.</b>The pawl forces are a model until a printed pair says otherwise, and the review reads that way.</li>
+    </ol>
+  </section>
+
+  </div>
+</div>
+</div>
+
+{{case-next}}

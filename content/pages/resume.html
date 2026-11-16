@@ -1,0 +1,105 @@
+<!--
+title: Résumé
+description: Résumé of Youssef Kartah: aerospace engineering at Penn State (May 2027), Safran Aerosystems intern, Nittany Rocket Labs structures, UAV design and test projects.
+section: resume
+class: page resume
+-->
+<div class="resume-top">
+  <div class="wrap">
+    <p>This page prints on one sheet. Use the button to print it or save it as a PDF.</p>
+    <div class="btn-row">{{resume-actions}}</div>
+  </div>
+</div>
+
+<article class="cv">
+<div class="cv-sheet">
+  <header>
+    <div>
+      <h1>Youssef Kartah</h1>
+      <p class="who">Aerospace engineering, Penn State · graduating May 2027 · {{site.location}}</p>
+    </div>
+    <p class="links"><a href="mailto:{{site.email}}">{{site.email}}</a><br><a href="{{site.linkedin}}">{{site.linkedinLabel}}</a>{{if site.phone}}<br>{{site.phone}}{{/if}}{{if site.url}}<br><a href="{{site.url}}">{{site.url}}</a>{{/if}}</p>
+  </header>
+
+  <section>
+    <h2>Education</h2>
+    <div>
+      <div class="item">
+        <div class="row"><h3>The Pennsylvania State University</h3><span class="when">Expected May 2027</span></div>
+        <p class="sub">B.S., Aerospace Engineering · autonomous vehicles track</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Experience</h2>
+    <div>
+      <div class="item">
+        <div class="row"><h3>Safran Aerosystems · Engineering Intern, Fluids &amp; Fuel Systems</h3><span class="when">Morocco · Jun to Aug 2024</span></div>
+        <ul>
+          <li>Assisted with production and acceptance testing of kerosene temperature probes and fuel-gauging devices: about 110 tests across 6 part numbers.</li>
+          <li>Standardized MATLAB and Excel test logs and traveler fields, saving about 3 minutes of data entry per test (5 to 8%).</li>
+          <li>Worked with production staff to update work instructions, checklists and margin-of-safety checks; about 10 fewer repeat-test and hold tags.</li>
+          <li>Compiled root-cause data packs within 24 to 48 hours of a failure; they helped close 2 nonconformance reports.</li>
+        </ul>
+      </div>
+      <div class="item">
+        <div class="row"><h3>Nittany Rocket Labs · Structures team</h3><span class="when">Sep 2025 to present</span></div>
+        <ul>
+          <li>With the team, lay up, vacuum bag, cure, demold and trim carbon-fiber body tubes and plates for the rocket airframe.</li>
+          <li>Modeled parts in SolidWorks with fasteners and GD&amp;T; checked fit with 3D-printed and laser-cut prototypes before layup.</li>
+          <li>Ran stiffness and buckling checks in ANSYS Discovery, compared with hand calculations; ran a cost and capability trade study for a new curing oven.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Projects</h2>
+    <div>
+      <div class="item">
+        <div class="row"><h3>M.A.R.V. autonomous quadcopter · senior capstone, team of 4</h3><span class="when">Fall 2026 to Spring 2027</span></div>
+        <ul>
+          <li>Designed the magnetic payload pickup through two concepts: a 36.3 g passive ratchet against an 80 g budget, then a servo winch with 150 mm of reach.</li>
+          <li>Built the mass budget and presented empty and loaded mass properties as the stability and control section of the preliminary design review.</li>
+          <li>Revised the winch to raise package-to-battery-tray clearance from 3.9 mm to about 6.7 mm, and documented what the change gave up.</li>
+        </ul>
+      </div>
+      <div class="item">
+        <div class="row"><h3>Self-built UAVs · personal, self-funded</h3><span class="when">Ongoing</span></div>
+        <ul>
+          <li>Integrated a Pixhawk with GPS and compass, telemetry, ESCs and RC; flew fully autonomous waypoint missions with a live manual override.</li>
+          <li>Cut the mapping UAV's build cost 30% with component trade studies across propulsion, battery and frame.</li>
+          <li>Iterated 3 frame designs in SolidWorks and ANSYS Discovery (safety factor of at least 1.5 at the arm root, no added mass); removed a hover oscillation by retuning PID gains in Simulink from 12 flight logs.</li>
+        </ul>
+      </div>
+      <div class="item">
+        <div class="row"><h3>Analysis and test · coursework and independent study</h3><span class="when">2025 to 2026</span></div>
+        <ul>
+          <li>Measured a 30.5 ± 0.6% stiffness gain from carbon reinforcement of an aluminum I-beam, a 10.1 ± 0.5% gain per unit weight.</li>
+          <li>Extracted lift and drag for a NACA 0012 at Mach 0.70 from raw CFD data in Python; two independent lift methods agreed within 0.4%.</li>
+          <li>Ran a steady RANS study in ANSYS Fluent, 7 variants on 3 meshes, predicting about 12% lower drag on an EV body with cooling flow kept.</li>
+        </ul>
+      </div>
+      <div class="item">
+        <div class="row"><h3>Line-following race robot · course team project</h3><span class="when">Nov 2026</span></div>
+        <ul>
+          <li>Worked on a four-state MicroPython race program: feedback line following and a 180° turn built from gyro and line-sensor readings.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="skills">
+    <h2>Skills</h2>
+    <div>
+      <p><b>Design:</b> SolidWorks, CATIA, GD&amp;T, design for manufacturing, 3D printing, laser cutting, composite layup and vacuum bagging</p>
+      <p><b>Analysis:</b> ANSYS Discovery, ANSYS Fluent, OpenFOAM, SU2, XFOIL, hand-calculation validation, uncertainty analysis</p>
+      <p><b>Flight systems:</b> Pixhawk, Mission Planner, Raspberry Pi with Navio2, OptiTrack, Simulink, PID tuning, flight log analysis</p>
+      <p><b>Test and quality:</b> production testing, work instructions, travelers, nonconformance reports, root cause and corrective action</p>
+      <p><b>Programming:</b> Python, MicroPython, MATLAB, C/C++, JavaScript, Git, LaTeX</p>
+      <p><b>Languages:</b> Arabic, English and French (fluent), Spanish (intermediate)</p>
+    </div>
+  </section>
+</div>
+</article>
