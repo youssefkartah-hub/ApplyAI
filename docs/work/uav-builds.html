@@ -16,48 +16,34 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#F5F2EC">
+<meta name="theme-color" content="#2340E8">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-<link rel="preload" href="../assets/fonts/geist.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="../assets/fonts/newsreader-display.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="../assets/css/site.css?v=03829a66">
-<script>document.documentElement.className = 'js';</script>
+<link rel="preload" href="../assets/fonts/archivo-expanded.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../assets/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../assets/css/site.css?v=f27bd35f">
+<script>
+document.documentElement.className = 'js';
+try { if (sessionStorage.getItem('go')) { sessionStorage.removeItem('go'); document.documentElement.classList.add('arriving'); } } catch (e) {}
+</script>
 </head>
 <body class="case">
 <a class="skip" href="#main">Skip to content</a>
-
-<header class="site-head">
-  <div class="wrap">
-    <a class="brand" href="../index.html" aria-label="Youssef Kartah, home">
-      <span class="brand-full">Youssef Kartah</span><span class="brand-short" aria-hidden="true">YK</span>
-    </a>
-    <nav aria-label="Main">
-      <a href="../index.html#work" aria-current="true">Work</a>
-      <a href="../index.html#about">About</a>
-      <a href="../resume.html">Résumé</a>
-      <a href="../index.html#contact">Contact</a>
-    </nav>
-  </div>
-</header>
+<div class="curtain" aria-hidden="true"></div>
+<header class="bar"><div class="bar-in"><a class="back" href="../projects.html" data-go><svg class="ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H6M11 6l-6 6 6 6"/></svg><span>Projects</span></a><a class="bar-name" href="../index.html" data-go>Youssef Kartah</a><nav aria-label="Main"><a class="bar-link" href="../Youssef_Kartah_Resume.pdf" target="_blank" rel="noopener">Résumé</a><a class="bar-link" href="#contact">Contact</a></nav></div><div class="progress" aria-hidden="true"></div></header>
 
 <main id="main">
 
-<header class="case-head">
+<header class="ph">
   <div class="wrap">
-    <p class="crumb"><a href="../index.html#work">Selected work</a><span aria-hidden="true">/</span><span>02 of 04</span></p>
-    <div class="case-head-grid">
-      <div>
-        <p class="kicker"><span>Personal projects</span><span>Self-funded</span><span>Ongoing</span></p>
-        <h1>Three UAVs, designed and built on my own</h1>
-        <p class="lede">Three builds on my own time and money: an autonomous mapping UAV, a quadcopter frame that I designed and then tuned from its own flight logs, and a thermal-imaging drone for crop irrigation that is on my desk now.</p>
-      </div>
-      <dl class="spec">
-        <div><dt>Status</dt><dd><span class="status status-progress"><b>Ongoing</b> <span>third build in assembly</span></span></dd></div>
-        <div><dt>My part</dt><dd>All of it: component trade studies, frame design and FEA, Pixhawk integration, mission planning, and tuning from flight logs.</dd></div>
-        <div><dt>Team</dt><dd>Solo. Nobody assigns these; I set the problem and pay for the parts.</dd></div>
-        <div><dt>Tools</dt><dd>Pixhawk · Mission Planner · SolidWorks · ANSYS Discovery · Simulink · MATLAB</dd></div>
-      </dl>
-    </div>
+    <p class="row-kind">Personal projects · Self-funded · Ongoing</p>
+    <h1>Three UAVs, designed and built on my own</h1>
+    <p class="lede">Three builds on my own time and money: an autonomous mapping UAV, a quadcopter frame that I designed and then tuned from its own flight logs, and a thermal-imaging drone for crop irrigation that is on my desk now.</p>
+    <dl class="spec">
+      <div><dt>Status</dt><dd><span class="status status-progress"><b>Ongoing</b> <span>third build in assembly</span></span></dd></div>
+      <div><dt>My part</dt><dd>All of it: component trade studies, frame design and FEA, Pixhawk integration, mission planning, and tuning from flight logs.</dd></div>
+      <div><dt>Team</dt><dd>Solo. Nobody assigns these; I set the problem and pay for the parts.</dd></div>
+      <div><dt>Tools</dt><dd>Pixhawk · Mission Planner · SolidWorks · ANSYS Discovery · Simulink · MATLAB</dd></div>
+    </dl>
   </div>
 </header>
 
@@ -117,6 +103,7 @@
     <div class="prose">
       <p>On a self-funded build, every component is a purchase I have to justify to myself. Propulsion, battery and frame also depend on each other, so choosing them one at a time means paying for the mismatch later.</p>
       <p>Before ordering anything for the mapping UAV I ran component-level trade studies across all three together. The build cost came down 30% <span class="ev ev-plain">Parts cost</span>.</p>
+      <p>I also chose motors, propellers and battery parameters through propulsion analysis and weight reduction, with a target of about 30% more flight endurance <span class="ev ev-estimate">Target</span>. That is a target. This page does not report a measured endurance.</p>
     </div>
   </section>
 
@@ -209,7 +196,7 @@
     <figure class="fig">
       <div class="plate annot-scroll" tabindex="0" role="region" aria-label="Annotated photo of the avionics, scrolls sideways on small screens">
         <div class="annot" data-pins>
-          <picture><source type="image/webp" srcset="../assets/media/uav-parts-640.webp 640w, ../assets/media/uav-parts-1000.webp 1000w, ../assets/media/uav-parts-1600.webp 1600w" sizes="(min-width: 1080px) 70vw, 760px"><img src="../assets/media/uav-parts.jpg" width="1600" height="568" alt="Drone components laid out on a desk: a propeller, a 30 amp speed controller, a Pixhawk flight controller, a GPS and compass module, a buzzer, an I2C splitter and a FlySky receiver" loading="lazy" decoding="async"></picture>
+          <img src="../assets/media/uav-parts-1440.webp" srcset="../assets/media/uav-parts-720.webp 720w, ../assets/media/uav-parts-1440.webp 1440w" sizes="(min-width: 1080px) 70vw, 760px" width="1440" height="511" alt="Drone components laid out on a desk: a propeller, a 30 amp speed controller, a Pixhawk flight controller, a GPS and compass module, a buzzer, an I2C splitter and a FlySky receiver" loading="lazy" decoding="async">
           <span class="pin" data-pin="1" style="left:11.5%;top:24%">1</span>
           <span class="pin" data-pin="2" style="left:32.8%;top:12%">2</span>
           <span class="pin" data-pin="3" style="left:40.8%;top:30%">3</span>
@@ -234,7 +221,7 @@
     <div class="cols mid">
       <figure class="fig">
         <div class="plate">
-          <video src="../assets/media/uav-build.mp4" poster="../assets/media/uav-build-poster.jpg" width="960" height="632" muted loop playsinline controls preload="none" aria-label="Timelapse of me assembling a quadcopter airframe at my desk"></video>
+          <video src="../assets/media/uav-build.mp4" poster="../assets/media/uav-build-poster-960.webp" width="960" height="632" muted loop playsinline controls preload="none" aria-label="Timelapse of me assembling a quadcopter airframe at my desk"></video>
           <button class="vbtn" type="button" data-state="paused" aria-label="Play video"><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9-5.5z"/></svg><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 1.5h3v11h-3zM8.5 1.5h3v11h-3z"/></svg><span>Play</span></button>
         </div>
         <figcaption class="plate-cap"><span>Fig. 2.3</span><span>The airframe going together at my desk.</span><span>Timelapse · 0:28</span></figcaption>
@@ -262,6 +249,7 @@
         <li><b>The safety factor is a simulation result.</b> It comes from ANSYS Discovery at the arm root, and it is not a load test.</li>
         <li><b>The tuning result comes from flight logs.</b> Twelve of them, recorded on the quadcopter itself.</li>
         <li><b>The thermal drone's mission is a plan.</b> No part of it has been demonstrated in flight.</li>
+        <li><b>The endurance gain is a target.</b> I have not measured it, so I do not claim it.</li>
       </ul>
     </div>
   </section>
@@ -282,35 +270,46 @@
 </div>
 
 
-<nav class="case-next" aria-label="More case studies">
-  <div class="wrap">
-    <a href="../work/marv.html"><span class="k">← Previous · 01</span><b>A payload pickup for an autonomous quadcopter</b></a>
-    <a href="../work/analysis.html" class="nx"><span class="k">Next · 03 →</span><b>Four analyses, each checked a second way</b></a>
-  </div>
+<nav class="next" aria-label="More projects">
+  <a class="next-main" href="../work/rocket-labs.html" data-go>
+    <span class="next-k">Next project</span>
+    <span class="next-t">Nittany Rocket Labs</span>
+    <span class="next-d">Structures and composites on Penn State's student rocketry team: manufacturable CAD, fit prototypes and stiffness and buckling checks for carbon-fiber airframe parts.</span>
+    <span class="next-ar" aria-hidden="true"><svg class="ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span>
+  </a>
+  <div class="next-side"><a href="../work/sarah.html" data-go><span>Previous</span> SARAH</a><a href="../projects.html" data-go><span>All projects</span> Back to the list</a></div>
 </nav>
 
 </main>
 
-<footer class="site-foot">
+
+<footer class="foot" id="contact">
   <div class="wrap">
-    <div class="foot-legend">
-      <p class="label">How to read the numbers</p>
-      <p>Every figure on this site is tagged with where it came from.</p>
-      <ul class="legend-list">
+    <div class="foot-top">
+      <h2>Get in touch</h2>
+      <p>Looking for full-time roles in design, test, manufacturing or autonomy, starting after May 2027. Open to relocating.</p>
+    </div>
+    <ul class="foot-links">
+      <li><a href="mailto:youssef.kartah@gmail.com">youssef.kartah@gmail.com</a><button class="copy" type="button" data-copy="youssef.kartah@gmail.com">Copy</button></li>
+      <li><a href="https://www.linkedin.com/in/youssef-kartah/" rel="me noopener" target="_blank">linkedin.com/in/youssef-kartah <svg class="ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></li>
+      <li><a href="../Youssef_Kartah_Resume.pdf" target="_blank" rel="noopener">Résumé (PDF) <svg class="ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></li>
+    </ul>
+    <div class="legend">
+      <p>Every figure on the project pages is tagged with where it came from:</p>
+      <ul>
         <li><span class="ev ev-measured">Measured</span> on a physical part or in flight</li>
         <li><span class="ev ev-simulated">Simulated</span> in CFD or FEA</li>
         <li><span class="ev ev-calculated">Calculated</span> from a stated model or data set</li>
         <li><span class="ev ev-cad">From CAD</span> model or mass budget</li>
+        <li><span class="ev ev-reported">My own record</span> from work records or my own write-up</li>
         <li><span class="ev ev-estimate">Estimate, untested</span></li>
       </ul>
     </div>
-    <div class="foot-meta">
-      <p><a href="mailto:youssef.kartah@gmail.com">youssef.kartah@gmail.com</a><br><a href="https://www.linkedin.com/in/youssef-kartah/" rel="me noopener">linkedin.com/in/youssef-kartah</a></p>
-      <p class="fine">Youssef Kartah · Engineering portfolio · Rev. November 2026<br>No trackers, no cookies.</p>
-    </div>
+    <p class="fine">Youssef Kartah · Rev. November 2026 · No trackers, no cookies.</p>
   </div>
 </footer>
 
-<script src="../assets/js/site.js?v=7d73b810" defer></script>
+
+<script src="../assets/js/site.js?v=d067b3f2" defer></script>
 </body>
 </html>

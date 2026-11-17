@@ -1,46 +1,117 @@
 {
-  "flagship": [
+  "projects": [
     {
-      "slug": "marv",
-      "number": "01",
-      "title": "A payload pickup for an autonomous quadcopter",
-      "navTitle": "M.A.R.V. payload pickup",
-      "kicker": [
-        "Senior capstone",
-        "AERSP 403A/B",
-        "Fall 2026 to Spring 2027"
+      "slug": "roomly",
+      "title": "Roomly",
+      "headline": "Roomly: sell the whole room",
+      "kind": [
+        "Web app",
+        "Solo build",
+        "2026"
       ],
       "status": {
         "kind": "progress",
-        "label": "In progress",
-        "detail": "preliminary design review complete"
+        "label": "Working prototype",
+        "detail": "demo accounts, no payments"
       },
-      "summary": "Our capstone quadcopter, M.A.R.V., flies under motion capture and has to collect a 100 g package with a magnet.",
-      "myPart": "I designed the pickup mechanism, from a passive ratchet to a servo winch, and produced the stability and control analysis for the design review.",
-      "team": "Team of 4. Each of us owns part of the vehicle; these two pieces are mine.",
-      "result": {
-        "value": "36.3 g",
-        "text": "for the ratchet pickup, against an 80 g mass budget",
-        "evidence": "cad"
-      },
+      "desc": "A move-out marketplace for students. You photograph a room once, a vision model drafts a priced listing for every item, and buyers walk through the room in 3D.",
+      "myPart": "Everything: the product, the vision pipeline, the 3D room, the offer flow and the demo.",
+      "team": "Solo build.",
       "tools": [
-        "CAD",
-        "Onshape (team frame model)",
-        "FDM printing in PLA",
-        "Mass-properties analysis"
+        "Next.js 15",
+        "React 19",
+        "React Three Fiber",
+        "Claude vision"
       ],
-      "figure": "figures/marv-pickups.html",
-      "figureCaption": "The two pickup concepts, v4 and v5.",
-      "figureKind": "Schematic · not to scale",
-      "og": "og-marv.jpg",
-      "figureClass": "pad"
+      "media": {
+        "type": "video",
+        "src": "assets/media/roomly-orbit.mp4",
+        "poster": "roomly-room.jpg",
+        "w": 800,
+        "h": 500,
+        "alt": "A student bedroom rebuilt in 3D by the Roomly app, turning slowly, with a price tag floating over each item"
+      },
+      "og": "og-roomly.jpg",
+      "result": {
+        "value": "6 → 15",
+        "text": "photos of my own bedroom became priced items in one pass"
+      }
+    },
+    {
+      "slug": "line-follower",
+      "title": "Line-following race robot",
+      "headline": "A line-following robot with a hand-written turn",
+      "kind": [
+        "Course project",
+        "Team race",
+        "November 2026"
+      ],
+      "status": {
+        "kind": "done",
+        "label": "Completed",
+        "detail": "raced 13 November 2026"
+      },
+      "desc": "A race robot that follows a taped line, turns 180° at a wall without the library's turn command, and runs home against the robot in the next lane.",
+      "myPart": "I worked on the race program and its tuning with my team.",
+      "team": "Course team. The robot is an XRP kit; the program is ours.",
+      "tools": [
+        "MicroPython",
+        "XRP robot kit",
+        "Feedback control",
+        "State machine"
+      ],
+      "media": {
+        "type": "video",
+        "src": "assets/media/lf-race.mp4",
+        "poster": "lf-race-poster.jpg",
+        "w": 960,
+        "h": 496,
+        "alt": "Two robots racing in parallel lanes on a table, out along the tape, around at the wall and back"
+      },
+      "og": "og-line-follower.jpg",
+      "result": {
+        "value": "4 states",
+        "text": "in a race program that ran hands-off in head-to-head races"
+      }
+    },
+    {
+      "slug": "sarah",
+      "title": "SARAH",
+      "headline": "SARAH: a command center for my day",
+      "kind": [
+        "Personal software",
+        "June to October 2026"
+      ],
+      "status": {
+        "kind": "done",
+        "label": "In personal use",
+        "detail": "runs on my laptop"
+      },
+      "desc": "A dashboard on my laptop that runs my job search and daily routine from one screen. One Python server, one HTML page, 47 commits.",
+      "myPart": "All of it, built with Claude Code as a pair programmer.",
+      "team": "Solo.",
+      "tools": [
+        "Python",
+        "One HTML page",
+        "Notion API",
+        "Gmail and Calendar APIs"
+      ],
+      "media": {
+        "type": "image",
+        "src": "sarah-today.jpg",
+        "alt": "The SARAH dashboard's Today screen with sample data: the next task, the day's numbers and a task list"
+      },
+      "og": "og-sarah.jpg",
+      "result": {
+        "value": "47 commits",
+        "text": "in under five months, two files and 6,841 lines"
+      }
     },
     {
       "slug": "uav-builds",
-      "number": "02",
-      "title": "Three UAVs, designed and built on my own",
-      "navTitle": "Self-built UAVs",
-      "kicker": [
+      "title": "Self-built drones",
+      "headline": "Three UAVs, designed and built on my own",
+      "kind": [
         "Personal projects",
         "Self-funded",
         "Ongoing"
@@ -50,14 +121,9 @@
         "label": "Ongoing",
         "detail": "third build in assembly"
       },
-      "summary": "An autonomous mapping UAV, a quadcopter frame with its control tuning, and a thermal-imaging drone for crop irrigation that I am assembling now.",
+      "desc": "Three drones on my own time and money: a mapping aircraft that flies waypoint missions, a quadcopter frame tuned from its flight logs, and a thermal-imaging drone I am assembling now.",
       "myPart": "All of it: component trade studies, frame design and FEA, Pixhawk integration, mission planning, and tuning from flight logs.",
       "team": "Solo. Nobody assigns these; I set the problem and pay for the parts.",
-      "result": {
-        "value": "12 logs",
-        "text": "of flight data behind the PID retune that removed a persistent hover oscillation",
-        "evidence": "measured"
-      },
       "tools": [
         "Pixhawk",
         "Mission Planner",
@@ -66,20 +132,94 @@
         "Simulink",
         "MATLAB"
       ],
-      "figure": "figures/home-uav.html",
-      "figureCaption": "Avionics for the current build, on my desk.",
-      "figureKind": "Photo",
+      "media": {
+        "type": "video",
+        "src": "assets/media/uav-build.mp4",
+        "poster": "uav-build-poster.jpg",
+        "w": 960,
+        "h": 632,
+        "alt": "Timelapse of me assembling a quadcopter airframe at my desk"
+      },
       "og": "og-uav-builds.jpg",
-      "figureClass": ""
+      "result": {
+        "value": "12 logs",
+        "text": "of flight data behind the PID retune that removed a hover oscillation"
+      }
+    },
+    {
+      "slug": "rocket-labs",
+      "title": "Nittany Rocket Labs",
+      "headline": "Composite airframe structures at Nittany Rocket Labs",
+      "kind": [
+        "Student team",
+        "Structures & Composites",
+        "Sep 2025 to present"
+      ],
+      "status": {
+        "kind": "progress",
+        "label": "Ongoing",
+        "detail": "since September 2025"
+      },
+      "desc": "Structures and composites on Penn State's student rocketry team: manufacturable CAD, fit prototypes and stiffness and buckling checks for carbon-fiber airframe parts.",
+      "myPart": "Manufacturable CAD and fit prototypes, stiffness and buckling checks, and simple FE models compared with hand calculations.",
+      "team": "Structures team. The layup and build work is shared.",
+      "tools": [
+        "SolidWorks",
+        "ANSYS Discovery",
+        "Composite layup",
+        "GD&T"
+      ],
+      "media": {
+        "type": "image",
+        "src": "nrl-layup.jpg",
+        "alt": "Gloved hands rolling carbon fiber onto a mandrel on a lab table covered in release film, with a cut sheet of carbon cloth beside them"
+      },
+      "og": "og-rocket-labs.jpg",
+      "result": {
+        "value": "Fit first",
+        "text": "prototypes settle fit and clearance before any carbon is cut"
+      }
+    },
+    {
+      "slug": "marv",
+      "title": "Capstone payload pickup",
+      "headline": "A payload pickup for an autonomous quadcopter",
+      "kind": [
+        "Senior capstone",
+        "AERSP 403A/B",
+        "Fall 2026 to Spring 2027"
+      ],
+      "status": {
+        "kind": "progress",
+        "label": "In progress",
+        "detail": "preliminary design review complete"
+      },
+      "desc": "The payload pickup for our senior capstone quadcopter, from a passive ratchet to a servo winch, plus the analysis of what a 100 g package does to the vehicle.",
+      "myPart": "I designed the pickup mechanism, from a passive ratchet to a servo winch, and produced the stability and control analysis for the design review.",
+      "team": "Team of 4. Each of us owns part of the vehicle; these two pieces are mine.",
+      "tools": [
+        "CAD",
+        "Onshape (team frame model)",
+        "FDM printing in PLA",
+        "Mass-properties analysis"
+      ],
+      "media": {
+        "type": "figure",
+        "include": "figures/marv-pickups.html",
+        "alt": "Schematic of the two pickup concepts: a passive ratchet tube that lifts the package 30 millimeters, and a servo winch that lowers a magnet puck 150 millimeters"
+      },
+      "og": "og-marv.jpg",
+      "result": {
+        "value": "36.3 g",
+        "text": "for the ratchet pickup, against an 80 g mass budget"
+      }
     },
     {
       "slug": "analysis",
-      "number": "03",
-      "title": "Four analyses, each checked a second way",
-      "navTitle": "Analysis, checked twice",
-      "kicker": [
+      "title": "Analysis, checked twice",
+      "headline": "Four analyses, each checked a second way",
+      "kind": [
         "Coursework and independent study",
-        "AERSP 305W · AERSP 424",
         "2025 to 2026"
       ],
       "status": {
@@ -87,82 +227,59 @@
         "label": "Completed",
         "detail": "one measured, three computed"
       },
-      "summary": "A structures lab, a transonic airfoil rebuilt from raw CFD data, a CFD drag study and a root solver. Each has a check built in that could have proved me wrong.",
+      "desc": "A carbon-reinforced beam test, a transonic airfoil rebuilt from raw CFD data, an EV drag study and a root solver, each checked a second way.",
       "myPart": "My own work throughout, except the root solver, which I wrote with one teammate.",
       "team": "Individual, except the root solver (two of us).",
-      "result": {
-        "value": "+30.5 ± 0.6%",
-        "text": "bending stiffness from carbon reinforcement, for 18.6% more weight",
-        "evidence": "measured"
-      },
       "tools": [
         "ANSYS Fluent",
         "Python",
         "MATLAB",
         "Uncertainty analysis"
       ],
-      "figure": "figures/home-analysis.html",
-      "figureCaption": "Flexural rigidity of the plain and reinforced beams, from deflection.",
-      "figureKind": "Chart · measured data",
+      "media": {
+        "type": "figure",
+        "include": "figures/home-analysis.html",
+        "alt": "Bar chart of the measured stiffness of a plain aluminum beam and a carbon-reinforced one"
+      },
       "og": "og-analysis.jpg",
-      "figureClass": "pad"
+      "result": {
+        "value": "+30.5 ± 0.6%",
+        "text": "bending stiffness from carbon reinforcement, for 18.6% more weight"
+      }
     },
     {
-      "slug": "line-follower",
-      "number": "04",
-      "title": "A line-following robot with a hand-written turn",
-      "navTitle": "Line-following race robot",
-      "kicker": [
-        "Course project",
-        "Team",
-        "November 2026"
+      "slug": "safran",
+      "title": "Safran Aerosystems",
+      "headline": "Fuel-system production and test at Safran Aerosystems",
+      "kind": [
+        "Internship",
+        "Fluids & Fuel Systems",
+        "Jun to Aug 2024"
       ],
       "status": {
         "kind": "done",
         "label": "Completed",
-        "detail": "raced 13 November 2026"
+        "detail": "Tiflet, Morocco"
       },
-      "summary": "Follow 1.5 m of tape through an S-bend, turn around at a wall and race the next lane home. The library's turn command was banned, so the 180° turn runs on the gyro and the line sensors.",
-      "myPart": "I worked on the race program and its tuning with my team.",
-      "team": "Course team. The robot is an XRP kit; the program is ours.",
-      "result": {
-        "value": "4 states",
-        "text": "in a race program that ran hands-off in head-to-head races",
-        "evidence": "tested"
-      },
+      "desc": "A summer in production and test of aircraft fuel-system parts: standardizing test records, updating work instructions and compiling data packs for failed parts.",
+      "myPart": "I assisted production and test, then changed the records, instructions and failure packs described here.",
+      "team": "Production and test team.",
       "tools": [
-        "MicroPython",
-        "XRP robot kit",
-        "Feedback control",
-        "State machine"
+        "MATLAB",
+        "Excel",
+        "Work instructions",
+        "RCCA"
       ],
-      "figure": "figures/home-lf.html",
-      "figureCaption": "The robot on the bench, plugged in for programming.",
-      "figureKind": "Photo",
-      "og": "og-line-follower.jpg",
-      "figureClass": ""
-    }
-  ],
-  "more": [
-    {
-      "title": "Roomly",
-      "kind": "Web app · solo build · 2026",
-      "status": "Working prototype",
-      "text": "A move-out marketplace where the room is the listing. The seller photographs the room once, a vision model drafts a priced listing for each item, and buyers browse the room in 3D.",
-      "result": "Six photos of my own bedroom became 15 priced items in one pass. I also costed in-app payments before building them: about $0.87 kept on a $120 sale, so I argued for in-person handoff.",
-      "tools": "Next.js · React Three Fiber · Claude vision",
-      "image": "roomly-room.jpg",
-      "alt": "A student apartment rebuilt in 3D inside the Roomly app, with a price tag floating over each piece of furniture"
-    },
-    {
-      "title": "SARAH",
-      "kind": "Personal software · June to October 2026",
-      "status": "In personal use",
-      "text": "A dashboard that runs on my laptop and keeps my job search and daily routine on one screen: one Python server, one HTML page, 47 commits. Built with Claude Code as a pair programmer.",
-      "result": "Traced a bug that hid several records at once to rows being keyed by company and role, and re-keyed them by unique ID. Replaced the server's file blocklist with an allowlist, so it serves one page and nothing else.",
-      "tools": "Python · Notion, Gmail and Calendar APIs",
-      "image": "sarah-today.jpg",
-      "alt": "The SARAH dashboard's Today screen with sample data: the next task, the day's numbers and a task list"
+      "media": {
+        "type": "figure",
+        "include": "figures/safran-row.html",
+        "alt": "Diagram of the test-to-closure loop for a part, with three numbered places where I changed the process"
+      },
+      "og": "og-safran.jpg",
+      "result": {
+        "value": "≈3 min",
+        "text": "of data entry saved on every test, 5 to 8%"
+      }
     }
   ]
 }

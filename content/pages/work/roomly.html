@@ -1,0 +1,241 @@
+<!--
+title: Roomly: sell the whole room
+description: Case study. A move-out marketplace for students where the room is the listing: a vision model drafts a priced listing for every item, buyers walk through the room in 3D, and a fee calculation settled the question of taking payments.
+lede: A move-out marketplace for students. A seller photographs their room once. A vision model finds and prices what is in it, the room becomes a 3D space buyers can walk through, and everything leaves in one pickup.
+-->
+{{case-head}}
+
+<section class="standing" aria-labelledby="standing-h">
+  <div class="wrap">
+    <p class="label">Where it stands · November 2026</p>
+    <h2 id="standing-h">A working prototype that I recorded running end to end on its demo accounts. Real sales have not tested its prices.</h2>
+    <ul>
+      <li><span class="big">6 → 15</span><p>photos of my own bedroom in, priced items out, in one pass</p>{{ev tested "Run in the app"}}</li>
+      <li><span class="big">$8–$150</span><p>the price range the model put on those 15 items</p>{{ev tested "Model output"}}</li>
+      <li><span class="big">$0.87</span><p>what Roomly would keep of a $120 sale if it took payments, after fees</p>{{ev calculated}}</li>
+      <li><span class="big">13</span><p>API route groups behind the app</p>{{ev reported}}</li>
+    </ul>
+    <p class="open"><b>Still open:</b> the model's prices are guesses until real sales confirm them, and the rooms are models, not scans. Both are covered under <a href="#limits">limits</a>.</p>
+  </div>
+</section>
+
+<div class="case-body">
+<div class="wrap">
+  <nav class="toc" aria-label="On this page">
+    <p>On this page</p>
+    <ol>
+      <li><a href="#idea">The idea</a></li>
+      <li><a href="#run">See it run</a></li>
+      <li><a href="#room">Drag the room</a></li>
+      <li><a href="#flow">Photos to listing</a></li>
+      <li><a href="#decisions">Decisions</a></li>
+      <li><a href="#shortcuts">Shortcuts</a></li>
+      <li><a href="#limits">Limits</a></li>
+      <li><a href="#lessons">What I took from it</a></li>
+    </ol>
+  </nav>
+
+  <div class="case-main">
+
+  <section class="sec" id="idea">
+    <p class="label"><b>01</b>The idea</p>
+    <h2>Don't list your room. Sell your room.</h2>
+    <div class="prose">
+      <p>Moving out means selling a dozen things in the last week of a lease. On a normal marketplace that is a dozen listings, a dozen chats and a dozen pickups.</p>
+      <p>Roomly makes the room the listing. The seller captures it once and approves what the AI drafts. Buyers browse the actual room, see what sits next to what, and can take several things in one trip.</p>
+      <p>The business idea, which I have not tested: students use it free, and a university pays per campus ($15K to $25K) as a waste-diversion program, because the furniture that sells is furniture that stays out of the dumpster.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="run">
+    <p class="label"><b>02</b>See it run</p>
+    <h2>Six steps, from browsing to a deal</h2>
+    <figure class="fig film" data-film>
+      <div class="plate"><video src="../assets/media/roomly-film.mp4" poster="{{poster roomly-room.jpg}}" width="1280" height="800" muted playsinline controls preload="metadata" aria-label="Screen recording of Roomly: browsing rooms, stepping into a 3D room, tapping a price tag, making an offer, the seller countering, and the buyer accepting"></video></div>
+      <div class="chapters" role="group" aria-label="Chapters">
+        <button class="chapter" type="button" data-t="0" data-name="Rooms near you" data-d="Rooms that students nearby are clearing out. Each card shows the item count, the price range and a Moving out badge."><b>0:00</b>Rooms near you</button>
+        <button class="chapter" type="button" data-t="2.54" data-name="Step inside" data-d="The seller's room, rebuilt in 3D with a price tag on every item. Drag to look around."><b>0:02</b>Step inside</button>
+        <button class="chapter" type="button" data-t="6.4" data-name="Tap a price tag" data-d="Tap a tag and the camera moves to the item. Its card shows price, condition, distance and the seller's rating."><b>0:06</b>Tap a price tag</button>
+        <button class="chapter" type="button" data-t="10.96" data-name="Make an offer" data-d="The listing page. Offer buttons at 70, 80 and 90 percent of the price, or type your own."><b>0:11</b>Make an offer</button>
+        <button class="chapter" type="button" data-t="17.75" data-name="The seller counters" data-d="The seller sees the offer inside the chat thread and can accept, decline or counter. Here the seller counters at $171."><b>0:18</b>The seller counters</button>
+        <button class="chapter" type="button" data-t="23.33" data-name="Deal" data-d="The buyer accepts. The thread shows the deal and the listing flips to Sale pending. Accepting also expires every competing offer on that item."><b>0:23</b>Deal</button>
+      </div>
+      <p class="film-desc" aria-live="polite"></p>
+      <figcaption class="plate-cap"><span>Fig. 1</span><span>Recorded inside the running app, using its seeded demo accounts. It was captured one rendered frame at a time, so the pacing is edited and every pixel is the app's.</span><span>Screen recording</span></figcaption>
+    </figure>
+  </section>
+
+  <section class="sec" id="room">
+    <p class="label"><b>03</b>The buyer's view</p>
+    <h2>Drag the room</h2>
+    <figure class="fig">
+      <div class="plate">
+        <div class="orbit" data-orbit data-n="30" data-base="../assets/media/orbit/" tabindex="0" role="slider" aria-label="Look around the room" aria-valuemin="0" aria-valuemax="29" aria-valuenow="15">
+          <img src="../assets/media/orbit/15.webp" alt="A student apartment rebuilt in 3D: bed, sofa, bookshelf, TV, desk and lamp, each with a floating price tag" width="960" height="600" draggable="false">
+          <span class="hint">Drag to look around</span>
+        </div>
+      </div>
+      <div class="orbit-ctl"><span>Left</span><input type="range" min="0" max="29" step="1" value="15" aria-label="View angle"><span>Right</span></div>
+      <figcaption class="plate-cap"><span>Fig. 2</span><span>Thirty views rendered by the app's own 3D scene, built with React Three Fiber: procedural furniture, a price tag floating on every item, and a camera that flies to whatever you tap. In the app the room turns freely; here it steps through a sweep of about 100°.</span><span>Renders from the app</span></figcaption>
+    </figure>
+  </section>
+
+  <section class="sec" id="flow">
+    <p class="label"><b>04</b>The seller's side</p>
+    <h2>From photos to a priced room</h2>
+    <div class="tabs side" data-tabs>
+      <div class="tablist" role="tablist" aria-label="Seller steps">
+        <button class="tab" type="button" role="tab"><b>1</b>Describe the space</button>
+        <button class="tab" type="button" role="tab"><b>2</b>Capture it</button>
+        <button class="tab" type="button" role="tab"><b>3</b>The model reads the room</button>
+        <button class="tab" type="button" role="tab"><b>4</b>A 3D room comes back</button>
+        <button class="tab" type="button" role="tab"><b>5</b>Tag, approve, publish</button>
+      </div>
+      <div>
+        <div class="tabpanel" role="tabpanel"><h3>Describe the space</h3><p class="prose">Name the room, pick its type, and add a line of context for buyers.</p>
+          <div class="plate">{{pic src="roomly-sell-details.jpg" alt="Roomly's Moving Out wizard, step 1 of 3: room name, type of space and a description" sizes="(min-width: 900px) 56vw, 100vw"}}</div></div>
+        <div class="tabpanel" role="tabpanel"><h3>Capture it</h3><p class="prose">Take 4 to 8 photos from the corners of the room, or record a slow video walkthrough. From a video the app pulls 6 frames on its own.</p>
+          <div class="plate">{{pic src="roomly-sell-photos.jpg" alt="Roomly's Moving Out wizard, step 2 of 3: add photos or a video walkthrough, then analyze the room with AI" sizes="(min-width: 900px) 56vw, 100vw"}}</div></div>
+        <div class="tabpanel" role="tabpanel"><h3>The model reads the room</h3><p class="prose">The frames go to Claude with a schema to fill in, so the answer comes back as data the app can use directly. For the room: its dimensions and the wall and floor colors. For every sellable item:</p>
+          <div class="fields"><span>label</span><span>3D layout position</span><span>dominant color</span><span>condition, from visible wear</span><span>resale price range</span><span>description</span><span>bounding box</span></div>
+          <p class="prose" style="margin-top:14px">The bounding box lets the app crop each item's own photo out of the frame. Prices are asked for as resale ranges in a US college town.</p></div>
+        <div class="tabpanel" role="tabpanel"><h3>A 3D room comes back</h3><p class="prose">The app builds the room from that data. This one came from 6 photos of my own bedroom: 15 items found, priced from $8 to $150 {{ev tested "Run in the app"}}.</p>
+          <div class="plate">{{pic src="roomly-ai-room.jpg" alt="A bedroom rebuilt in 3D by the pipeline, with fifteen floating price tags from 8 to 150 dollars" sizes="(min-width: 900px) 56vw, 100vw"}}</div></div>
+        <div class="tabpanel" role="tabpanel"><h3>Tag, approve, publish</h3><p class="prose">The seller taps items in the room to tag them for sale. Only price and condition need confirming; everything else is pre-filled. Nothing goes live until they press Publish.</p>
+          <div class="plate">{{pic src="roomly-tag.jpg" alt="The tagging step: a 3D room with price tags, a counter reading 11 of 12 items tagged, 970 dollars total, and a Publish room button" sizes="(min-width: 900px) 56vw, 100vw"}}</div>
+          <p class="note">Captured without an API key, so the app shows its built-in sample layout and says so in the orange banner at the top.</p></div>
+      </div>
+    </div>
+
+    <div class="cols mid" style="margin-top:clamp(40px,5vw,72px)">
+      <figure class="fig">
+        <div class="plate">{{pic src="roomly-dashboard.jpg" alt="Roomly seller dashboard with counts of active listings, pending offers and views, an offer waiting for a response, and the seller's room" sizes="(min-width: 860px) 46vw, 100vw"}}</div>
+        <figcaption class="plate-cap"><span>Fig. 3</span><span>The seller dashboard, with an offer waiting for an answer.</span><span>Screenshot</span></figcaption>
+      </figure>
+      <figure class="fig">
+        <div class="duo">
+          <div class="plate">{{pic src="roomly-m-home.jpg" alt="Roomly home screen on a phone" sizes="(min-width: 860px) 22vw, 50vw"}}</div>
+          <div class="plate">{{pic src="roomly-m-room.jpg" alt="A Roomly 3D room on a phone" sizes="(min-width: 860px) 22vw, 50vw"}}</div>
+        </div>
+        <figcaption class="plate-cap"><span>Fig. 4</span><span>The same app at phone width.</span><span>Screenshot</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="sec" id="decisions">
+    <p class="label"><b>05</b>Decisions</p>
+    <h2>Three choices that shaped it</h2>
+
+    <h3>A 3D room without a 3D scanner</h3>
+    <div class="prose"><p>A phone photo has no depth. A true reconstruction needs hardware or software most students will never have.</p></div>
+    <div class="decision">
+      <p class="decision-h">How does a buyer see the room? <span>Options I weighed</span></p>
+      <div class="opts">
+        <div class="opt">
+          <h3 class="opt-h">Reconstruct it from photos</h3>
+          <ul>
+            <li>A faithful model of the real room.</li>
+            <li class="con">Needs depth hardware or heavy software that students do not have.</li>
+          </ul>
+        </div>
+        <div class="opt">
+          <h3 class="opt-h">Ask a vision model for layout <em>Chosen</em></h3>
+          <ul>
+            <li>Works from ordinary phone photos.</li>
+            <li>Rooms are stored as positioned objects, the same shape a real reconstruction pipeline could fill in later.</li>
+            <li class="con">It is a model of the room, not a scan.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="why"><b>Why:</b> a buyer needs layout and scale: what is in the room, roughly where, and how big. A faithful scan adds little to that. I asked Claude vision for structured output (room dimensions, wall and floor colors, and each item with a 3D position) and built a dollhouse view from procedural furniture in React Three Fiber.</p>
+    </div>
+
+    <h3>Let the AI draft, and the seller decide</h3>
+    <div class="callout">
+      <p class="label">The rule</p>
+      <p>A model can misread an item or price it badly, and if that went live on its own the seller would pay for the mistake. So each detected item shows how confident the model is, the seller taps an item to include it or change the price, and nothing publishes without the seller's approval.</p>
+    </div>
+
+    <h3>Should Roomly take the money?</h3>
+    <div class="prose">
+      <p>An investor pushed for in-app payments and shipping, which sounds like the obvious next feature. Before building it I wrote up both options with the fees on a real basket. Move the sliders to see what one sale leaves.</p>
+    </div>
+    <figure class="fig">
+      <div class="calc" data-calc>
+        <div class="ctrl">
+          <label>Sale price<input type="range" data-in="price" min="20" max="600" step="5" value="120" aria-label="Sale price in dollars"><output data-o="price">$120</output></label>
+          <label>Roomly's take<input type="range" data-in="take" min="3" max="15" step="0.5" value="6" aria-label="Roomly's take rate in percent"><output data-o="take">6%</output></label>
+          <div class="chips" role="group" aria-label="Examples"><button class="chip" type="button" data-price="120">$120 bundle</button><button class="chip" type="button" data-price="450">$450 room</button></div>
+        </div>
+        <div>
+          <div class="calc-rows">
+            <div class="calc-row take"><span class="lab">Roomly's take<small data-l="take">6% of the sale</small></span><span class="amt" data-a="take">$7.20</span><span class="trk"><i data-b="take"></i></span></div>
+            <div class="calc-row"><span class="lab">Card processing<small>2.9% + $0.30</small></span><span class="amt" data-a="card">−$3.78</span><span class="trk"><i data-b="card"></i></span></div>
+            <div class="calc-row"><span class="lab">Payout to the seller<small>0.25% + $0.25</small></span><span class="amt" data-a="pay">−$0.55</span><span class="trk"><i data-b="pay"></i></span></div>
+            <div class="calc-row"><span class="lab">Active seller account<small>$2.00 for the month</small></span><span class="amt" data-a="acct">−$2.00</span><span class="trk"><i data-b="acct"></i></span></div>
+          </div>
+          <div class="calc-net"><span>What Roomly keeps</span><output data-net>$0.87</output></div>
+          <p class="calc-say" data-say aria-live="polite"></p>
+        </div>
+      </div>
+      <figcaption class="plate-cap"><span>Fig. 5</span><span>Fees as I used them in my write-up, with Roomly absorbing them. If the seller absorbed them instead, a $120 sale would pay out $106.47.</span><span>Calculation</span></figcaption>
+    </figure>
+    <div class="prose">
+      <p>I argued for peer-to-peer handoff. On a $120 bundle Roomly would keep about $0.87. Collecting payment would also make it a marketplace facilitator for sales tax, and shipping furniture means owning freight damage.</p>
+    </div>
+
+    <h3>Where the seller lives</h3>
+    <div class="prose">
+      <p>A room listing is, by definition, a map to where someone sleeps. Buyers need distance to decide, and they need the door only after both sides agree to meet. Exact coordinates are rounded before they leave the server, a listing shows a nearby pickup landmark, and the address is shared privately in messages once buyer and seller connect.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="shortcuts">
+    <p class="label"><b>06</b>Shortcuts, taken on purpose</p>
+    <h2>What is fake, and what replaces it</h2>
+    <div class="prose"><p>A solo build cannot do everything properly at once, and a demo that hides its shortcuts is a trap for whoever builds on it next. I took each shortcut where it is cheap to undo, and wrote each one down.</p></div>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Shortcuts">
+      <table class="data stack">
+        <thead><tr><th scope="col">Shortcut</th><th scope="col">What it is today</th><th scope="col">What replaces it</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Database</th><td class="txt" data-label="What it is today">A JSON file behind one module, <code>lib/db.ts</code></td><td class="txt" data-label="What replaces it">Postgres, through that same module</td></tr>
+          <tr><th scope="row">Messages</th><td class="txt" data-label="What it is today">The app polls every 4 seconds</td><td class="txt" data-label="What replaces it">A live connection</td></tr>
+          <tr><th scope="row">Room analysis without a key</th><td class="txt" data-label="What it is today">The wizard returns a sample layout and says so in a banner</td><td class="txt" data-label="What replaces it">A real API key</td></tr>
+          <tr><th scope="row">Passwords</th><td class="txt" data-label="What it is today">Stored in plain text. The README calls this a deliberate MVP shortcut.</td><td class="txt" data-label="What replaces it">Proper authentication, before anyone real uses it</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="limits">
+    <p class="label"><b>07</b>Results and limits</p>
+    <h2>What this prototype does and does not show</h2>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Limits">
+      <table class="data stack">
+        <thead><tr><th scope="col">Claim</th><th scope="col">What I have</th><th scope="col">What is missing</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">It drafts a priced listing from photos</th><td class="txt" data-label="What I have">One run on my own bedroom: 6 photos, 15 items, $8 to $150</td><td class="txt" data-label="What is missing">The prices have not been compared with real sales</td></tr>
+          <tr><th scope="row">Buyers can walk through a room</th><td class="txt" data-label="What I have">A 3D scene built from the model's layout</td><td class="txt" data-label="What is missing">It is a model of the room, not a scan</td></tr>
+          <tr><th scope="row">The offer flow works</th><td class="txt" data-label="What I have">Recorded end to end on the seeded demo accounts</td><td class="txt" data-label="What is missing">No real buyers and sellers</td></tr>
+          <tr><th scope="row">Universities would pay per campus</th><td class="txt" data-label="What I have">A plan</td><td class="txt" data-label="What is missing">Any test of it</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="lessons">
+    <p class="label"><b>08</b>What I took from it</p>
+    <h2>Four things I took from building it</h2>
+    <ol class="lessons">
+      <li><b>Make the hard step disappear.</b>Nobody wants to write twelve listings. The product is the capture pass that writes them.</li>
+      <li><b>Let the AI draft and the person decide.</b>The model is fast and sometimes wrong. Approval is cheap and keeps the seller in charge.</li>
+      <li><b>Run the numbers before the feature.</b>Eighty-seven cents on a $120 sale settled an argument that opinions could not.</li>
+      <li><b>Name the shortcuts.</b>An MVP is honest when its README says what is fake.</li>
+    </ol>
+  </section>
+
+  </div>
+</div>
+</div>
+
+{{case-next}}

@@ -16,48 +16,34 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#F5F2EC">
+<meta name="theme-color" content="#2340E8">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-<link rel="preload" href="../assets/fonts/geist.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="../assets/fonts/newsreader-display.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="../assets/css/site.css?v=03829a66">
-<script>document.documentElement.className = 'js';</script>
+<link rel="preload" href="../assets/fonts/archivo-expanded.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../assets/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../assets/css/site.css?v=f27bd35f">
+<script>
+document.documentElement.className = 'js';
+try { if (sessionStorage.getItem('go')) { sessionStorage.removeItem('go'); document.documentElement.classList.add('arriving'); } } catch (e) {}
+</script>
 </head>
 <body class="case">
 <a class="skip" href="#main">Skip to content</a>
-
-<header class="site-head">
-  <div class="wrap">
-    <a class="brand" href="../index.html" aria-label="Youssef Kartah, home">
-      <span class="brand-full">Youssef Kartah</span><span class="brand-short" aria-hidden="true">YK</span>
-    </a>
-    <nav aria-label="Main">
-      <a href="../index.html#work" aria-current="true">Work</a>
-      <a href="../index.html#about">About</a>
-      <a href="../resume.html">Résumé</a>
-      <a href="../index.html#contact">Contact</a>
-    </nav>
-  </div>
-</header>
+<div class="curtain" aria-hidden="true"></div>
+<header class="bar"><div class="bar-in"><a class="back" href="../projects.html" data-go><svg class="ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H6M11 6l-6 6 6 6"/></svg><span>Projects</span></a><a class="bar-name" href="../index.html" data-go>Youssef Kartah</a><nav aria-label="Main"><a class="bar-link" href="../Youssef_Kartah_Resume.pdf" target="_blank" rel="noopener">Résumé</a><a class="bar-link" href="#contact">Contact</a></nav></div><div class="progress" aria-hidden="true"></div></header>
 
 <main id="main">
 
-<header class="case-head">
+<header class="ph">
   <div class="wrap">
-    <p class="crumb"><a href="../index.html#work">Selected work</a><span aria-hidden="true">/</span><span>03 of 04</span></p>
-    <div class="case-head-grid">
-      <div>
-        <p class="kicker"><span>Coursework and independent study</span><span>AERSP 305W · AERSP 424</span><span>2025 to 2026</span></p>
-        <h1>Four analyses, each checked a second way</h1>
-        <p class="lede">A structures lab, two computational projects and an independent CFD study. Each one ends in a number I can defend line by line, and each has a check built in that could have proved me wrong.</p>
-      </div>
-      <dl class="spec">
-        <div><dt>Status</dt><dd><span class="status status-done"><b>Completed</b> <span>one measured, three computed</span></span></dd></div>
-        <div><dt>My part</dt><dd>My own work throughout, except the root solver, which I wrote with one teammate.</dd></div>
-        <div><dt>Team</dt><dd>Individual, except the root solver (two of us).</dd></div>
-        <div><dt>Tools</dt><dd>ANSYS Fluent · Python · MATLAB · Uncertainty analysis</dd></div>
-      </dl>
-    </div>
+    <p class="row-kind">Coursework and independent study · 2025 to 2026</p>
+    <h1>Four analyses, each checked a second way</h1>
+    <p class="lede">A structures lab, two computational projects and an independent CFD study. Each one ends in a number I can defend line by line, and each has a check built in that could have proved me wrong.</p>
+    <dl class="spec">
+      <div><dt>Status</dt><dd><span class="status status-done"><b>Completed</b> <span>one measured, three computed</span></span></dd></div>
+      <div><dt>My part</dt><dd>My own work throughout, except the root solver, which I wrote with one teammate.</dd></div>
+      <div><dt>Team</dt><dd>Individual, except the root solver (two of us).</dd></div>
+      <div><dt>Tools</dt><dd>ANSYS Fluent · Python · MATLAB · Uncertainty analysis</dd></div>
+    </dl>
   </div>
 </header>
 
@@ -216,6 +202,7 @@
         <p>How much drag can come off an electric vehicle body without starving the battery and motor of cooling air?</p>
         <p>I ran steady RANS simulations in ANSYS Fluent on 7 geometry variants that changed the body contours, the underbody and the wheel covers.</p>
         <p>A drag change of a few percent can be the mesh talking. I checked every trend on 3 mesh densities before trusting it. That made 21 runs, so I scripted the post-processing in MATLAB, which took it from 10 minutes a run to 3.</p>
+        <p>I also studied boundary-layer behavior and the surface-finish assumptions in the model, to inform the choice of material and finish and the coating smoothness a design would need. The MATLAB scripts ran the parametric sweeps and organized the results with basic statistics.</p>
       </div>
       <figure class="fig">
         <div class="plate pad"><svg viewBox="0 0 380 188" role="img" aria-label="Study design: seven geometry variants, each run on three mesh densities, for 21 steady RANS runs in total.">
@@ -316,35 +303,46 @@
 </div>
 
 
-<nav class="case-next" aria-label="More case studies">
-  <div class="wrap">
-    <a href="../work/uav-builds.html"><span class="k">← Previous · 02</span><b>Three UAVs, designed and built on my own</b></a>
-    <a href="../work/line-follower.html" class="nx"><span class="k">Next · 04 →</span><b>A line-following robot with a hand-written turn</b></a>
-  </div>
+<nav class="next" aria-label="More projects">
+  <a class="next-main" href="../work/safran.html" data-go>
+    <span class="next-k">Next project</span>
+    <span class="next-t">Safran Aerosystems</span>
+    <span class="next-d">A summer in production and test of aircraft fuel-system parts: standardizing test records, updating work instructions and compiling data packs for failed parts.</span>
+    <span class="next-ar" aria-hidden="true"><svg class="ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span>
+  </a>
+  <div class="next-side"><a href="../work/marv.html" data-go><span>Previous</span> Capstone payload pickup</a><a href="../projects.html" data-go><span>All projects</span> Back to the list</a></div>
 </nav>
 
 </main>
 
-<footer class="site-foot">
+
+<footer class="foot" id="contact">
   <div class="wrap">
-    <div class="foot-legend">
-      <p class="label">How to read the numbers</p>
-      <p>Every figure on this site is tagged with where it came from.</p>
-      <ul class="legend-list">
+    <div class="foot-top">
+      <h2>Get in touch</h2>
+      <p>Looking for full-time roles in design, test, manufacturing or autonomy, starting after May 2027. Open to relocating.</p>
+    </div>
+    <ul class="foot-links">
+      <li><a href="mailto:youssef.kartah@gmail.com">youssef.kartah@gmail.com</a><button class="copy" type="button" data-copy="youssef.kartah@gmail.com">Copy</button></li>
+      <li><a href="https://www.linkedin.com/in/youssef-kartah/" rel="me noopener" target="_blank">linkedin.com/in/youssef-kartah <svg class="ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></li>
+      <li><a href="../Youssef_Kartah_Resume.pdf" target="_blank" rel="noopener">Résumé (PDF) <svg class="ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></li>
+    </ul>
+    <div class="legend">
+      <p>Every figure on the project pages is tagged with where it came from:</p>
+      <ul>
         <li><span class="ev ev-measured">Measured</span> on a physical part or in flight</li>
         <li><span class="ev ev-simulated">Simulated</span> in CFD or FEA</li>
         <li><span class="ev ev-calculated">Calculated</span> from a stated model or data set</li>
         <li><span class="ev ev-cad">From CAD</span> model or mass budget</li>
+        <li><span class="ev ev-reported">My own record</span> from work records or my own write-up</li>
         <li><span class="ev ev-estimate">Estimate, untested</span></li>
       </ul>
     </div>
-    <div class="foot-meta">
-      <p><a href="mailto:youssef.kartah@gmail.com">youssef.kartah@gmail.com</a><br><a href="https://www.linkedin.com/in/youssef-kartah/" rel="me noopener">linkedin.com/in/youssef-kartah</a></p>
-      <p class="fine">Youssef Kartah · Engineering portfolio · Rev. November 2026<br>No trackers, no cookies.</p>
-    </div>
+    <p class="fine">Youssef Kartah · Rev. November 2026 · No trackers, no cookies.</p>
   </div>
 </footer>
 
-<script src="../assets/js/site.js?v=7d73b810" defer></script>
+
+<script src="../assets/js/site.js?v=d067b3f2" defer></script>
 </body>
 </html>

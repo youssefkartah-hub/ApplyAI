@@ -61,6 +61,7 @@ lede: Three builds on my own time and money: an autonomous mapping UAV, a quadco
     <div class="prose">
       <p>On a self-funded build, every component is a purchase I have to justify to myself. Propulsion, battery and frame also depend on each other, so choosing them one at a time means paying for the mismatch later.</p>
       <p>Before ordering anything for the mapping UAV I ran component-level trade studies across all three together. The build cost came down 30% <span class="ev ev-plain">Parts cost</span>.</p>
+      <p>I also chose motors, propellers and battery parameters through propulsion analysis and weight reduction, with a target of about 30% more flight endurance {{ev estimate "Target"}}. That is a target. This page does not report a measured endurance.</p>
     </div>
   </section>
 
@@ -137,7 +138,7 @@ lede: Three builds on my own time and money: an autonomous mapping UAV, a quadco
     <div class="cols mid">
       <figure class="fig">
         <div class="plate">
-          <video src="../assets/media/uav-build.mp4" poster="../assets/media/uav-build-poster.jpg" width="960" height="632" muted loop playsinline controls preload="none" aria-label="Timelapse of me assembling a quadcopter airframe at my desk"></video>
+          <video src="../assets/media/uav-build.mp4" poster="{{poster uav-build-poster.jpg}}" width="960" height="632" muted loop playsinline controls preload="none" aria-label="Timelapse of me assembling a quadcopter airframe at my desk"></video>
           <button class="vbtn" type="button" data-state="paused" aria-label="Play video"><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9-5.5z"/></svg><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 1.5h3v11h-3zM8.5 1.5h3v11h-3z"/></svg><span>Play</span></button>
         </div>
         <figcaption class="plate-cap"><span>Fig. 2.3</span><span>The airframe going together at my desk.</span><span>Timelapse · 0:28</span></figcaption>
@@ -165,6 +166,7 @@ lede: Three builds on my own time and money: an autonomous mapping UAV, a quadco
         <li><b>The safety factor is a simulation result.</b> It comes from ANSYS Discovery at the arm root, and it is not a load test.</li>
         <li><b>The tuning result comes from flight logs.</b> Twelve of them, recorded on the quadcopter itself.</li>
         <li><b>The thermal drone's mission is a plan.</b> No part of it has been demonstrated in flight.</li>
+        <li><b>The endurance gain is a target.</b> I have not measured it, so I do not claim it.</li>
       </ul>
     </div>
   </section>

@@ -1,106 +1,207 @@
 {
-  "lf-front.jpg": {
-    "w": 1500,
-    "h": 1125,
-    "webp": [
-      640,
-      1000,
-      1500
+  "lf-front": {
+    "w": 1440,
+    "h": 1080,
+    "widths": [
+      720,
+      1440
     ]
   },
-  "lf-race-poster.jpg": {
+  "lf-race-poster": {
     "w": 960,
     "h": 496,
-    "webp": [
-      640,
+    "widths": [
+      720,
       960
     ]
   },
-  "lf-robot.jpg": {
-    "w": 1600,
-    "h": 1201,
-    "webp": [
-      640,
-      1000,
-      1600
+  "lf-robot": {
+    "w": 1440,
+    "h": 1081,
+    "widths": [
+      720,
+      1440
     ]
   },
-  "lf-sensor.jpg": {
-    "w": 1500,
-    "h": 1000,
-    "webp": [
-      640,
-      1000,
-      1500
+  "lf-sensor": {
+    "w": 1440,
+    "h": 960,
+    "widths": [
+      720,
+      1440
     ]
   },
-  "lf-top.jpg": {
+  "lf-top": {
     "w": 1400,
     "h": 1400,
-    "webp": [
-      640,
-      1000,
+    "widths": [
+      720,
       1400
     ]
   },
-  "nrl-layup.jpg": {
+  "nrl-layup": {
     "w": 1400,
     "h": 1050,
-    "webp": [
-      640,
-      1000,
+    "widths": [
+      720,
       1400
     ]
   },
-  "nrl-tube.jpg": {
+  "nrl-tube": {
     "w": 368,
     "h": 744,
-    "webp": [
+    "widths": [
       368
     ]
   },
-  "portrait.jpg": {
+  "portrait": {
     "w": 880,
     "h": 1100,
-    "webp": [
-      640,
+    "widths": [
+      720,
       880
     ]
   },
-  "roomly-room.jpg": {
+  "roomly-ai-room": {
     "w": 1280,
     "h": 800,
-    "webp": [
-      640,
-      1000,
+    "widths": [
+      720,
       1280
     ]
   },
-  "sarah-today.jpg": {
-    "w": 1800,
-    "h": 1125,
-    "webp": [
-      640,
-      1000,
-      1600,
-      1800
+  "roomly-dashboard": {
+    "w": 1440,
+    "h": 900,
+    "widths": [
+      720,
+      1440
     ]
   },
-  "uav-build-poster.jpg": {
+  "roomly-m-home": {
+    "w": 640,
+    "h": 1385,
+    "widths": [
+      640
+    ]
+  },
+  "roomly-m-room": {
+    "w": 640,
+    "h": 1385,
+    "widths": [
+      640
+    ]
+  },
+  "roomly-room": {
+    "w": 1280,
+    "h": 800,
+    "widths": [
+      720,
+      1280
+    ]
+  },
+  "roomly-sell-details": {
+    "w": 1440,
+    "h": 900,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "roomly-sell-photos": {
+    "w": 1440,
+    "h": 900,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "roomly-tag": {
+    "w": 1280,
+    "h": 800,
+    "widths": [
+      720,
+      1280
+    ]
+  },
+  "sarah-apps": {
+    "w": 1440,
+    "h": 900,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "sarah-calendar": {
+    "w": 1440,
+    "h": 900,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "sarah-command": {
+    "w": 1200,
+    "h": 750,
+    "widths": [
+      720,
+      1200
+    ]
+  },
+  "sarah-goals": {
+    "w": 1440,
+    "h": 900,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "sarah-insights": {
+    "w": 1440,
+    "h": 900,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "sarah-insights2": {
+    "w": 1440,
+    "h": 900,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "sarah-match": {
+    "w": 1440,
+    "h": 900,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "sarah-today": {
+    "w": 1440,
+    "h": 900,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "uav-build-poster": {
     "w": 960,
     "h": 632,
-    "webp": [
-      640,
+    "widths": [
+      720,
       960
     ]
   },
-  "uav-parts.jpg": {
-    "w": 1600,
-    "h": 568,
-    "webp": [
-      640,
-      1000,
-      1600
+  "uav-parts": {
+    "w": 1440,
+    "h": 511,
+    "widths": [
+      720,
+      1440
     ]
   }
 }

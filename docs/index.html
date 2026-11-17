@@ -4,404 +4,72 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Youssef Kartah · Mechanical design and test for small autonomous aircraft</title>
-<meta name="description" content="Youssef Kartah, aerospace engineering at Penn State (May 2027). UAV mechanism design, structures and test: a capstone quadcopter payload pickup, self-built drones, and analysis checked a second way.">
+<title>Youssef Kartah · Aerospace engineering portfolio</title>
+<meta name="description" content="Youssef Kartah, aerospace engineering at Penn State (May 2027). Drones, composite structures, a payload mechanism, a race robot and the software around them, each with the evidence behind it.">
 
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Youssef Kartah">
 <meta property="og:title" content="Youssef Kartah">
-<meta property="og:description" content="Youssef Kartah, aerospace engineering at Penn State (May 2027). UAV mechanism design, structures and test: a capstone quadcopter payload pickup, self-built drones, and analysis checked a second way.">
+<meta property="og:description" content="Youssef Kartah, aerospace engineering at Penn State (May 2027). Drones, composite structures, a payload mechanism, a race robot and the software around them, each with the evidence behind it.">
 <meta property="og:image" content="assets/media/og-home.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#F5F2EC">
+<meta name="theme-color" content="#2340E8">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-<link rel="preload" href="assets/fonts/geist.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="assets/fonts/newsreader-display.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/site.css?v=03829a66">
-<script>document.documentElement.className = 'js';</script>
+<link rel="preload" href="assets/fonts/archivo-expanded.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/site.css?v=f27bd35f">
+<script>
+document.documentElement.className = 'js';
+try { if (sessionStorage.getItem('go')) { sessionStorage.removeItem('go'); document.documentElement.classList.add('arriving'); } } catch (e) {}
+</script>
 </head>
-<body class="page">
+<body class="home">
 <a class="skip" href="#main">Skip to content</a>
+<div class="curtain" aria-hidden="true"></div>
 
-<header class="site-head">
-  <div class="wrap">
-    <a class="brand" href="index.html" aria-label="Youssef Kartah, home">
-      <span class="brand-full">Youssef Kartah</span><span class="brand-short" aria-hidden="true">YK</span>
-    </a>
-    <nav aria-label="Main">
-      <a href="index.html#work">Work</a>
-      <a href="index.html#about">About</a>
-      <a href="resume.html">Résumé</a>
-      <a href="index.html#contact">Contact</a>
-    </nav>
-  </div>
-</header>
 
 <main id="main">
-<section class="hero" aria-labelledby="name">
-  <div class="wrap">
-    <div class="hero-text">
-      <p class="kicker"><span>Aerospace engineering</span><span>Penn State</span><span>May 2027</span></p>
-      <h1 id="name">Youssef Kartah</h1>
-      <p class="position">I design and build hardware for small autonomous aircraft, and I check it with analysis and test before I trust it.</p>
-      <p class="avail">Looking for full-time roles in design, test, manufacturing or autonomy, starting after May 2027. Open to relocating.</p>
-      <div class="btn-row">
-        <a class="btn btn-primary" href="#work">See selected work</a>
-        <a class="btn" href="resume.html">View résumé</a>
-        <a class="mail" href="mailto:youssef.kartah@gmail.com">youssef.kartah@gmail.com</a>
+<header class="cover" id="top">
+  <div class="cover-in">
+    <div class="cover-text">
+      <p class="kind appear" style="--d:.1s">Aerospace Engineering · Penn State · Class of 2027</p>
+      <h1 class="name" id="name"><span class="mask"><span style="--d:.05s">Youssef</span></span> <span class="mask"><span style="--d:.18s">Kartah</span></span></h1>
+      <p class="intro appear" style="--d:.55s">I design and build small autonomous aircraft, the structures that go on them and the software around them. I check every design with an analysis or a test before I trust it.</p>
+      <p class="intro-2 appear" style="--d:.65s">Looking for full-time roles in design, test, manufacturing or autonomy, starting after May 2027. Open to relocating.</p>
+      <div class="cover-actions appear" style="--d:.78s">
+        <a class="btn btn-white" href="Youssef_Kartah_Resume.pdf" target="_blank" rel="noopener">Open résumé <svg class="ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
+        <a class="btn btn-line" href="Youssef_Kartah_Resume.pdf" download>Download PDF</a>
       </div>
+      <ul class="connect appear" style="--d:.9s" aria-label="Ways to connect">
+        <li><a href="mailto:youssef.kartah@gmail.com">youssef.kartah@gmail.com</a><button class="copy" type="button" data-copy="youssef.kartah@gmail.com">Copy</button></li>
+        <li><a href="https://www.linkedin.com/in/youssef-kartah/" rel="me noopener" target="_blank">LinkedIn <svg class="ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></li>
+      </ul>
     </div>
-    <figure class="hero-fig">
-      <div class="plate">
-        <video src="assets/media/uav-build.mp4" poster="assets/media/uav-build-poster.jpg" width="960" height="632" muted loop playsinline controls preload="none" data-autoplay aria-label="Timelapse of me assembling a quadcopter airframe at my desk"></video>
-        <button class="vbtn" type="button" data-state="paused" aria-label="Play video"><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9-5.5z"/></svg><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 1.5h3v11h-3zM8.5 1.5h3v11h-3z"/></svg><span>Play</span></button>
-      </div>
-      <figcaption class="plate-cap"><span>Fig. 00</span><span>Assembling the airframe for my current UAV build, at my desk.</span><span>Timelapse · 0:28</span></figcaption>
+    <figure class="window-wrap">
+      <div class="window"><img src="assets/media/portrait-880.webp" srcset="assets/media/portrait-720.webp 720w, assets/media/portrait-880.webp 880w" sizes="400px" width="880" height="1100" alt="Portrait of Youssef Kartah" fetchpriority="high" decoding="async"></div>
     </figure>
   </div>
-</section>
+  <a class="cue appear" style="--d:1.2s" href="#enter"><i aria-hidden="true"></i>Scroll</a>
+</header>
 
-<section class="proof" aria-label="Evidence at a glance">
-  <div class="wrap">
-    <ul>
-      <li><span class="big">36.3<small>g</small></span><p>Payload pickup mechanism for our capstone quadcopter, against an 80 g mass budget.</p><span class="ev ev-cad">From CAD</span><a href="work/marv.html">Capstone pickup</a></li>
-      <li><span class="big">+30.5<small>± 0.6%</small></span><p>Bending stiffness added by carbon reinforcement, five runs per beam.</p><span class="ev ev-measured">Measured</span><a href="work/analysis.html#beam">Beam test</a></li>
-      <li><span class="big">0.4<small>%</small></span><p>Gap between two independent lift calculations on a transonic airfoil.</p><span class="ev ev-calculated">Calculated</span><a href="work/analysis.html#airfoil">Airfoil forces</a></li>
-      <li><span class="big">≈110</span><p>Production tests across 6 fuel-system part numbers at Safran Aerosystems.</p><span class="ev ev-plain">Internship · 2024</span><a href="#experience">Experience</a></li>
-    </ul>
-  </div>
-</section>
-
-<section class="band" id="work" aria-labelledby="work-h">
-  <div class="wrap">
-    <div class="sec-head">
-      <p class="label">Selected work</p>
-      <h2 id="work-h">Four projects, with the evidence attached</h2>
-      <p>Each case study opens with where the project stands today, then shows the decisions, the analysis and the checks behind it.</p>
-    </div>
-
-<article class="feature" aria-labelledby="w-marv">
-  <a class="feature-fig" href="work/marv.html" tabindex="-1" aria-hidden="true">
-    <div class="plate pad"><div class="duo">
-  <svg viewBox="0 0 300 296" role="img" aria-label="v4, passive ratchet: an inner tube slides up inside an outer tube fixed under the arm plate. Landing on the package pushes the inner tube up 30 millimeters in ten clicks, and pawls hold it. An N52 magnet at the bottom holds the 100 gram package.">
-    <defs>
-      <pattern id="p4-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" class="hatch-l"/></pattern>
-      <marker id="p4-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" class="mka"/></marker>
-    </defs>
-    <text class="t12" x="10" y="20">v4 · PASSIVE RATCHET</text>
-    <text class="t10" x="290" y="20" text-anchor="end">OCT 2026</text>
-    <rect x="70" y="42" width="160" height="10" class="ln" style="fill:url(#p4-hatch)"/>
-    <text class="t10" x="236" y="51">arm plate</text>
-    <rect x="118" y="52" width="64" height="112" class="ln"/>
-    <path class="thin" d="M118 66h5M118 75h5M118 84h5M118 93h5M118 102h5M118 111h5M118 120h5M118 129h5M118 138h5M118 147h5M182 66h-5M182 75h-5M182 84h-5M182 93h-5M182 102h-5M182 111h-5M182 120h-5M182 129h-5M182 138h-5M182 147h-5"/>
-    <rect x="128" y="184" width="44" height="7" class="ghost"/>
-    <rect x="126" y="100" width="48" height="114" class="box"/>
-    <polygon points="126,107 119,114 126,120" class="fa"/>
-    <polygon points="174,107 181,114 174,120" class="fa"/>
-    <rect x="128" y="214" width="44" height="7" class="solid"/>
-    <rect x="98" y="228" width="104" height="44" class="dash"/>
-    <text class="t10" x="150" y="254" text-anchor="middle">100 g package</text>
-    <text class="t10" x="10" y="117">pawls</text><line class="lead" x1="46" y1="114" x2="119" y2="114"/>
-    <text class="t10" x="10" y="221">N52 magnet</text><line class="lead" x1="76" y1="218" x2="128" y2="218"/>
-    <path class="thin" d="M175 187.5h40M175 217.5h40"/>
-    <line x1="209" y1="189" x2="209" y2="216" class="sa" marker-start="url(#p4-ah)" marker-end="url(#p4-ah)"/>
-    <text class="t11 ta" x="218" y="199">30 mm</text>
-    <text class="t10" x="218" y="212">10 clicks</text>
-    <text class="t10" x="10" y="62">outer tube</text><line class="lead" x1="74" y1="59" x2="118" y2="59"/>
-    <text class="t10" x="10" y="160">inner tube</text><line class="lead" x1="74" y1="157" x2="126" y2="157"/>
-  </svg>
-  <svg viewBox="0 0 300 372" role="img" aria-label="v5, servo winch: an FS90R servo turns a spool that lowers a magnet puck 150 millimeters on braided line through a line guide. Winding it back pulls the cone-topped puck into a conical dock under the arm plate.">
-    <defs>
-      <pattern id="p5-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" class="hatch-l"/></pattern>
-      <marker id="p5-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" class="mka"/></marker>
-    </defs>
-    <text class="t12 ta" x="10" y="20">v5 · SERVO WINCH</text>
-    <text class="t10" x="290" y="20" text-anchor="end">NOV 2026</text>
-    <rect x="70" y="42" width="160" height="10" class="ln" style="fill:url(#p5-hatch)"/>
-    <path d="M98 52 V150 H130 L140 126 H170 L180 150 H212 V52" class="ln"/>
-    <rect x="106" y="62" width="36" height="26" rx="2" class="box"/>
-    <line x1="142" y1="75" x2="157" y2="75" class="ln"/>
-    <circle cx="168" cy="75" r="11" class="box"/>
-    <line x1="168" y1="66.5" x2="168" y2="83.5" class="ln" style="stroke-width:1.6"/><line x1="159.5" y1="75" x2="176.5" y2="75" class="thin"/>
-    <circle cx="168" cy="75" r="3" class="solid"/>
-    <path d="M162 85 L155 106 V282" class="sa"/>
-    <path d="M149 100 V109 A6 6 0 0 0 161 109 V100" class="ln" style="stroke-width:1.6"/>
-    <polygon points="141,128 169,128 178,147 132,147" class="ghost"/>
-    <polygon points="141,282 169,282 178,300 132,300" class="box"/>
-    <rect x="132" y="300" width="46" height="6" class="solid"/>
-    <rect x="103" y="316" width="104" height="42" class="dash"/>
-    <text class="t10" x="155" y="341" text-anchor="middle">100 g package</text>
-    <text class="t10" x="10" y="296">magnet puck</text><line class="lead" x1="80" y1="293" x2="132" y2="293"/>
-    <path class="thin" d="M182 150h40M180 306h42"/>
-    <line x1="228" y1="152" x2="228" y2="304" class="sa" marker-start="url(#p5-ah)" marker-end="url(#p5-ah)"/>
-    <text class="t11 ta" x="236" y="232">150 mm</text>
-    <text class="t10" x="10" y="79">FS90R servo</text><line class="lead" x1="80" y1="76" x2="106" y2="76"/>
-    <text class="t10" x="222" y="68">spool</text><line class="lead" x1="179" y1="72" x2="218" y2="66"/>
-    <text class="t10" x="10" y="112">line guide</text><line class="lead" x1="72" y1="109" x2="149" y2="106"/>
-    <text class="t10" x="10" y="146">conical dock</text><line class="lead" x1="86" y1="143" x2="135" y2="138"/>
-  </svg>
-</div>
-</div>
-    <p class="plate-cap"><span>Fig. 01</span><span>The two pickup concepts, v4 and v5.</span><span>Schematic · not to scale</span></p>
-  </a>
-  <div class="feature-body">
-    <p class="kicker"><b>01</b><span>Senior capstone</span><span>AERSP 403A/B</span><span>Fall 2026 to Spring 2027</span></p>
-    <h3 id="w-marv"><a href="work/marv.html">A payload pickup for an autonomous quadcopter</a></h3>
-    <p class="feature-sum">Our capstone quadcopter, M.A.R.V., flies under motion capture and has to collect a 100 g package with a magnet.</p>
-    <dl class="feature-facts">
-      <div><dt>My part</dt><dd>I designed the pickup mechanism, from a passive ratchet to a servo winch, and produced the stability and control analysis for the design review.</dd></div>
-      <div><dt>Result</dt><dd><strong class="num">36.3 g</strong> for the ratchet pickup, against an 80 g mass budget <span class="ev ev-cad">From CAD</span></dd></div>
-      <div><dt>Status</dt><dd><span class="status status-progress"><b>In progress</b> <span>preliminary design review complete</span></span></dd></div>
-    </dl>
-    <a class="more" href="work/marv.html">Read the case study<span aria-hidden="true"> →</span><span class="vh">: A payload pickup for an autonomous quadcopter</span></a>
-  </div>
-</article>
-
-<article class="feature flip" aria-labelledby="w-uav-builds">
-  <a class="feature-fig" href="work/uav-builds.html" tabindex="-1" aria-hidden="true">
-    <div class="plate"><picture><source type="image/webp" srcset="assets/media/uav-parts-640.webp 640w, assets/media/uav-parts-1000.webp 1000w, assets/media/uav-parts-1600.webp 1600w" sizes="(min-width: 980px) 56vw, 100vw"><img src="assets/media/uav-parts.jpg" width="1600" height="568" alt="" class="pos-uav" loading="lazy" decoding="async"></picture>
-</div>
-    <p class="plate-cap"><span>Fig. 02</span><span>Avionics for the current build, on my desk.</span><span>Photo</span></p>
-  </a>
-  <div class="feature-body">
-    <p class="kicker"><b>02</b><span>Personal projects</span><span>Self-funded</span><span>Ongoing</span></p>
-    <h3 id="w-uav-builds"><a href="work/uav-builds.html">Three UAVs, designed and built on my own</a></h3>
-    <p class="feature-sum">An autonomous mapping UAV, a quadcopter frame with its control tuning, and a thermal-imaging drone for crop irrigation that I am assembling now.</p>
-    <dl class="feature-facts">
-      <div><dt>My part</dt><dd>All of it: component trade studies, frame design and FEA, Pixhawk integration, mission planning, and tuning from flight logs.</dd></div>
-      <div><dt>Result</dt><dd><strong class="num">12 logs</strong> of flight data behind the PID retune that removed a persistent hover oscillation <span class="ev ev-measured">Measured</span></dd></div>
-      <div><dt>Status</dt><dd><span class="status status-progress"><b>Ongoing</b> <span>third build in assembly</span></span></dd></div>
-    </dl>
-    <a class="more" href="work/uav-builds.html">Read the case study<span aria-hidden="true"> →</span><span class="vh">: Three UAVs, designed and built on my own</span></a>
-  </div>
-</article>
-
-<article class="feature" aria-labelledby="w-analysis">
-  <a class="feature-fig" href="work/analysis.html" tabindex="-1" aria-hidden="true">
-    <div class="plate pad"><div class="chartcard">
-  <div class="readout"><span class="big">+30.5%</span><b>± 0.6% · flexural rigidity, from deflection</b></div>
-  <div class="bars">
-    <div class="bargroup">
-      <p class="label"><span>Rigidity EI, 10<sup>6</sup> lbf·in²</span><em>+30.5%</em></p>
-      <div class="barrow"><span>Aluminum</span><span class="trk"><i style="--w:76.6%"></i></span><span class="val">19.84</span></div>
-      <div class="barrow hi"><span>Reinforced</span><span class="trk"><i style="--w:100%"></i></span><span class="val">25.90</span></div>
-    </div>
-    <div class="bargroup">
-      <p class="label"><span>Weight, lbf</span><em>+18.6%</em></p>
-      <div class="barrow"><span>Aluminum</span><span class="trk"><i style="--w:84.3%"></i></span><span class="val">10.75</span></div>
-      <div class="barrow hi"><span>Reinforced</span><span class="trk"><i style="--w:100%"></i></span><span class="val">12.75</span></div>
-    </div>
-    <div class="bargroup">
-      <p class="label"><span>Rigidity per weight</span><em>+10.1 ± 0.5%</em></p>
-      <div class="barrow"><span>Aluminum</span><span class="trk"><i style="--w:90.8%"></i></span><span class="val">1.846</span></div>
-      <div class="barrow hi"><span>Reinforced</span><span class="trk"><i style="--w:100%"></i></span><span class="val">2.032</span></div>
-    </div>
-  </div>
-</div>
-</div>
-    <p class="plate-cap"><span>Fig. 03</span><span>Flexural rigidity of the plain and reinforced beams, from deflection.</span><span>Chart · measured data</span></p>
-  </a>
-  <div class="feature-body">
-    <p class="kicker"><b>03</b><span>Coursework and independent study</span><span>AERSP 305W · AERSP 424</span><span>2025 to 2026</span></p>
-    <h3 id="w-analysis"><a href="work/analysis.html">Four analyses, each checked a second way</a></h3>
-    <p class="feature-sum">A structures lab, a transonic airfoil rebuilt from raw CFD data, a CFD drag study and a root solver. Each has a check built in that could have proved me wrong.</p>
-    <dl class="feature-facts">
-      <div><dt>My part</dt><dd>My own work throughout, except the root solver, which I wrote with one teammate.</dd></div>
-      <div><dt>Result</dt><dd><strong class="num">+30.5 ± 0.6%</strong> bending stiffness from carbon reinforcement, for 18.6% more weight <span class="ev ev-measured">Measured</span></dd></div>
-      <div><dt>Status</dt><dd><span class="status status-done"><b>Completed</b> <span>one measured, three computed</span></span></dd></div>
-    </dl>
-    <a class="more" href="work/analysis.html">Read the case study<span aria-hidden="true"> →</span><span class="vh">: Four analyses, each checked a second way</span></a>
-  </div>
-</article>
-
-<article class="feature flip" aria-labelledby="w-line-follower">
-  <a class="feature-fig" href="work/line-follower.html" tabindex="-1" aria-hidden="true">
-    <div class="plate"><picture><source type="image/webp" srcset="assets/media/lf-robot-640.webp 640w, assets/media/lf-robot-1000.webp 1000w, assets/media/lf-robot-1600.webp 1600w" sizes="(min-width: 980px) 56vw, 100vw"><img src="assets/media/lf-robot.jpg" width="1600" height="1201" alt="" loading="lazy" decoding="async"></picture>
-</div>
-    <p class="plate-cap"><span>Fig. 04</span><span>The robot on the bench, plugged in for programming.</span><span>Photo</span></p>
-  </a>
-  <div class="feature-body">
-    <p class="kicker"><b>04</b><span>Course project</span><span>Team</span><span>November 2026</span></p>
-    <h3 id="w-line-follower"><a href="work/line-follower.html">A line-following robot with a hand-written turn</a></h3>
-    <p class="feature-sum">Follow 1.5 m of tape through an S-bend, turn around at a wall and race the next lane home. The library's turn command was banned, so the 180° turn runs on the gyro and the line sensors.</p>
-    <dl class="feature-facts">
-      <div><dt>My part</dt><dd>I worked on the race program and its tuning with my team.</dd></div>
-      <div><dt>Result</dt><dd><strong class="num">4 states</strong> in a race program that ran hands-off in head-to-head races <span class="ev ev-tested">Tested on hardware</span></dd></div>
-      <div><dt>Status</dt><dd><span class="status status-done"><b>Completed</b> <span>raced 13 November 2026</span></span></dd></div>
-    </dl>
-    <a class="more" href="work/line-follower.html">Read the case study<span aria-hidden="true"> →</span><span class="vh">: A line-following robot with a hand-written turn</span></a>
-  </div>
-</article>
-  </div>
-</section>
-
-<section class="band" id="experience" aria-labelledby="xp-h" style="padding-top:0">
-  <div class="wrap">
-    <div class="sec-head">
-      <p class="label">Experience</p>
-      <h2 id="xp-h">A production test floor and a composites lab</h2>
-      <p>Where I learned what it takes to make a part, test it and leave a record that proves it.</p>
-    </div>
-
-    <article class="xp">
-      <div>
-        <h3>Safran Aerosystems</h3>
-        <p class="role">Engineering intern, Fluids &amp; Fuel Systems</p>
-        <p class="kicker"><span>Jun to Aug 2024</span><span>Morocco</span></p>
-      </div>
-      <ul>
-        <li>Assisted with production and acceptance testing of kerosene temperature probes and fuel-gauging devices: <b>about 110 tests across 6 part numbers</b>.</li>
-        <li>Standardized the MATLAB and Excel test logs and the traveler fields, saving <b>about 3 minutes of data entry per test</b>, 5 to 8% of the test.</li>
-        <li>Worked with production staff to update work instructions, checklists and margin-of-safety checks, which led to <b>about 10 fewer repeat-test and hold tags</b>.</li>
-        <li>Compiled root-cause data packs within 24 to 48 hours of a failure (test traces, as-built against spec, photos). They <b>helped close 2 nonconformance reports</b>.</li>
-      </ul>
-    </article>
-
-    <article class="xp">
-      <div>
-        <h3>Nittany Rocket Labs</h3>
-        <p class="role">Structures team, Penn State's student rocketry team</p>
-        <p class="kicker"><span>Sep 2025 to present</span><span>Team</span></p>
-      </div>
-      <div class="cq">
-        <ul>
-          <li>With the structures team, <b>lay up, vacuum bag, cure, demold and trim</b> the rocket's carbon-fiber body tubes and flat plates.</li>
-          <li>Modeled parts in SolidWorks for manufacturability, with fasteners and GD&amp;T, and <b>checked fit with 3D-printed and laser-cut prototypes</b> before any carbon was cut.</li>
-          <li>Ran stiffness and buckling checks in ANSYS Discovery against deflection limits, and <b>compared simple panel and beam models with hand calculations</b> before trusting them.</li>
-          <li>Researched nondestructive evaluation for composites, ran a cost and capability trade study for a new curing oven, and evaluated reinforcement for the tail cone.</li>
-        </ul>
-        <div class="xp-figs">
-          <div class="plate"><picture><source type="image/webp" srcset="assets/media/nrl-layup-640.webp 640w, assets/media/nrl-layup-1000.webp 1000w, assets/media/nrl-layup-1400.webp 1400w" sizes="(min-width: 900px) 46vw, 72vw"><img src="assets/media/nrl-layup.jpg" width="1400" height="1050" alt="Gloved hands rolling carbon fiber onto a mandrel on a lab table covered in release film, with a cut sheet of carbon cloth beside them" loading="lazy" decoding="async"></picture></div>
-          <div class="plate"><picture><source type="image/webp" srcset="assets/media/nrl-tube-368.webp 368w" sizes="(min-width: 900px) 16vw, 26vw"><img src="assets/media/nrl-tube.jpg" width="368" height="744" alt="A rotary tool trimming the ragged end of a cured carbon-fiber tube still on its aluminum mandrel" loading="lazy" decoding="async"></picture></div>
-        </div>
-        <p class="plate-cap"><span>Fig. E1</span><span>A layup in progress, and trimming a cured tube on its mandrel. Team photos from my end-of-semester structures review.</span><span>Photos</span></p>
-      </div>
-    </article>
-  </div>
-</section>
-
-<section class="band" id="more" aria-labelledby="more-h" style="padding-top:0">
-  <div class="wrap">
-    <div class="sec-head">
-      <p class="label">Also built</p>
-      <h2 id="more-h">Two software projects</h2>
-      <p>Outside the hardware work, I build tools when I need them. Both are working prototypes rather than finished products.</p>
-    </div>
-    <div class="mini-grid">
-
-<article class="mini">
-  <div class="mini-img"><picture><source type="image/webp" srcset="assets/media/roomly-room-640.webp 640w, assets/media/roomly-room-1000.webp 1000w, assets/media/roomly-room-1280.webp 1280w" sizes="(min-width: 900px) 280px, 100vw"><img src="assets/media/roomly-room.jpg" width="1280" height="800" alt="A student apartment rebuilt in 3D inside the Roomly app, with a price tag floating over each piece of furniture" loading="lazy" decoding="async"></picture></div>
-  <div class="mini-body">
-    <p class="kicker"><span>Web app · solo build · 2026</span><span>Working prototype</span></p>
-    <h3>Roomly</h3>
-    <p>A move-out marketplace where the room is the listing. The seller photographs the room once, a vision model drafts a priced listing for each item, and buyers browse the room in 3D.</p>
-    <p class="mini-result">Six photos of my own bedroom became 15 priced items in one pass. I also costed in-app payments before building them: about $0.87 kept on a $120 sale, so I argued for in-person handoff.</p>
-    <p class="tools">Next.js · React Three Fiber · Claude vision</p>
-  </div>
-</article>
-
-<article class="mini">
-  <div class="mini-img"><picture><source type="image/webp" srcset="assets/media/sarah-today-640.webp 640w, assets/media/sarah-today-1000.webp 1000w, assets/media/sarah-today-1600.webp 1600w, assets/media/sarah-today-1800.webp 1800w" sizes="(min-width: 900px) 280px, 100vw"><img src="assets/media/sarah-today.jpg" width="1800" height="1125" alt="The SARAH dashboard's Today screen with sample data: the next task, the day's numbers and a task list" loading="lazy" decoding="async"></picture></div>
-  <div class="mini-body">
-    <p class="kicker"><span>Personal software · June to October 2026</span><span>In personal use</span></p>
-    <h3>SARAH</h3>
-    <p>A dashboard that runs on my laptop and keeps my job search and daily routine on one screen: one Python server, one HTML page, 47 commits. Built with Claude Code as a pair programmer.</p>
-    <p class="mini-result">Traced a bug that hid several records at once to rows being keyed by company and role, and re-keyed them by unique ID. Replaced the server's file blocklist with an allowlist, so it serves one page and nothing else.</p>
-    <p class="tools">Python · Notion, Gmail and Calendar APIs</p>
-  </div>
-</article>
-    </div>
-  </div>
-</section>
-
-<section class="band" id="about" aria-labelledby="about-h" style="padding-top:0">
-  <div class="wrap">
-    <div class="sec-head">
-      <p class="label">About</p>
-      <h2 id="about-h">How I work</h2>
-    </div>
-    <div class="about-grid">
-      <div class="about-photo plate"><picture><source type="image/webp" srcset="assets/media/portrait-640.webp 640w, assets/media/portrait-880.webp 880w" sizes="300px"><img src="assets/media/portrait.jpg" width="880" height="1100" alt="Portrait of Youssef Kartah" loading="lazy" decoding="async"></picture></div>
-      <div class="about-text">
-        <p>I am a senior in aerospace engineering at Penn State, on the autonomous vehicles track, graduating in May 2027.</p>
-        <p>Most of what I know about drones I learned by buying the parts myself and getting them to fly. My habits come from there: settle the trade study before spending the money, keep a manual override on anything that flies itself, and tune from the flight log instead of from how the flight felt.</p>
-        <p>A summer in production test at Safran Aerosystems showed me why aerospace procedures are as strict as they are. It also showed me something about myself. I went out of my way to ask my supervisor for feedback only three times in three months, and I should have asked far more often.</p>
-        <div class="facts-line">
-          <span><b>Based in</b>State College, PA</span>
-          <span><b>Languages</b>Arabic, English and French (fluent) · Spanish (intermediate)</span>
-          <span><b>Next</b>Full-time roles after May 2027 · open to relocating</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="toolbox">
-      <h3>Tools, and where I used them</h3>
-      <table class="tooltable">
-        <tbody>
-          <tr><th scope="row">SolidWorks</th><td>Rocket airframe parts and fit prototypes at Nittany Rocket Labs; three iterations of a <a href="work/uav-builds.html#frame">quadcopter frame</a>.</td></tr>
-          <tr><th scope="row">ANSYS Discovery</th><td>Stiffness and buckling checks on rocket parts; arm-root stress on the quadcopter frame.</td></tr>
-          <tr><th scope="row">ANSYS Fluent</th><td>Steady RANS <a href="work/analysis.html#ev">drag study of an EV body</a>: 7 variants, each on 3 meshes.</td></tr>
-          <tr><th scope="row">MATLAB and Simulink</th><td>PID retune from flight logs in Simulink; CFD post-processing scripts; test logs at Safran.</td></tr>
-          <tr><th scope="row">Python and MicroPython</th><td>A <a href="work/analysis.html#solver">root solver</a> and transonic airfoil post-processing; the <a href="work/line-follower.html">line follower's</a> race program.</td></tr>
-          <tr><th scope="row">Pixhawk and Mission Planner</th><td>Autonomous waypoint and grid missions on the <a href="work/uav-builds.html">mapping UAV</a>.</td></tr>
-          <tr><th scope="row">Composite layup, vacuum bagging</th><td>Carbon-fiber tubes and plates at Nittany Rocket Labs.</td></tr>
-          <tr><th scope="row">GD&amp;T, 3D printing, laser cutting</th><td>Fit prototypes for rocket parts; the PLA <a href="work/marv.html">payload pickup</a>.</td></tr>
-          <tr><th scope="row">Production test records</th><td>Work instructions, travelers, nonconformance reports and root-cause data packs at Safran.</td></tr>
-        </tbody>
-      </table>
-      <p class="also">Also used, without a project on this site to show for it: CATIA, OpenFOAM, SU2, XFOIL, C and C++, wind tunnel testing, LaTeX and Git.</p>
-    </div>
-  </div>
-</section>
-
-<section class="contact" id="contact" aria-labelledby="contact-h">
-  <div class="wrap">
-    <div class="contact-grid">
-      <div>
-        <p class="label">Contact</p>
-        <h2 id="contact-h">Get in touch.</h2>
-        <p>Looking for full-time roles in design, test, manufacturing or autonomy, starting after May 2027. Open to relocating.</p>
-      </div>
-      <ul class="contact-list">
-        <li><span class="k">Email</span><a href="mailto:youssef.kartah@gmail.com">youssef.kartah@gmail.com</a></li>
-        <li><span class="k">LinkedIn</span><a href="https://www.linkedin.com/in/youssef-kartah/" rel="me noopener">linkedin.com/in/youssef-kartah</a></li>
-
-        <li><span class="k">Résumé</span><a href="resume.html">View or print the résumé</a></li>
-        <li><span class="k">Based in</span><span class="v">State College, PA</span></li>
-      </ul>
-    </div>
+<section class="gate" id="enter" aria-labelledby="gate-note">
+  <div class="gate-in">
+    <p class="gate-note" id="gate-note">Eight projects, listed from the ones I can show the most of to the ones I can show the least.</p>
+    <a class="go" href="projects.html" data-go><span class="go-t">Projects</span><span class="go-ar" aria-hidden="true"><svg class="ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span></a>
   </div>
 </section>
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Person","name":"Youssef Kartah","description":"Mechanical design and test for small autonomous aircraft","email":"mailto:youssef.kartah@gmail.com","sameAs":["https://www.linkedin.com/in/youssef-kartah/"],"affiliation":{"@type":"CollegeOrUniversity","name":"The Pennsylvania State University"}}
+{"@context":"https://schema.org","@type":"Person","name":"Youssef Kartah","description":"Aerospace engineering student building small autonomous aircraft and the software around them","email":"mailto:youssef.kartah@gmail.com","sameAs":["https://www.linkedin.com/in/youssef-kartah/"],"affiliation":{"@type":"CollegeOrUniversity","name":"The Pennsylvania State University"}}
 </script>
 
 </main>
 
-<footer class="site-foot">
-  <div class="wrap">
-    <div class="foot-legend">
-      <p class="label">How to read the numbers</p>
-      <p>Every figure on this site is tagged with where it came from.</p>
-      <ul class="legend-list">
-        <li><span class="ev ev-measured">Measured</span> on a physical part or in flight</li>
-        <li><span class="ev ev-simulated">Simulated</span> in CFD or FEA</li>
-        <li><span class="ev ev-calculated">Calculated</span> from a stated model or data set</li>
-        <li><span class="ev ev-cad">From CAD</span> model or mass budget</li>
-        <li><span class="ev ev-estimate">Estimate, untested</span></li>
-      </ul>
-    </div>
-    <div class="foot-meta">
-      <p><a href="mailto:youssef.kartah@gmail.com">youssef.kartah@gmail.com</a><br><a href="https://www.linkedin.com/in/youssef-kartah/" rel="me noopener">linkedin.com/in/youssef-kartah</a></p>
-      <p class="fine">Youssef Kartah · Engineering portfolio · Rev. November 2026<br>No trackers, no cookies.</p>
-    </div>
-  </div>
-</footer>
 
-<script src="assets/js/site.js?v=7d73b810" defer></script>
+
+<script src="assets/js/site.js?v=d067b3f2" defer></script>
 </body>
 </html>

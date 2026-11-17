@@ -16,53 +16,52 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#F5F2EC">
+<meta name="theme-color" content="#2340E8">
 <link rel="icon" href="{{root}}assets/favicon.svg" type="image/svg+xml">
-<link rel="preload" href="{{root}}assets/fonts/geist.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="{{root}}assets/fonts/newsreader-display.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="{{root}}assets/fonts/archivo-expanded.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="{{root}}assets/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="{{root}}assets/css/site.css?v={{v.css}}">
-<script>document.documentElement.className = 'js';</script>
+<script>
+document.documentElement.className = 'js';
+try { if (sessionStorage.getItem('go')) { sessionStorage.removeItem('go'); document.documentElement.classList.add('arriving'); } } catch (e) {}
+</script>
 </head>
 <body class="{{page.bodyClass}}">
 <a class="skip" href="#main">Skip to content</a>
-
-<header class="site-head">
-  <div class="wrap">
-    <a class="brand" href="{{root}}index.html" aria-label="{{site.name}}, home">
-      <span class="brand-full">{{site.name}}</span><span class="brand-short" aria-hidden="true">YK</span>
-    </a>
-    <nav aria-label="Main">
-      <a href="{{root}}index.html#work"{{page.cur.work}}>Work</a>
-      <a href="{{root}}index.html#about"{{page.cur.about}}>About</a>
-      <a href="{{root}}resume.html"{{page.cur.resume}}>Résumé</a>
-      <a href="{{root}}index.html#contact"{{page.cur.contact}}>Contact</a>
-    </nav>
-  </div>
-</header>
+<div class="curtain" aria-hidden="true"></div>
+{{page.bar}}
 
 <main id="main">
 {{content}}
 </main>
 
-<footer class="site-foot">
+{{if page.footer}}
+<footer class="foot" id="contact">
   <div class="wrap">
-    <div class="foot-legend">
-      <p class="label">How to read the numbers</p>
-      <p>Every figure on this site is tagged with where it came from.</p>
-      <ul class="legend-list">
+    <div class="foot-top">
+      <h2>Get in touch</h2>
+      <p>{{site.availability}}</p>
+    </div>
+    <ul class="foot-links">
+      <li><a href="mailto:{{site.email}}">{{site.email}}</a><button class="copy" type="button" data-copy="{{site.email}}">Copy</button></li>
+      <li><a href="{{site.linkedin}}" rel="me noopener" target="_blank">{{site.linkedinLabel}} {{arrow}}</a></li>
+      <li><a href="{{root}}{{site.resumePdf}}" target="_blank" rel="noopener">Résumé (PDF) {{arrow}}</a></li>
+    </ul>
+    <div class="legend">
+      <p>Every figure on the project pages is tagged with where it came from:</p>
+      <ul>
         <li>{{ev measured}} on a physical part or in flight</li>
         <li>{{ev simulated}} in CFD or FEA</li>
         <li>{{ev calculated}} from a stated model or data set</li>
         <li>{{ev cad}} model or mass budget</li>
+        <li>{{ev reported}} from work records or my own write-up</li>
         <li>{{ev estimate}}</li>
       </ul>
     </div>
-    <div class="foot-meta">
-      <p><a href="mailto:{{site.email}}">{{site.email}}</a><br><a href="{{site.linkedin}}" rel="me noopener">{{site.linkedinLabel}}</a></p>
-      <p class="fine">{{site.name}} · Engineering portfolio · Rev. {{site.revision}}<br>No trackers, no cookies.</p>
-    </div>
+    <p class="fine">{{site.name}} · Rev. {{site.revision}} · No trackers, no cookies.</p>
   </div>
 </footer>
+{{/if}}
 
 <script src="{{root}}assets/js/site.js?v={{v.js}}" defer></script>
 </body>

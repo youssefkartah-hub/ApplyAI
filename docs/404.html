@@ -16,62 +16,35 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#F5F2EC">
+<meta name="theme-color" content="#2340E8">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-<link rel="preload" href="assets/fonts/geist.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="assets/fonts/newsreader-display.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/site.css?v=03829a66">
-<script>document.documentElement.className = 'js';</script>
+<link rel="preload" href="assets/fonts/archivo-expanded.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/site.css?v=f27bd35f">
+<script>
+document.documentElement.className = 'js';
+try { if (sessionStorage.getItem('go')) { sessionStorage.removeItem('go'); document.documentElement.classList.add('arriving'); } } catch (e) {}
+</script>
 </head>
 <body class="page">
 <a class="skip" href="#main">Skip to content</a>
-
-<header class="site-head">
-  <div class="wrap">
-    <a class="brand" href="index.html" aria-label="Youssef Kartah, home">
-      <span class="brand-full">Youssef Kartah</span><span class="brand-short" aria-hidden="true">YK</span>
-    </a>
-    <nav aria-label="Main">
-      <a href="index.html#work">Work</a>
-      <a href="index.html#about">About</a>
-      <a href="resume.html">Résumé</a>
-      <a href="index.html#contact">Contact</a>
-    </nav>
-  </div>
-</header>
+<div class="curtain" aria-hidden="true"></div>
+<header class="bar"><div class="bar-in"><a class="bar-name" href="index.html" data-go>Youssef Kartah</a><nav aria-label="Main"><a class="bar-link" href="Youssef_Kartah_Resume.pdf" target="_blank" rel="noopener">Résumé</a></nav></div></header>
 
 <main id="main">
 <section class="lost">
   <div class="wrap">
-    <p class="label">Error 404</p>
-    <h1>This page is not here.</h1>
-    <p>The link may be out of date. The work is all on the home page.</p>
-    <div class="btn-row"><a class="btn btn-primary" href="index.html#work">See selected work</a><a class="btn" href="resume.html">View résumé</a></div>
+    <p class="kind">Error 404</p>
+    <h1>That page is not here.</h1>
+    <p>The link may be out of date. The projects are all on one page.</p>
+    <div class="btns"><a class="btn btn-ink" href="projects.html">See the projects <svg class="ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a><a class="btn" href="index.html">Home</a></div>
   </div>
 </section>
 
 </main>
 
-<footer class="site-foot">
-  <div class="wrap">
-    <div class="foot-legend">
-      <p class="label">How to read the numbers</p>
-      <p>Every figure on this site is tagged with where it came from.</p>
-      <ul class="legend-list">
-        <li><span class="ev ev-measured">Measured</span> on a physical part or in flight</li>
-        <li><span class="ev ev-simulated">Simulated</span> in CFD or FEA</li>
-        <li><span class="ev ev-calculated">Calculated</span> from a stated model or data set</li>
-        <li><span class="ev ev-cad">From CAD</span> model or mass budget</li>
-        <li><span class="ev ev-estimate">Estimate, untested</span></li>
-      </ul>
-    </div>
-    <div class="foot-meta">
-      <p><a href="mailto:youssef.kartah@gmail.com">youssef.kartah@gmail.com</a><br><a href="https://www.linkedin.com/in/youssef-kartah/" rel="me noopener">linkedin.com/in/youssef-kartah</a></p>
-      <p class="fine">Youssef Kartah · Engineering portfolio · Rev. November 2026<br>No trackers, no cookies.</p>
-    </div>
-  </div>
-</footer>
 
-<script src="assets/js/site.js?v=7d73b810" defer></script>
+
+<script src="assets/js/site.js?v=d067b3f2" defer></script>
 </body>
 </html>

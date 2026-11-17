@@ -106,6 +106,7 @@ lede: A structures lab, two computational projects and an independent CFD study.
         <p>How much drag can come off an electric vehicle body without starving the battery and motor of cooling air?</p>
         <p>I ran steady RANS simulations in ANSYS Fluent on 7 geometry variants that changed the body contours, the underbody and the wheel covers.</p>
         <p>A drag change of a few percent can be the mesh talking. I checked every trend on 3 mesh densities before trusting it. That made 21 runs, so I scripted the post-processing in MATLAB, which took it from 10 minutes a run to 3.</p>
+        <p>I also studied boundary-layer behavior and the surface-finish assumptions in the model, to inform the choice of material and finish and the coating smoothness a design would need. The MATLAB scripts ran the parametric sweeps and organized the results with basic statistics.</p>
       </div>
       <figure class="fig">
         <div class="plate pad">{{include figures/analysis-ev.html}}</div>

@@ -16,48 +16,34 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#F5F2EC">
+<meta name="theme-color" content="#2340E8">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-<link rel="preload" href="../assets/fonts/geist.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="../assets/fonts/newsreader-display.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="../assets/css/site.css?v=03829a66">
-<script>document.documentElement.className = 'js';</script>
+<link rel="preload" href="../assets/fonts/archivo-expanded.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../assets/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../assets/css/site.css?v=f27bd35f">
+<script>
+document.documentElement.className = 'js';
+try { if (sessionStorage.getItem('go')) { sessionStorage.removeItem('go'); document.documentElement.classList.add('arriving'); } } catch (e) {}
+</script>
 </head>
 <body class="case">
 <a class="skip" href="#main">Skip to content</a>
-
-<header class="site-head">
-  <div class="wrap">
-    <a class="brand" href="../index.html" aria-label="Youssef Kartah, home">
-      <span class="brand-full">Youssef Kartah</span><span class="brand-short" aria-hidden="true">YK</span>
-    </a>
-    <nav aria-label="Main">
-      <a href="../index.html#work" aria-current="true">Work</a>
-      <a href="../index.html#about">About</a>
-      <a href="../resume.html">Résumé</a>
-      <a href="../index.html#contact">Contact</a>
-    </nav>
-  </div>
-</header>
+<div class="curtain" aria-hidden="true"></div>
+<header class="bar"><div class="bar-in"><a class="back" href="../projects.html" data-go><svg class="ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H6M11 6l-6 6 6 6"/></svg><span>Projects</span></a><a class="bar-name" href="../index.html" data-go>Youssef Kartah</a><nav aria-label="Main"><a class="bar-link" href="../Youssef_Kartah_Resume.pdf" target="_blank" rel="noopener">Résumé</a><a class="bar-link" href="#contact">Contact</a></nav></div><div class="progress" aria-hidden="true"></div></header>
 
 <main id="main">
 
-<header class="case-head">
+<header class="ph">
   <div class="wrap">
-    <p class="crumb"><a href="../index.html#work">Selected work</a><span aria-hidden="true">/</span><span>01 of 04</span></p>
-    <div class="case-head-grid">
-      <div>
-        <p class="kicker"><span>Senior capstone</span><span>AERSP 403A/B</span><span>Fall 2026 to Spring 2027</span></p>
-        <h1>A payload pickup for an autonomous quadcopter</h1>
-        <p class="lede">Our senior capstone, M.A.R.V., is a 630 g quadcopter that flies itself under motion capture and has to collect a 100 g package with a magnet. I own two pieces of it: the mechanism that grabs the package, and the analysis of what carrying it does to the vehicle.</p>
-      </div>
-      <dl class="spec">
-        <div><dt>Status</dt><dd><span class="status status-progress"><b>In progress</b> <span>preliminary design review complete</span></span></dd></div>
-        <div><dt>My part</dt><dd>I designed the pickup mechanism, from a passive ratchet to a servo winch, and produced the stability and control analysis for the design review.</dd></div>
-        <div><dt>Team</dt><dd>Team of 4. Each of us owns part of the vehicle; these two pieces are mine.</dd></div>
-        <div><dt>Tools</dt><dd>CAD · Onshape (team frame model) · FDM printing in PLA · Mass-properties analysis</dd></div>
-      </dl>
-    </div>
+    <p class="row-kind">Senior capstone · AERSP 403A/B · Fall 2026 to Spring 2027</p>
+    <h1>A payload pickup for an autonomous quadcopter</h1>
+    <p class="lede">Our senior capstone, M.A.R.V., is a 630 g quadcopter that flies itself under motion capture and has to collect a 100 g package with a magnet. I own two pieces of it: the mechanism that grabs the package, and the analysis of what carrying it does to the vehicle.</p>
+    <dl class="spec">
+      <div><dt>Status</dt><dd><span class="status status-progress"><b>In progress</b> <span>preliminary design review complete</span></span></dd></div>
+      <div><dt>My part</dt><dd>I designed the pickup mechanism, from a passive ratchet to a servo winch, and produced the stability and control analysis for the design review.</dd></div>
+      <div><dt>Team</dt><dd>Team of 4. Each of us owns part of the vehicle; these two pieces are mine.</dd></div>
+      <div><dt>Tools</dt><dd>CAD · Onshape (team frame model) · FDM printing in PLA · Mass-properties analysis</dd></div>
+    </dl>
   </div>
 </header>
 
@@ -336,14 +322,14 @@
     <line class="lead" x1="52" y1="133" x2="123" y2="106"/>
     <text class="t10" x="12" y="138">magnet</text>
   </g>
-  <g class="fade rc-51">
+  <g class="rc-51">
     <line x1="300" y1="95.5" x2="300" y2="110" class="sa" marker-start="url(#rc-ah)" marker-end="url(#rc-ah)"/>
     <text class="t11 ta halo" x="308" y="106">3.9 mm</text>
     <path d="M108 110.5h15M183 110.5h15" class="sa" style="stroke-width:3"/>
     <text class="t11 halo" x="12" y="208">Plate bears on the printed rim</text>
     <text class="t10" x="12" y="224">magnet face 0.2 mm below the rim</text>
   </g>
-  <g class="fade rc-52">
+  <g class="rc-52">
     <line x1="300" y1="95.5" x2="300" y2="120.4" class="sa" marker-start="url(#rc-ah)" marker-end="url(#rc-ah)"/>
     <text class="t11 ta halo" x="308" y="111">≈ 6.7 mm</text>
     <text class="t11 halo" x="12" y="208">Plate hangs clear of the rim</text>
@@ -404,7 +390,7 @@
   <rect x="233" y="84" width="18" height="69" class="box"/>
   <rect x="235" y="153" width="14" height="5" class="solid"/>
   <text class="t10" x="262" y="112">pickup</text>
-  <g class="fade cg-pkg">
+  <g class="cg-pkg">
     <rect x="220" y="161" width="44" height="34" class="dash"/>
     <text class="t10" x="272" y="176">100 g</text>
     <text class="t10" x="272" y="189">package</text>
@@ -415,8 +401,8 @@
     <path d="M170,70 L170,63 A7,7 0 0 1 177,70 Z" class="cg-fill"/>
     <path d="M170,70 L170,77 A7,7 0 0 1 163,70 Z" class="cg-fill"/>
   </g>
-  <g class="fade cg-l-empty"><line x1="137" y1="117" x2="164" y2="74" class="lead"/><text class="t11 halo" x="8" y="122">CG, empty</text></g>
-  <g class="fade cg-l-loaded"><line x1="137" y1="117" x2="177" y2="91" class="lead"/><text class="t11 ta halo" x="8" y="122">CG, package aboard</text></g>
+  <g class="cg-l-empty"><line x1="137" y1="117" x2="164" y2="74" class="lead"/><text class="t11 halo" x="8" y="122">CG, empty</text></g>
+  <g class="cg-l-loaded"><line x1="137" y1="117" x2="177" y2="91" class="lead"/><text class="t11 ta halo" x="8" y="122">CG, package aboard</text></g>
   <text class="t10 tm" x="170" y="211">frame centre</text>
   <line x1="300" y1="205" x2="352" y2="205" class="lead" marker-end="url(#cg-ah)"/>
   <text class="t10 te" x="294" y="208">forward</text>
@@ -499,35 +485,46 @@
 </div>
 
 
-<nav class="case-next" aria-label="More case studies">
-  <div class="wrap">
-    <a href="../work/line-follower.html"><span class="k">← Previous · 04</span><b>A line-following robot with a hand-written turn</b></a>
-    <a href="../work/uav-builds.html" class="nx"><span class="k">Next · 02 →</span><b>Three UAVs, designed and built on my own</b></a>
-  </div>
+<nav class="next" aria-label="More projects">
+  <a class="next-main" href="../work/analysis.html" data-go>
+    <span class="next-k">Next project</span>
+    <span class="next-t">Analysis, checked twice</span>
+    <span class="next-d">A carbon-reinforced beam test, a transonic airfoil rebuilt from raw CFD data, an EV drag study and a root solver, each checked a second way.</span>
+    <span class="next-ar" aria-hidden="true"><svg class="ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span>
+  </a>
+  <div class="next-side"><a href="../work/rocket-labs.html" data-go><span>Previous</span> Nittany Rocket Labs</a><a href="../projects.html" data-go><span>All projects</span> Back to the list</a></div>
 </nav>
 
 </main>
 
-<footer class="site-foot">
+
+<footer class="foot" id="contact">
   <div class="wrap">
-    <div class="foot-legend">
-      <p class="label">How to read the numbers</p>
-      <p>Every figure on this site is tagged with where it came from.</p>
-      <ul class="legend-list">
+    <div class="foot-top">
+      <h2>Get in touch</h2>
+      <p>Looking for full-time roles in design, test, manufacturing or autonomy, starting after May 2027. Open to relocating.</p>
+    </div>
+    <ul class="foot-links">
+      <li><a href="mailto:youssef.kartah@gmail.com">youssef.kartah@gmail.com</a><button class="copy" type="button" data-copy="youssef.kartah@gmail.com">Copy</button></li>
+      <li><a href="https://www.linkedin.com/in/youssef-kartah/" rel="me noopener" target="_blank">linkedin.com/in/youssef-kartah <svg class="ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></li>
+      <li><a href="../Youssef_Kartah_Resume.pdf" target="_blank" rel="noopener">Résumé (PDF) <svg class="ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></li>
+    </ul>
+    <div class="legend">
+      <p>Every figure on the project pages is tagged with where it came from:</p>
+      <ul>
         <li><span class="ev ev-measured">Measured</span> on a physical part or in flight</li>
         <li><span class="ev ev-simulated">Simulated</span> in CFD or FEA</li>
         <li><span class="ev ev-calculated">Calculated</span> from a stated model or data set</li>
         <li><span class="ev ev-cad">From CAD</span> model or mass budget</li>
+        <li><span class="ev ev-reported">My own record</span> from work records or my own write-up</li>
         <li><span class="ev ev-estimate">Estimate, untested</span></li>
       </ul>
     </div>
-    <div class="foot-meta">
-      <p><a href="mailto:youssef.kartah@gmail.com">youssef.kartah@gmail.com</a><br><a href="https://www.linkedin.com/in/youssef-kartah/" rel="me noopener">linkedin.com/in/youssef-kartah</a></p>
-      <p class="fine">Youssef Kartah · Engineering portfolio · Rev. November 2026<br>No trackers, no cookies.</p>
-    </div>
+    <p class="fine">Youssef Kartah · Rev. November 2026 · No trackers, no cookies.</p>
   </div>
 </footer>
 
-<script src="../assets/js/site.js?v=7d73b810" defer></script>
+
+<script src="../assets/js/site.js?v=d067b3f2" defer></script>
 </body>
 </html>
