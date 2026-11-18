@@ -194,6 +194,22 @@ deliberately minimal: show up and check the box, exactly like prayers.
   sync; it replaces the Tasks card on Today. Past calendar imports no longer
   linger as open tasks.
 
+## Phase 10 — Health from the Google Health weekly report ✅ (shipped November 2026)
+
+- ❤️ Health tab: reads the weekly progress report Google Health (Fitbit) emails,
+  through read-only Gmail (the token the job tracker's Gmail sync already
+  uses). Each report is parsed once from its HTML (plain text as a fallback):
+  steps, best day, floors, distance, calories, active zone minutes, sleep,
+  active hours, resting heart rate and weight, each with its change from the
+  week before. Where the wording only says "since last week", the colour and
+  direction of Google's arrow decide the sign and whether it's good.
+- Training (SARAH check-offs for the same Sunday–Saturday plus Fitbit activity)
+  and Recovery (sleep against the 7-hour line, resting heart rate against your
+  own average) as stat tiles with 12-week sparklines, a plain-language read,
+  a recovery badge, a table of every week, a rundown line while a report is
+  new, and voice. Numbers only are cached, in `.health_cache.json` (0600,
+  gitignored, never served).
+
 ## Later ideas (unscheduled)
 
 - Journal, spaced-repetition flashcards, richer language stats, deeper knowledge

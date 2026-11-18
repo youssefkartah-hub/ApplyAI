@@ -215,6 +215,8 @@ Endpoints, all on localhost only:
 | `GET /api/robinhood` | Accounts, positions and cash through SnapTrade, cached 5 minutes (`?force=1` refreshes, at most once a minute) |
 | `POST /api/robinhood/connect` · `/link` · `/disconnect` | Checks and saves the SnapTrade keys; makes a five-minute Connection Portal link; deletes the keys |
 | `GET /api/robinhood/linked` | Where the portal sends the browser when you're done: tells the app tab to load the portfolio, then closes |
+| `GET /api/health` | Your Google Health weekly reports from Gmail, as numbers, cached 30 minutes (`?force=1` checks again, at most every 30 s) |
+| `POST /api/health/connect` | The one-time read-only Gmail approval, then reads the reports |
 
 The server is threaded, so a slow market fetch or the one-time Google approval never freezes the rest of the app, and it can restart immediately after Ctrl+C. It listens on this Mac only (127.0.0.1), so nobody else on a campus or café network can reach it. It serves exactly one file, the app page; everything else in the folder (key files, `personal_data.json`, documents, resume, `.git`) can't be fetched, however the address is spelled. The API only answers the app's own page: requests from any other website you have open are refused (checked by Origin, Sec-Fetch-Site and a JSON-only rule), as are requests addressed to another host name (DNS rebinding), and no other site can frame the app. On startup it makes the key files, personal data, documents and resume readable by your user only, and everything it writes afterwards is created that way.
 
@@ -224,7 +226,7 @@ The server is threaded, so a slow market fetch or the one-time Google approval n
 
 ## 13. Data, privacy, and cost
 
-- **Everything personal lives on your Mac.** Lead measures, calls home, tasks, reviews, imported spending, the ticks you add to assignments: `personal_data.json` + a browser localStorage backup. Job data lives in your Notion. Your Rocket Money export is read in the browser and never sent anywhere. Dated tasks and blocks go to your own Google Calendar only if you turn sync on. Canvas and SnapTrade are only ever read: nothing is submitted, traded or changed there.
+- **Everything personal lives on your Mac.** Lead measures, calls home, tasks, reviews, imported spending, the ticks you add to assignments: `personal_data.json` + a browser localStorage backup. Job data lives in your Notion. Your Rocket Money export is read in the browser and never sent anywhere. Dated tasks and blocks go to your own Google Calendar only if you turn sync on. Canvas and SnapTrade are only ever read: nothing is submitted, traded or changed there. For Health, Gmail is read-only and only the Google Health reports are opened; their numbers are kept in `.health_cache.json`, never the emails themselves.
 - **API keys** sit in plain files in the app folder, gitignored, never served, never leaving your machine except to their own service. Your Robinhood password is never typed into SARAH: you sign in on SnapTrade's own page.
 - **Cost**: the app, market data, calendar, Notion, Canvas and SnapTrade's personal plan are free. ElevenLabs has a free tier (~10 min of speech/month; $5/mo for more). The Claude conversation brain is pay-as-you-go — roughly half a cent per exchange, a few dollars a month with heavy daily use, and it's optional: without a key, Sarah still works with pattern matching.
 
@@ -322,3 +324,20 @@ Robinhood has no public API for stock accounts, and signing in with your passwor
 **What you see:** total value, the amount in positions, cash, all-time gain, and every position (stocks, ETFs, crypto, options at 100 shares a contract, sweep funds) with shares, price, value and gain. Totals come from Robinhood itself; the note under the table says how fresh the positions are. The portfolio also counts toward net worth automatically, so don't add it there by hand. It refreshes every 10 minutes while the app is open (SnapTrade allows a personal account ten calls a minute), and **Refresh** asks again. If SnapTrade hiccups, the last good numbers stay on screen with a warning.
 
 **Disconnect** deletes the keys from this Mac. The link itself stays in your SnapTrade dashboard until you remove it there.
+
+## 18. Health (Google Health weekly report)
+
+Every week Google Health (Fitbit) emails you a progress report. The ❤️ Health tab, under Life, reads it from Gmail and lays it out next to the training you check off in SARAH.
+
+**Connecting** (once): open the Health tab and press **Connect Gmail**. Google asks for read-only Gmail access, the same kind the job tracker's Gmail sync uses (the two share `token.json`, so if that sync already runs, Health connects by itself). SARAH searches only for emails from `google-health-noreply@google.com` titled "weekly progress report", reads each one once, keeps just the numbers in `.health_cache.json`, and never sends them anywhere. If Google says the Gmail API is switched off, the tab shows an **Enable Gmail API** link to the exact switch, same as the calendar.
+
+**What you see**, for the week the report covers (Sunday to Saturday):
+
+- **A short read** at the top: active zone minutes against the 150-minute weekly benchmark, sleep against your 7-hour line, resting heart rate against your own usual, and a warning when training went up while sleep went down. A badge says **Recovered**, **Watch recovery** or **Under-recovered**: recovered means sleep at or above 7 hours and resting heart rate within 3 bpm of your average over the previous weeks; each one off flags it.
+- **🏋️ Training**: the martial arts sessions and lifts you checked off in SARAH on those same seven days, against what was scheduled, then Google Health's activity numbers: active zone minutes, steps a day (and best day), distance, active hours, floors, calories.
+- **🛌 Recovery**: nights you checked off "slept 7+", then sleep, resting heart rate and weight.
+- Every number shows its change from the week before (green when it's a good change, red when it isn't, as Google marks them) and a 12-week sparkline with the shown week highlighted. Hover a sparkline for that week's value; click it to jump to that week.
+- **‹ ›** step through earlier reports, and **Every week as a table** lists all of them side by side.
+
+New reports usually arrive early in the week. For two days after one lands, the rundown on Today carries a ❤️ line with the headline numbers. Ask by voice too: "how did I sleep last week?", "how's my recovery?", "what was my resting heart rate?".
+

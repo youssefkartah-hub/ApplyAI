@@ -81,7 +81,7 @@
   .rank li{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);font-size:13px}
   .rank li:last-child{border-bottom:none} .rank .v{color:var(--muted)}
   .pill2{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:2px 8px;margin:3px 4px 0 0;font-size:12px}
-  #main{display:block}
+  #main{display:block;grid-template-columns:minmax(0,1fr)}
   .tabs{display:flex;flex-direction:column;gap:2px;position:fixed;top:66px;left:max(20px,calc(50vw - var(--wrapw)/2));
     z-index:60;width:224px;max-height:calc(100vh - 90px);overflow:auto;
     background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;
@@ -336,6 +336,23 @@
   .vbadge.skip{color:#3f0a0a;background:linear-gradient(135deg,#f87171,#ef4444)}
   .vscore{font-size:44px;font-weight:800;line-height:1}
   .vscore small{font-size:15px;font-weight:600;color:var(--muted)}
+  .hlgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .hltile{border:1px solid var(--line);border-radius:10px;padding:9px 11px 6px;background:var(--panel2)}
+  .hltile .l{font-size:11.5px;color:var(--muted)}
+  .hltile .v{font-size:20px;font-weight:600;margin-top:1px}
+  .hltile .v small{font-size:12px;color:var(--muted);font-weight:500}
+  .hltile .dl{font-size:11.5px;margin-top:1px}
+  .dl.good{color:var(--offer)} .dl.bad{color:var(--rejected)} .dl.flat{color:var(--muted)}
+  .hlsub{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:12px 0 6px}
+  .spark{display:block;width:100%;height:auto;margin-top:6px;--sa:#22d3ee;--sm:#5f8098}
+  html[data-theme="light"] .spark{--sa:#0e7490;--sm:#94a3b8}
+  .spark .off{fill:var(--sm)} .spark .on{fill:var(--sa)}
+  .spark .ln{fill:none;stroke:var(--sm);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+  .spark .dot{fill:var(--sa);stroke:var(--panel2);stroke-width:2}
+  .spark .ref{stroke:var(--muted);stroke-width:1;opacity:.45}
+  .spark .hit{fill:transparent;cursor:pointer}
+  #hlWeeks th,#hlWeeks td{white-space:nowrap}
+  .spark .hit:hover{fill:rgba(127,127,127,.08)}
   .mrow{display:flex;align-items:center;gap:10px;margin:8px 0}
   .mrow .ml{width:150px;font-size:12.5px;color:var(--muted);flex:0 0 150px}
   .mbar{flex:1;height:9px;border-radius:6px;background:rgba(0,0,0,.35);overflow:hidden;min-width:60px}
@@ -516,6 +533,7 @@
       <div class="navlbl">Life</div>
       <button class="tab" data-tab="courses">🎓 Courses</button>
       <button class="tab" data-tab="train">🏋️ Train</button>
+      <button class="tab" data-tab="health">❤️ Health</button>
       <button class="tab" data-tab="fin">💰 Finance</button>
       <button class="tab" data-tab="proj">🛠 Projects</button>
     </div>
@@ -582,6 +600,15 @@
       </div>
       <div class="icard" id="bjjPath" style="margin-top:14px"></div>
       <div class="icard" id="trainPlan" style="margin-top:14px"></div>
+    </div>
+
+    <div class="pane" data-pane="health" hidden>
+      <div class="icard" id="hlHead" style="margin-bottom:14px"></div>
+      <div class="charts" id="hlCards">
+        <div class="icard" id="hlTrain"></div>
+        <div class="icard" id="hlRecover"></div>
+      </div>
+      <div class="icard" id="hlWeeks"></div>
     </div>
 
     <div class="pane" data-pane="match" hidden>
@@ -1538,6 +1565,7 @@ function renderToday(){
   const list=sideGroups().today;
   if(list.length) b.push(`Today's list: <b>${list.length} left</b> · first up: ${esc(list[0].title)}${list[0].time&&list[0].due===tk?` at ${fmtHM(list[0].time)}`:""}`);
   b.push(`Applications <b>${appsToday}/${goal}</b> today (US ${ab.USA}/${APP_GOAL.USA} · outside ${ab.Outside}/${APP_GOAL.Outside})${interviews?` · ${interviews} interview${interviews>1?"s":""} in play`:""}`);
+  const hb=healthBullet(); if(hb) b.push(hb);
   if(new Date().getDay()===0&&!wk.review) b.push(`<b>Sunday review is due.</b> Four numbers and one line, on the Scoreboard.`);
   $("briefBox").innerHTML=`<h3>☀️ Your rundown
     <button class="rowbtn" data-speak style="float:right;text-transform:none;letter-spacing:0">🔊 Read it to me</button></h3>
@@ -2073,7 +2101,7 @@ function renderGoals(){
 let heroItem=null, currentTab="today";
 const PANE_R={today:[renderToday],score:[renderScoreboard],crm:[renderCRM],
   proj:[renderProjects],goals:[renderGoals],train:[renderTrain,renderBjj],fin:[renderFin],
-  kb:[renderKB],match:[renderMatch],courses:[renderCourses]};
+  kb:[renderKB],match:[renderMatch],courses:[renderCourses],health:[renderHealth]};
 function renderOS(){ try{ renderSide(); }catch(e){ console.error(e); } try{
   // Only rebuild what's on screen: the Today pane rerenders when visible,
   // other tabs get their own renderers, and the header day % stays fresh
@@ -3355,6 +3383,235 @@ function cvGrouped(list){
     if(lbl!==last){ html+=`<div class="duegrp">${lbl}</div>`; last=lbl; }
     html+=cvRow(a); });
   return html; }
+/* ---- Health: the weekly Google Health (Fitbit) report, read from Gmail ---- */
+const hl={data:null,err:"",errUrl:"",busy:false,connecting:false,needsAuth:false,back:0,loadedAt:0};
+try{ const c=JSON.parse(localStorage.getItem("sarah_health")||"null"); if(c&&Array.isArray(c.weeks)) hl.data=c; }catch(e){}
+const AZM_WEEK=150, SLEEP_LINE=420;   // the 150-minute weekly activity benchmark; your 7-hour sleep line
+function hlApply(j){
+  if(Array.isArray(j.weeks)&&(j.weeks.length||!hl.data)){
+    hl.data={weeks:j.weeks,fetchedAt:j.fetchedAt||(hl.data&&hl.data.fetchedAt)||0};
+    try{ localStorage.setItem("sarah_health",JSON.stringify(hl.data)); }catch(e){}
+  }
+  hl.needsAuth=j.connected===false;
+  hl.err=j.error&&j.error!=="needs_auth"?(j.message||j.error):""; hl.errUrl=j.url||"";
+  if(hl.back>=hlWeeks().length) hl.back=0;
+}
+async function loadHealth(force){
+  if((document.hidden||hl.busy)&&!force) return;
+  hl.busy=true;
+  let j;
+  try{ j=await fetch("/api/health"+(force?"?force=1":""),{cache:"no-store"}).then(r=>r.json()); }
+  catch(e){ j={error:"net",message:"Couldn't reach the app server."}; }
+  hl.busy=false; hl.loadedAt=Date.now();
+  hlApply(j); renderOS();
+}
+async function hlConnect(){
+  if(hl.connecting) return;
+  hl.connecting=true; hl.err=""; renderOS();
+  toast("Approve read-only Gmail access in the Google window that just opened…");
+  let j;
+  try{ j=await fetch("/api/health/connect",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"}).then(r=>r.json()); }
+  catch(e){ j={error:"net",message:"Couldn't reach the app server."}; }
+  hl.connecting=false; hl.loadedAt=Date.now();
+  if(j.error&&!Array.isArray(j.weeks)){ hl.err=j.message||j.error; hl.errUrl=j.url||""; renderOS(); return; }
+  hlApply(j); renderOS();
+  const n=hlWeeks().length;
+  toast(j.error?j.message:n?`Gmail connected. ${n} weekly report${n>1?"s":""} found.`:"Gmail connected. No Google Health reports in your inbox yet.");
+}
+function hlWeeks(){ return (hl.data&&hl.data.weeks)||[]; }            // newest first
+function hlWeek(){ return hlWeeks()[hl.back]||null; }
+function hlRange(w){
+  const a=new Date(w.start+"T12:00"), b=new Date(w.end+"T12:00"), m=d=>d.toLocaleDateString(undefined,{month:"short"});
+  return a.getMonth()===b.getMonth()?`${m(a)} ${a.getDate()}–${b.getDate()}`:`${m(a)} ${a.getDate()} – ${m(b)} ${b.getDate()}`;
+}
+function hlDays(w){ const out=[];
+  for(let d=w.start; d<=w.end&&out.length<14; d=dkFor(new Date(Date.parse(d+"T12:00")+86400000))) out.push(d);
+  return out; }
+// what you checked off in SARAH over the same seven days the report covers
+function hlSarah(w){
+  const s={martial:0,bjj:0,mt:0,lifts:0,martialDue:0,liftsDue:0,sleep7:0,sleepNights:0};
+  hlDays(w).forEach(dk=>{ const d=(OS.daily||{})[dk]||{}, sp=splitFor(dk);
+    let m=(d.bjj?1:0)+(d.muaythai?1:0); if(!m&&d.training) m=1;
+    s.martial+=m; if(d.bjj) s.bjj++; if(d.muaythai) s.mt++;
+    if(sp.combat) s.martialDue++;
+    if(sp.lift&&sp.lift!=="recovery"){ s.liftsDue++; if(d.lift) s.lifts++; }
+    if(dk>=systemStart()){ s.sleepNights++; if(d.sleep) s.sleep7++; } });
+  return s;
+}
+const fmtSleep=m=>`${Math.floor(m/60)}h ${String(Math.round(m%60)).padStart(2,"0")}m`;
+const fmtMins=m=>m>=60?`${Math.floor(m/60)}h ${String(m%60).padStart(2,"0")}m`:`${m} min`;
+// each measure: how to read it, and whether up is good when Google doesn't say
+const HL_M={
+  azm:{label:"Active zone minutes",pick:w=>w.azm&&w.azm.v,fmt:v=>v.toLocaleString(),unit:"min",up:true,bar:true,ref:AZM_WEEK,
+    d:v=>`${Math.abs(v).toLocaleString()} min`},
+  steps:{label:"Steps a day",pick:w=>w.steps&&w.steps.avg,fmt:v=>v.toLocaleString(),unit:"/day",up:true,bar:true,
+    d:v=>`${Math.abs(v).toLocaleString()} total`},
+  distance:{label:"Distance",pick:w=>w.distance&&w.distance.v,fmt:v=>(+v).toFixed(1),unit:w=>w&&w.distance&&w.distance.unit||"mi",up:true,bar:true,
+    d:v=>`${Math.abs(v).toFixed(1)}`},
+  activeHours:{label:"Active hours",pick:w=>w.activeHours&&w.activeHours.v,fmt:v=>v,unit:w=>`of ${w&&w.activeHours&&w.activeHours.of||9} h`,up:true,
+    d:v=>`${Math.abs(v)} h`},
+  floors:{label:"Floors",pick:w=>w.floors&&w.floors.v,fmt:v=>v.toLocaleString(),unit:"",up:true,bar:true,d:v=>`${Math.abs(v)}`},
+  calories:{label:"Calories a day",pick:w=>w.calories&&w.calories.v,fmt:v=>v.toLocaleString(),unit:"kcal",up:null,
+    d:v=>`${Math.abs(v).toLocaleString()}`},
+  sleep:{label:"Sleep a night",pick:w=>w.sleep&&w.sleep.v,fmt:fmtSleep,unit:"",up:true,ref:SLEEP_LINE,d:v=>fmtMins(Math.abs(v))},
+  rhr:{label:"Resting heart rate",pick:w=>w.rhr&&w.rhr.v,fmt:v=>v,unit:"bpm",up:false,d:v=>`${Math.abs(v)} bpm`},
+  weight:{label:"Weight",pick:w=>w.weight&&w.weight.v,fmt:v=>(+v).toFixed(1),unit:w=>w&&w.weight&&w.weight.unit||"lb",up:null,
+    d:v=>`${Math.abs(v).toFixed(1)}`}};
+function hlDelta(key,w){
+  const m=w[key]; if(!m||m.d==null) return "";
+  if(m.d===0) return `<div class="dl flat">no change</div>`;
+  const good=m.good!=null?m.good:HL_M[key].up==null?null:(m.d>0)===HL_M[key].up;
+  return `<div class="dl ${good==null?"flat":good?"good":"bad"}">${m.d>0?"▲":"▼"} ${HL_M[key].d(m.d)}</div>`;
+}
+function hlBar(x,y,w,h){ const r=Math.max(0,Math.min(4,h,w/2));   // rounded at the data end, square on the baseline
+  return `M${x},${y+h}V${y+r}Q${x},${y} ${x+r},${y}H${x+w-r}Q${x+w},${y} ${x+w},${y+r}V${y+h}Z`; }
+// a 12-week trend: older weeks in the quiet grey, the week on screen in the accent
+function hlSpark(key){
+  const M=HL_M[key], all=hlWeeks().slice(0,12), sel=hlWeek();
+  const ws=all.slice().reverse(), vals=ws.map(M.pick);
+  const nums=vals.filter(v=>v!=null); if(nums.length<2) return "";
+  const W=140,H=38,T=5,B=3, n=ws.length, slot=W/n;
+  let lo=M.bar?0:Math.min(...nums), hi=Math.max(...nums);
+  if(M.ref!=null){ hi=Math.max(hi,M.ref); if(!M.bar) lo=Math.min(lo,M.ref); }
+  if(!M.bar){ const pad=(hi-lo)*0.15||1; lo-=pad; hi+=pad; }
+  if(hi===lo) hi=lo+1;
+  const y=v=>T+(H-T-B)*(1-(v-lo)/(hi-lo)), cx=i=>slot*i+slot/2;
+  const tip=(w,v)=>`<title>${hlRange(w)}: ${v==null?"no data":M.fmt(v)+(typeof M.unit==="function"?" "+M.unit(w):M.unit?" "+M.unit:"")}</title>`;
+  let g="";
+  if(M.ref!=null) g+=`<line x1="0" x2="${W}" y1="${y(M.ref)}" y2="${y(M.ref)}" class="ref"/>`;
+  if(M.bar){
+    const bw=Math.min(24,slot-2);
+    ws.forEach((w,i)=>{ const v=vals[i]; if(v==null) return;
+      const top=y(v), on=w===sel;
+      g+=`<path d="${hlBar(cx(i)-bw/2,top,bw,H-B-top)}" class="${on?"on":"off"}"/>`; });
+  }else{
+    const pts=ws.map((w,i)=>vals[i]==null?null:[cx(i),y(vals[i])]);
+    let d="", pen=false;
+    pts.forEach(p=>{ if(!p){ pen=false; return; } d+=(pen?"L":"M")+p[0].toFixed(1)+","+p[1].toFixed(1); pen=true; });
+    g+=`<path d="${d}" class="ln"/>`;
+    const i=ws.indexOf(sel); if(i>=0&&pts[i]) g+=`<circle cx="${pts[i][0]}" cy="${pts[i][1]}" r="4" class="dot"/>`;
+  }
+  // hover targets: a full-height column per week, bigger than the mark
+  ws.forEach((w,i)=>{ g+=`<rect x="${slot*i}" y="0" width="${slot}" height="${H}" class="hit" data-hl-pick="${all.indexOf(w)}">${tip(w,vals[i])}</rect>`; });
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(M.label)}, last ${n} weeks">${g}</svg>`;
+}
+function hlTile(key,w,extra){
+  const M=HL_M[key], v=M.pick(w); if(v==null) return "";
+  const unit=typeof M.unit==="function"?M.unit(w):M.unit;
+  return `<div class="hltile"><div class="l">${M.label}</div>
+    <div class="v">${M.fmt(v)}${unit?` <small>${esc(unit)}</small>`:""}</div>
+    ${extra?`<div class="dl flat">${extra}</div>`:""}${hlDelta(key,w)}${hlSpark(key)}</div>`;
+}
+// recovery: sleep against your 7-hour line, resting heart rate against your own usual
+function hlRecovery(w){
+  const prev=hlWeeks().filter(x=>x.end<w.end&&x.rhr&&x.rhr.v!=null).slice(0,8);
+  const base=prev.length>=2?Math.round(10*prev.reduce((a,x)=>a+x.rhr.v,0)/prev.length)/10:null;
+  const sleep=w.sleep?w.sleep.v:null, rhr=w.rhr?w.rhr.v:null;
+  const short=sleep!=null&&sleep<SLEEP_LINE;
+  const rhrUp=rhr!=null&&(base!=null?rhr-base>=3:(w.rhr.d||0)>=3);
+  const flags=(short?1:0)+(rhrUp?1:0);
+  return {base,sleep,rhr,short,rhrUp,flags,
+    label:flags===2?"Under-recovered":flags?"Watch recovery":"Recovered",cls:flags===2?"bad":flags?"warn":"ok"};
+}
+function hlRead(w){
+  const s=hlSarah(w), r=hlRecovery(w), out=[];
+  if(w.azm){ const a=w.azm.v, d=w.azm.d;
+    const vs=d?`, ${d>0?"up":"down"} ${Math.abs(d)} on the week before`:"";
+    out.push(a>=AZM_WEEK*2?`Big training week: <b>${a} active zone minutes</b>, ${(a/AZM_WEEK).toFixed(1)}× the 150 benchmark${vs}.`
+      :a>=AZM_WEEK?`<b>${a} active zone minutes</b>, past the 150 benchmark${vs}.`
+      :`<b>${a} active zone minutes</b>, short of the 150 benchmark${vs}.`); }
+  if(r.sleep!=null) out.push(`Sleep averaged <b>${fmtSleep(r.sleep)}</b>${r.short?`, ${SLEEP_LINE-r.sleep} min under your 7-hour line`:", above your 7-hour line"}${w.sleep.d?` (${w.sleep.d>0?"up":"down"} ${fmtMins(Math.abs(w.sleep.d))})`:""}.`);
+  if(r.rhrUp) out.push(`Resting heart rate <b>${r.rhr} bpm</b>, ${r.base!=null?`${Math.round(r.rhr-r.base)} above your usual ${r.base}`:`up ${w.rhr.d} on the week before`}. That usually means fatigue or short nights: ease off a notch.`);
+  if(w.azm&&w.azm.d>0&&w.sleep&&w.sleep.d<0&&r.short) out.push(`More training on less sleep is how weeks go sideways. <b>Protect bedtime this week.</b>`);
+  else if(!r.flags&&r.sleep!=null) out.push(`Recovery is keeping up with the training. Keep the routine.`);
+  out.push(`In SARAH you checked off <b>${s.martial} martial arts</b>${s.martialDue?` of ${s.martialDue} scheduled`:""} and <b>${s.lifts} lift${s.lifts===1?"":"s"}</b>${s.liftsDue?` of ${s.liftsDue}`:""} that week.`);
+  return out;
+}
+function hlSetupHtml(){
+  return `<h3>❤️ Health</h3>
+    <p style="margin:2px 0 8px">SARAH reads the weekly progress report Google Health emails you and shows it here, next to the training you check off.</p>
+    <p class="muted" style="font-size:12.5px;margin:0 0 10px">It needs read-only Gmail access, the same kind the job tracker's Gmail sync uses. Only those reports are opened, only their numbers are kept, and they stay on this Mac.</p>
+    ${hl.err?`<p style="font-size:13px;margin:0 0 8px;color:var(--rejected)">⚠ ${esc(hl.err)}</p>`:""}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${hl.errUrl?`<a class="rowbtn" href="${esc(hl.errUrl)}" target="_blank" rel="noopener" style="text-transform:none;letter-spacing:0;text-decoration:none">Enable Gmail API ↗</a>`:""}
+    <button class="primary" data-hl-connect ${hl.connecting?"disabled":""}>${hl.connecting?"Waiting for your approval…":hl.errUrl?"Try again":"Connect Gmail"}</button></div>`;
+}
+function renderHealth(){
+  if(!$("hlHead")) return;
+  if(!hl.busy&&!hl.connecting&&Date.now()-hl.loadedAt>30*60000) loadHealth(false);
+  const w=hlWeek(), ws=hlWeeks();
+  $("hlCards").hidden=$("hlWeeks").hidden=!w;
+  if(!w){
+    $("hlHead").innerHTML=!hl.loadedAt?`<h3>❤️ Health</h3><p class="muted">Checking Gmail for your Google Health reports…</p>`
+      :hl.needsAuth||hl.errUrl?hlSetupHtml()
+      :`<h3>❤️ Health <button class="rowbtn" data-hl-refresh style="float:right;text-transform:none;letter-spacing:0">${hl.busy?"Checking…":"Check again"}</button></h3>
+        <p style="margin:2px 0 6px">Gmail is connected, but there's no Google Health weekly report in it yet.</p>
+        <p class="muted" style="font-size:12.5px;margin:0">They come from google-health-noreply@google.com, usually early in the week. If you don't get them, switch on the weekly progress email in the Google Health app's notification settings.</p>
+        ${hl.err?`<div class="usage-note" style="color:var(--warn)">⚠ ${esc(hl.err)}</div>`:""}`;
+    return;
+  }
+  const r=hlRecovery(w), s=hlSarah(w);
+  const nav=`<span style="float:right;text-transform:none;letter-spacing:0;display:flex;gap:6px">
+      <button class="rowbtn" data-hl-nav="1" ${hl.back>=ws.length-1?"disabled":""} title="Earlier week">‹</button>
+      <button class="rowbtn" data-hl-nav="-1" ${hl.back<=0?"disabled":""} title="Later week">›</button>
+      <button class="rowbtn" data-hl-refresh ${hl.busy?"disabled":""}>${hl.busy?"Checking…":"Refresh"}</button></span>`;
+  $("hlHead").innerHTML=`<h3>❤️ Health ${nav}</h3>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div class="ht" style="font-size:20px;font-weight:700">${hlRange(w)}</div>
+      <span class="tagpill ${r.cls}">${r.cls==="ok"?"✓":"⚠"} ${r.label}</span></div>
+    <div class="muted" style="font-size:12px;margin:2px 0 6px">Google Health weekly report · arrived ${fmtShortDate(w.received)}${hl.back?` · ${hl.back} week${hl.back>1?"s":""} back`:""}${hl.data.fetchedAt?` · checked ${agoLabel(hl.data.fetchedAt)}`:""}</div>
+    <ul class="blist">${hlRead(w).map(x=>`<li>${x}</li>`).join("")}</ul>
+    ${hl.err?`<div class="usage-note" style="color:var(--warn)">⚠ ${esc(hl.err)}${hl.errUrl?` <a href="${esc(hl.errUrl)}" target="_blank" rel="noopener">Enable it ↗</a>`:""}${hl.needsAuth?` <button class="rowbtn" data-hl-connect>Reconnect</button>`:""}</div>`:""}`;
+  const chk=(label,v,of,note)=>`<div class="mrow"><div class="ml">${label}</div>
+    <div class="mbar"><span style="width:${of?Math.min(100,Math.round(100*v/of)):0}%"></span></div>
+    <div class="mval">${v}${of?`/${of}`:""}</div></div>${note?`<div class="usage-note" style="margin:-4px 0 4px">${note}</div>`:""}`;
+  $("hlTrain").innerHTML=`<h3>🏋️ Training</h3>
+    <div class="hlsub">Checked off in SARAH</div>
+    ${chk("Martial arts",s.martial,s.martialDue,`BJJ ${s.bjj} · Muay Thai ${s.mt}`)}${chk("Lifts",s.lifts,s.liftsDue)}
+    <div class="hlsub">From Google Health · ▲▼ vs the week before</div>
+    <div class="hlgrid">${hlTile("azm",w)}${hlTile("steps",w,w.steps.best?`best day ${w.steps.best.toLocaleString()}`:"")}${hlTile("distance",w)}${hlTile("activeHours",w)}${hlTile("floors",w)}${hlTile("calories",w)}</div>`;
+  $("hlRecover").innerHTML=`<h3>🛌 Recovery</h3>
+    ${s.sleepNights?`<div class="hlsub">Checked off in SARAH</div>${chk("Slept 7+ hours",s.sleep7,s.sleepNights)}`:""}
+    <div class="hlsub">From Google Health · ▲▼ vs the week before</div>
+    <div class="hlgrid">${hlTile("sleep",w)}${hlTile("rhr",w,r.base!=null?`your usual ${r.base}`:"")}${hlTile("weight",w)}</div>
+    <div class="usage-note">Recovered means sleep at or above 7 hours and a resting heart rate within 3 bpm of your usual. Each one off flags it.</div>`;
+  const cell=(key,x)=>{ const v=HL_M[key].pick(x); return v==null?"—":HL_M[key].fmt(v); };
+  const open=!!($("hlWeeks").querySelector("details")||{}).open;   // picking a row keeps the table open
+  $("hlWeeks").innerHTML=`<details ${open?"open":""}><summary class="muted" style="cursor:pointer;font-size:12.5px">Every week as a table (${ws.length})</summary>
+    <div style="overflow-x:auto"><table class="revhist"><thead><tr><th>Week</th><th>Active zone min</th><th>Steps a day</th><th>Distance</th>
+      <th>Sleep</th><th>Resting HR</th><th>Weight</th><th>Martial arts</th><th>Lifts</th></tr></thead><tbody>
+      ${ws.map((x,i)=>{ const q=hlSarah(x); return `<tr data-hl-pick="${i}" style="cursor:pointer${i===hl.back?";font-weight:600":""}">
+        <td>${hlRange(x)}</td><td>${cell("azm",x)}</td><td>${cell("steps",x)}</td><td>${cell("distance",x)}</td>
+        <td>${cell("sleep",x)}</td><td>${cell("rhr",x)}</td><td>${cell("weight",x)}</td><td>${q.martial}</td><td>${q.lifts}</td></tr>`; }).join("")}
+    </tbody></table></div></details>`;
+}
+// the newest report, for the rundown, while it's still news (two days)
+function healthBullet(){
+  const w=hlWeeks()[0]; if(!w||daysBetween(w.received,todayKey())>2) return "";
+  const r=hlRecovery(w);
+  return `❤️ Google Health, ${hlRange(w)}: ${w.azm?`<b>${w.azm.v} active zone min</b> · `:""}${r.sleep!=null?`sleep <b>${fmtSleep(r.sleep)}</b> · `:""}${r.label.toLowerCase()} <a href="#" data-go-health>→</a>`;
+}
+function healthSpeech(){
+  const w=hlWeeks()[0];
+  if(!w) return hl.needsAuth?"Connect Gmail on the Health tab and I'll read your Google Health reports.":"There's no Google Health report in your Gmail yet.";
+  return cleanSpeech(`For ${hlRange(w)}: `+hlRead(w).map(x=>x.replace(/<[^>]+>/g,"")).join(" "));
+}
+function healthState(){
+  const w=hlWeeks()[0]; if(!w) return null;
+  const r=hlRecovery(w), s=hlSarah(w);
+  return {week:`${w.start} to ${w.end}`,activeZoneMinutes:w.azm&&w.azm.v,stepsPerDay:w.steps&&w.steps.avg,
+    sleepPerNight:r.sleep!=null?fmtSleep(r.sleep):null,restingHeartRate:r.rhr,usualRestingHeartRate:r.base,
+    weight:w.weight?`${w.weight.v} ${w.weight.unit}`:null,recovery:r.label,
+    checkedOffInSarah:{martialArts:s.martial,lifts:s.lifts}};
+}
+document.addEventListener("click",e=>{
+  if(e.target.closest("[data-go-health]")){ e.preventDefault(); switchTab("health"); return; }
+  const c=e.target.closest("[data-hl-connect]"); if(c&&!c.disabled){ hlConnect(); return; }
+  if(e.target.closest("[data-hl-refresh]")){ loadHealth(true); return; }
+  const nv=e.target.closest("[data-hl-nav]"); if(nv&&!nv.disabled){
+    hl.back=Math.max(0,Math.min(hlWeeks().length-1,hl.back+(+nv.dataset.hlNav))); renderHealth(); return; }
+  const pk=e.target.closest("[data-hl-pick]"); if(pk){ hl.back=+pk.dataset.hlPick; renderHealth(); return; }
+});
+
 async function loadCanvas(force){
   if((document.hidden||cv.busy)&&!force) return;
   cv.busy=true;
@@ -3989,6 +4246,8 @@ function localIntent(t){
     if(/subscription/.test(l)){ const n=detectSubs().length;
       return n?`I found ${n} recurring charges, about $${subsMonthly().toLocaleString()} a month.`:"Import your Rocket Money export in Finance and I'll find your subscriptions."; }
     if(/net worth/.test(l)) return `Your net worth stands at $${netWorth().toLocaleString()}.`;
+    if(/\b(health|fitbit|resting heart|heart rate|recover(y|ed)|active zone|how did i sleep|my sleep|steps)\b/.test(l)){
+      switchTab("health"); return healthSpeech(); }
     if(/(rundown|brief|my day)/.test(l)) return cleanSpeech($("briefBox").innerText.replace(/🔊 Read it to me|☀️ Your rundown/g,""));
     return null;
   }
@@ -4045,6 +4304,7 @@ function voiceState(){
     finance:{monthSpend:spendInMonth(monthKey(0)),
       subscriptionsPerMonth:subsMonthly(),netWorth:netWorth(),notes:finInsights()},
     portfolio:portfolioState(),
+    healthLastWeek:healthState(),
     trainingPlan:(()=>{try{const sp=todaySplit(), p=perfPair("training");
       return {today:sp.rest?"rest day":scheduledFor(tk).map(([,n])=>n).join(" + "),
         checkedOffToday:trainingToday().filter(([k])=>dd[k]).map(([,n])=>n),
@@ -4142,7 +4402,7 @@ $("micBtn").addEventListener("click",()=>{
   next();
 })();
 
-osLoad().then(()=>{ switchTab("today"); loadCal(); loadMarkets(); calStatusCheck(); loadCanvas(false); loadRobinhood(false); });
+osLoad().then(()=>{ switchTab("today"); loadCal(); loadMarkets(); calStatusCheck(); loadCanvas(false); loadRobinhood(false); loadHealth(false); });
 setInterval(loadCal,5*60*1000);
 </script>
 </body>

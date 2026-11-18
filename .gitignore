@@ -170,3 +170,4 @@ knowledge/
 resume/
 canvas_config.json*
 snaptrade_keys.json*
+.health_cache.json

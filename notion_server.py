@@ -46,7 +46,7 @@ STATIC_FILES = {"/job-dashboard.html"}
 BLOCKED = {"notion_token.txt", "notion_config.json", "credentials.json",
            "token.json", ".sync_state.json", "personal_data.json", "token_calendar.json",
            "elevenlabs_key.txt", "anthropic_key.txt", ".sarah_calendar.json",
-           "canvas_config.json", "snaptrade_keys.json"}
+           "canvas_config.json", "snaptrade_keys.json", ".health_cache.json"}
 ANTHROPIC_KEY_FILE = os.path.join(DIRECTORY, "anthropic_key.txt")
 
 
@@ -668,16 +668,20 @@ def _cal_write_call(fn, payload, interactive=False):
         return fn(_cal_service(creds), payload)
     except Exception as e:
         msg = str(e)
-        # Most common first-run failure: the Calendar API is off in the user's Cloud project.
-        m = re.search(r"has not been used in project (\d+)|accessNotConfigured|SERVICE_DISABLED", msg)
-        if m:
-            proj = re.search(r"project (\d+)", msg)
-            url = ("https://console.cloud.google.com/apis/library/calendar-json.googleapis.com"
-                   + (f"?project={proj.group(1)}" if proj else ""))
-            return {"error": "api_disabled", "url": url,
-                    "message": "The Google Calendar API is switched off for your Google project. "
-                               "Open the link, press Enable, wait a minute, then try again."}
-        return {"error": "cal", "message": msg[:200]}
+        return _api_off(msg, "calendar-json.googleapis.com", "Google Calendar") or {"error": "cal", "message": msg[:200]}
+
+
+def _api_off(msg, api, name):
+    """The most common first-run failure: an API switched off in the user's Cloud
+    project. Google answers with a raw 403; this turns it into a plain message
+    and the console link that switches it on."""
+    if not re.search(r"has not been used in project|accessNotConfigured|SERVICE_DISABLED", msg):
+        return None
+    proj = re.search(r"project (\d+)", msg)
+    url = f"https://console.cloud.google.com/apis/library/{api}" + (f"?project={proj.group(1)}" if proj else "")
+    return {"error": "api_disabled", "url": url,
+            "message": f"The {name} API is switched off for your Google project. "
+                       "Open the link, press Enable, wait a minute, then try again."}
 
 
 def cal_status():
@@ -692,6 +696,287 @@ def cal_connect(_payload):
         cid, tz = _sarah_calendar(svc)
         return {"ok": True, "calendarId": cid, "tz": tz}
     return _cal_write_call(go, {}, interactive=True)
+
+
+# ---------------------------------------------------------------------------
+# Health: the weekly progress report Google Health (Fitbit) emails you.
+# Read-only Gmail access through the same token the job tracker's Gmail sync
+# uses. Only those reports are ever fetched, and only their numbers are kept,
+# in a local cache file that is never served.
+# ---------------------------------------------------------------------------
+GMAIL_TOKEN = os.path.join(DIRECTORY, "token.json")        # shared with sync_gmail.py
+GMAIL_READ = "https://www.googleapis.com/auth/gmail.readonly"
+HEALTH_CACHE = os.path.join(DIRECTORY, ".health_cache.json")
+HEALTH_QUERY = 'from:google-health-noreply@google.com subject:"weekly progress report"'
+HEALTH_TTL = 1800           # seconds; the report only arrives once a week
+HEALTH_PARSER = 1           # bump after a parser change so stored reports are read again
+_gm_lock = threading.Lock()
+_hl_cache = {"at": 0, "data": None}
+_hl_lock = threading.Lock()
+_GMAIL_ERRORS = {
+    "needs_auth": "Connect Gmail once (read-only) so SARAH can read your Google Health reports.",
+    "no_creds": "credentials.json is missing from the app folder.",
+    "not_finished": "The Google approval wasn't finished. Press Connect to try again.",
+    "no_libs": "The Google libraries aren't installed. Run: pip3 install -r requirements.txt",
+}
+
+
+def _gmail_creds(interactive=False):
+    """Read-only Gmail credentials. The browser approval only runs when you press Connect."""
+    from google.auth.transport.requests import Request
+    from google.oauth2.credentials import Credentials
+    with _gm_lock:
+        creds = None
+        if os.path.exists(GMAIL_TOKEN):
+            try:
+                creds = Credentials.from_authorized_user_file(GMAIL_TOKEN)
+            except Exception:
+                creds = None
+        if creds and GMAIL_READ not in (creds.scopes or []):
+            creds = None
+        if creds and creds.valid:
+            return creds, None
+        if creds and creds.expired and creds.refresh_token:
+            try:
+                creds.refresh(Request())
+                _save_private(GMAIL_TOKEN, json.loads(creds.to_json()))
+                return creds, None
+            except Exception:
+                creds = None
+        if not interactive:
+            return None, "needs_auth"
+        secrets = os.path.join(DIRECTORY, "credentials.json")
+        if not os.path.exists(secrets):
+            return None, "no_creds"
+        from google_auth_oauthlib.flow import InstalledAppFlow
+        print("\nGmail needs a one-time read-only approval — check your browser.")
+        try:   # give up after five minutes rather than holding a thread forever
+            creds = InstalledAppFlow.from_client_secrets_file(secrets, [GMAIL_READ]).run_local_server(
+                port=0, timeout_seconds=300)
+        except Exception:
+            creds = None
+        if not creds:
+            return None, "not_finished"
+        _save_private(GMAIL_TOKEN, json.loads(creds.to_json()))
+        print("Gmail connected. ✓")
+        return creds, None
+
+
+_MON = {m: i for i, m in enumerate(("jan", "feb", "mar", "apr", "may", "jun",
+                                    "jul", "aug", "sep", "oct", "nov", "dec"), 1)}
+# the caption printed under each number in the report → our key
+_HL_LABELS = {"total steps": "steps", "total floors": "floors", "total miles": "distance",
+              "total kilometers": "distance", "total km": "distance",
+              "avg. calories burned": "calories", "total active zone minutes": "azm",
+              "avg. restful sleep": "sleep", "avg. hrs with 250+ steps": "activeHours",
+              "avg. resting heart rate": "rhr", "avg. weight": "weight"}
+_ARROW = re.compile(r"^(?:(green|red|gr[ae]y)\s+)?(upward|downward)\s+arrow\b\s*", re.I)
+
+
+def _hl_lines(text, is_html):
+    """The report as a list of text lines. Images become their alt text, because
+    the arrow beside each change ("green upward arrow") is the only place that
+    says which way some changes went."""
+    if is_html:
+        import html as _html
+        t = re.sub(r"(?is)<(style|head|script)\b.*?</\1>", " ", text)
+        t = re.sub(r"""(?is)<img\b[^>]*?\balt\s*=\s*(["'])(.*?)\1[^>]*>""", lambda m: "\n" + m.group(2) + "\n", t)
+        t = re.sub(r"(?s)<[^>]+>", "\n", t)
+        text = _html.unescape(t)
+    return [ln for ln in (re.sub(r"\s+", " ", x).strip() for x in text.split("\n")) if ln]
+
+
+def _hl_num(s):
+    f = float(s.replace(",", ""))
+    return int(f) if f.is_integer() else f
+
+
+def _hl_value(s):
+    """A headline number, or None. Whole-line matches only, so a sentence never counts."""
+    s = s.strip()
+    for pat, make in (
+            (r"\d[\d,]*(?:\.\d+)?", lambda m: {"v": _hl_num(m[0])}),
+            (r"(\d+)\s*h\s*(\d+)\s*m(?:in)?", lambda m: {"v": int(m[1]) * 60 + int(m[2])}),   # sleep, minutes
+            (r"(\d+)\s*h", lambda m: {"v": int(m[1]) * 60}),
+            (r"(\d+)\s*m(?:in)?", lambda m: {"v": int(m[1])}),
+            (r"(\d+)\s*of\s*(\d+)\s*h(?:rs?)?", lambda m: {"v": int(m[1]), "of": int(m[2])}),
+            (r"(\d+(?:\.\d+)?)\s*bpm", lambda m: {"v": _hl_num(m[1])}),
+            (r"(\d+(?:\.\d+)?)\s*(lbs?|kg)", lambda m: {"v": _hl_num(m[1]), "unit": "kg" if m[2] == "kg" else "lb"})):
+        m = re.fullmatch(pat, s, re.I)
+        if m:
+            return make(m)
+    return None
+
+
+def _hl_delta(line, arrow, key):
+    """The change from last week, signed. Wording gives the direction when it says
+    more/fewer; "since last week" doesn't, so the arrow decides."""
+    low = line.lower()
+    if "same as" in low:
+        return 0
+    m = re.search(r"(\d+)\s*hrs?\s*(\d+)\s*min", low)
+    if m:
+        mag = int(m[1]) * 60 + int(m[2])
+    elif re.search(r"(\d+)\s*hrs?\b", low):
+        mag = int(re.search(r"(\d+)\s*hrs?\b", low)[1]) * 60
+    elif re.search(r"(\d+)\s*min", low):
+        mag = int(re.search(r"(\d+)\s*min", low)[1])
+    else:
+        n = re.search(r"\d[\d,]*(?:\.\d+)?", low)
+        if not n:
+            return None
+        mag = _hl_num(n[0])
+        if key == "activeHours":
+            mag *= 60
+    if key == "activeHours":
+        mag = round(mag / 60, 1)              # active hours are counted in hours, not minutes
+    if arrow:
+        sign = 1 if arrow[2].lower() == "upward" else -1
+    elif re.search(r"\b(more|over|higher|above|up)\b", low):
+        sign = 1
+    elif re.search(r"\b(fewer|below|lower|less|down)\b", low):
+        sign = -1
+    else:
+        return None
+    return sign * mag
+
+
+def parse_health_report(body, is_html, received):
+    """One weekly report → its numbers, or None if it isn't one we can read.
+    `received` is the date the email arrived (YYYY-MM-DD), which supplies the year."""
+    import datetime as dt
+    L = _hl_lines(body, is_html)
+    m = re.search(r"stats for\s+([A-Za-z]{3})[a-z]*\.?\s+(\d{1,2})\s*[-–—]\s*([A-Za-z]{3})[a-z]*\.?\s+(\d{1,2})",
+                  " \n ".join(L))
+    if not m or m[1].lower() not in _MON or m[3].lower() not in _MON:
+        return None
+    got = dt.date.fromisoformat(received)
+    try:
+        end = dt.date(got.year, _MON[m[3].lower()], int(m[4]))
+        if end > got:
+            end = end.replace(year=end.year - 1)          # a report for late December, read in January
+        start = dt.date(end.year, _MON[m[1].lower()], int(m[2]))
+        if start > end:
+            start = start.replace(year=start.year - 1)
+    except ValueError:
+        return None
+    out = {"start": start.isoformat(), "end": end.isoformat(), "received": received}
+    for i, ln in enumerate(L):
+        key = _HL_LABELS.get(ln.lower())
+        if not key or key in out or i == 0:
+            continue
+        val = _hl_value(L[i - 1])                         # the number sits right above its caption
+        if not val:
+            continue                                      # an image captioned like a label, not the label
+        arrow = None
+        val["d"] = None
+        for j in range(i + 1, min(i + 8, len(L))):
+            s = L[j]
+            if _hl_value(s):
+                break                                     # reached the next number: no change given
+            a = _ARROW.match(s)
+            if a:
+                arrow, s = a, s[a.end():].strip()
+            if re.search(r"(last|previous) week", s, re.I):
+                val["d"] = _hl_delta(s, arrow, key)
+                break
+        # Google colours each arrow by whether the change is good for you
+        val["good"] = {"green": True, "red": False}.get((arrow[1] or "").lower()) if arrow else None
+        if key == "distance":
+            val["unit"] = "mi" if "mile" in ln.lower() else "km"
+        out[key] = val
+    if "steps" not in out:
+        return None
+    text = " \n ".join(L)
+    best = re.search(r"Best day\s*·\s*(\d[\d,]*)", text)
+    avg = re.search(r"Avg\s*(\d[\d,]*)\s*steps/day", text)
+    out["steps"]["best"] = _hl_num(best[1]) if best else None
+    out["steps"]["avg"] = _hl_num(avg[1]) if avg else round(out["steps"]["v"] / 7)
+    return out
+
+
+def _hl_from_message(full):
+    """Pull the report out of a Gmail API message (HTML first, plain text as a fallback)."""
+    import base64
+    import datetime as dt
+    parts = {}
+
+    def walk(p):
+        mt, data = p.get("mimeType", ""), (p.get("body") or {}).get("data")
+        if data and mt in ("text/html", "text/plain") and mt not in parts:
+            parts[mt] = base64.urlsafe_b64decode(data + "=" * (-len(data) % 4)).decode("utf-8", "ignore")
+        for sub in p.get("parts") or []:
+            walk(sub)
+    walk(full.get("payload") or {})
+    received = dt.datetime.fromtimestamp(int(full.get("internalDate", 0)) / 1000).date().isoformat()
+    for mt in ("text/html", "text/plain"):
+        if mt in parts:
+            r = parse_health_report(parts[mt], mt == "text/html", received)
+            if r:
+                r["id"] = full.get("id")
+                return r
+    return None
+
+
+def _hl_stored():
+    try:
+        with open(HEALTH_CACHE) as f:
+            d = json.load(f)
+        if d.get("parser") == HEALTH_PARSER:
+            return d.get("reports") or {}
+    except Exception:
+        pass
+    return {}
+
+
+def _hl_result(reports, **extra):
+    weeks, seen = [], set()
+    for w in sorted((r for r in reports.values() if r), key=lambda r: (r["end"], r["received"]), reverse=True):
+        if w["end"] not in seen:                          # a resent report doesn't count twice
+            seen.add(w["end"])
+            weeks.append(w)
+    return {"weeks": weeks[:52], **extra}
+
+
+def fetch_health(force=False):
+    with _hl_lock:
+        now = time.time()
+        if _hl_cache["data"] and now - _hl_cache["at"] < (30 if force else HEALTH_TTL):
+            return _hl_cache["data"]
+        reports = _hl_stored()
+        try:
+            creds, err = _gmail_creds(interactive=False)
+        except ImportError:
+            creds, err = None, "no_libs"
+        if err:
+            return _hl_result(reports, connected=False, error=err, message=_GMAIL_ERRORS[err])
+        try:
+            from googleapiclient.discovery import build
+            gm = build("gmail", "v1", credentials=creds, cache_discovery=False).users().messages()
+            found = gm.list(userId="me", q=HEALTH_QUERY, maxResults=60).execute().get("messages") or []
+            new = [m["id"] for m in found if m["id"] not in reports]
+            for mid in new:                               # each report is read once, then kept
+                reports[mid] = _hl_from_message(gm.get(userId="me", id=mid, format="full").execute())
+            if new:
+                _save_private(HEALTH_CACHE, {"parser": HEALTH_PARSER, "reports": reports})
+        except Exception as e:
+            msg = str(e)
+            return _hl_result(reports, connected=True, **(_api_off(msg, "gmail.googleapis.com", "Gmail") or
+                              {"error": "fetch", "message": f"Couldn't read Gmail: {msg[:140]}"}))
+        data = _hl_result(reports, connected=True, fetchedAt=int(now * 1000))
+        _hl_cache.update(at=now, data=data)
+        return data
+
+
+def health_connect(_payload):
+    try:
+        _, err = _gmail_creds(interactive=True)
+    except ImportError:
+        err = "no_libs"
+    if err:
+        return {"error": err, "message": _GMAIL_ERRORS.get(err, err)}
+    _drop_cache(_hl_cache, _hl_lock)
+    return fetch_health(force=True)
 
 
 # Voice assistant brain: understands spoken updates and questions.
@@ -2404,6 +2689,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if path == "/api/calsync/status":
             self._send_json(cal_status())
             return
+        if path == "/api/health":
+            self._send_json(fetch_health(force))
+            return
         if path == "/api/markets":
             self._send_json(fetch_markets())
             return
@@ -2469,7 +2757,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         path = self.path.split("?", 1)[0]
         connectors = {"/api/canvas/connect": canvas_connect, "/api/canvas/disconnect": canvas_disconnect,
                       "/api/robinhood/connect": rh_connect, "/api/robinhood/link": rh_link,
-                      "/api/robinhood/disconnect": rh_disconnect}
+                      "/api/robinhood/disconnect": rh_disconnect, "/api/health/connect": health_connect}
         if path in connectors:
             length = int(self.headers.get("Content-Length", 0))
             if length < 0 or length > 20000:
