@@ -1,0 +1,132 @@
+<!--
+title: Fuel-system production and test at Safran Aerosystems
+description: Case study. A summer internship in production and test of aircraft fuel-system parts: standardized test records, updated work instructions and root-cause data packs that helped close two nonconformance reports.
+lede: Three months on the production and test side of aircraft fuel systems. I assisted with testing kerosene temperature probes and fuel-gauging devices, and I made the test records quicker to fill in and harder to get wrong.
+-->
+{{case-head}}
+
+<section class="standing" aria-labelledby="standing-h">
+  <div class="wrap">
+    <p class="label">What I changed · June to August 2024</p>
+    <h2 id="standing-h">Three changes to the test loop. The figures are my own records from the internship, with part numbers and data left out.</h2>
+    <ul>
+      <li><span class="big">≈3<small>min</small></span><p>of data entry saved on every test, 5 to 8% of the test</p>{{ev reported}}</li>
+      <li><span class="big">≈10</span><p>fewer repeat-test and hold tags after the work instructions were updated</p>{{ev reported}}</li>
+      <li><span class="big">2</span><p>nonconformance reports closed with the help of my data packs</p>{{ev reported}}</li>
+      <li><span class="big">≈110</span><p>tests across 6 part numbers, the volume the new records applied to</p>{{ev reported}}</li>
+    </ul>
+    <p class="open"><b>Still open:</b> the baseline period for the tag count is not recorded here. See <a href="#limits">limits</a>.</p>
+  </div>
+</section>
+
+<div class="case-body">
+<div class="wrap">
+  <nav class="toc" aria-label="On this page">
+    <p>On this page</p>
+    <ol>
+      <li><a href="#job">The job</a></li>
+      <li><a href="#loop">The loop I worked in</a></li>
+      <li><a href="#changes">Three changes</a></li>
+      <li><a href="#limits">Limits</a></li>
+      <li><a href="#reflection">Looking back</a></li>
+    </ol>
+  </nav>
+
+  <div class="case-main">
+
+  <section class="sec" id="job">
+    <p class="label"><b>01</b>The job</p>
+    <h2>Test the part, and leave a record that proves it</h2>
+    <div class="cols mid">
+      <div class="prose">
+        <p>From June to August 2024 I assisted in the production and testing of kerosene systems, including temperature probes and gauge devices, working with the production and test team on their performance and dependability, at Safran Aerosystems in Tiflet, Morocco.</p>
+        <p>The work ran on industry-standard procedures. A work instruction says how each test is run, a traveler follows each part, and a part that falls outside its specification is held until someone can show why.</p>
+      </div>
+      <figure class="fig">
+        <div class="plate">{{pic src="safran-bench.jpg" alt="A test station monitor showing a dialog that reads TEST MAUVAIS, with buttons to retest or stop" sizes="(min-width: 860px) 46vw, 100vw"}}</div>
+        <figcaption class="plate-cap"><span>Fig. 1</span><span><b>A failed test, July 2024.</b> "Test mauvais" is a failed result, and the two buttons are retest and stop. The log behind the dialog is blurred on purpose.</span><span>Photo</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="sec" id="loop">
+    <p class="label"><b>02</b>How it works</p>
+    <h2>The loop from test bench to closed report</h2>
+    <div class="prose"><p>A part goes through, and either passes or is held. The three numbered markers are the places I changed the loop. Select one.</p></div>
+    <figure class="fig" data-explore>
+      <div class="plate pad">{{include figures/safran-loop.html}}</div>
+      <div class="chips" role="group" aria-label="What I changed" style="margin-top:18px">
+        <button class="chip" type="button" data-k="1" data-title="1 · Work instructions and checklists" data-text="I worked with production staff to update the work instructions, the checklists and the margin-of-safety checks. Result: about 10 fewer repeat-test and hold tags.">1 · Instructions</button>
+        <button class="chip" type="button" data-k="2" data-title="2 · Test logs and traveler fields" data-text="I standardized the MATLAB and Excel test logs and the traveler fields, so the same result goes in the same place every time. Result: about 3 minutes saved per test, 5 to 8%.">2 · Records</button>
+        <button class="chip" type="button" data-k="3" data-title="3 · Root cause data packs" data-text="I compiled each pack within 24 to 48 hours of a failure: test traces, as-built versus spec comparisons, and photos. They helped close 2 nonconformance reports.">3 · Root cause</button>
+      </div>
+      <div class="readout" aria-live="polite"><b data-r-title>The test-to-closure loop</b><p data-r-text>Select a numbered marker, or a button, to see what I changed there and what it did.</p></div>
+      <figcaption class="plate-cap"><span>Fig. 2</span><span>A simplified picture of the loop as I worked in it. Blue outlines mark the steps I changed.</span><span>Diagram · conceptual</span></figcaption>
+    </figure>
+  </section>
+
+  <section class="sec" id="changes">
+    <p class="label"><b>03</b>Three changes</p>
+    <h2>What I saw, what I thought, what I did</h2>
+
+    <h3>Records that ate the clock</h3>
+    <div class="prose">
+      <p>Every test ends with data entry: results into MATLAB and Excel logs, and fields on the traveler. Across about 110 tests on 6 part numbers that time adds up, and fields that differ from one log to the next invite mistakes. The test itself takes as long as it takes. The paperwork around it is the part that can be made the same every time.</p>
+      <p>I standardized the test logs and the traveler fields, so the same result goes in the same place for every part number. That saved about 3 minutes of data entry on every test, 5 to 8% of the test {{ev reported}}.</p>
+    </div>
+
+    <h3>Tests that had to be run twice</h3>
+    <div class="prose">
+      <p>Parts were collecting repeat-test and hold tags. Each one stops a part and costs a second pass on the bench. A change to the instruction reaches every operator and every later unit, which makes it the first place to look.</p>
+      <p>I worked with production staff to update the work instructions, the checklists and the margin-of-safety checks. The result was about 10 fewer repeat-test and hold tags {{ev reported}}.</p>
+    </div>
+
+    <h3>A failed part and an open report</h3>
+    <div class="prose">
+      <p>When a part fails, a nonconformance report stays open until someone can show what went wrong and why. The people who decide need the evidence in one place and quickly, while the part and the setup are still fresh.</p>
+      <p>I compiled root cause and corrective action data packs within 24 to 48 hours of a failure: test traces, as-built versus spec comparisons, and photos. The packs helped close 2 nonconformance reports {{ev reported}}.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="limits">
+    <p class="label"><b>04</b>Results and limits</p>
+    <h2>What these figures are, and what is left out</h2>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Limits">
+      <table class="data stack">
+        <thead><tr><th scope="col">Figure</th><th scope="col">What it rests on</th><th scope="col">What is not stated</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">About 3 minutes saved per test</th><td class="txt" data-label="What it rests on">My own record across about 110 tests on 6 part numbers</td><td class="txt" data-label="What is not stated">The full test duration behind the 5 to 8%</td></tr>
+          <tr><th scope="row">About 10 fewer repeat-test and hold tags</th><td class="txt" data-label="What it rests on">My own count of tags after the instruction changes</td><td class="txt" data-label="What is not stated">The baseline period and total tag count</td></tr>
+          <tr><th scope="row">2 reports closed</th><td class="txt" data-label="What it rests on">Data packs I compiled helped close them</td><td class="txt" data-label="What is not stated">The decision to close was not mine</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Part numbers, specifications, test data and station photos are left out on purpose. They belong to the employer.</p>
+  </section>
+
+  <section class="sec" id="reflection">
+    <p class="label"><b>05</b>Looking back</p>
+    <h2>Three months later</h2>
+    <div class="prose"><p>I wrote this reflection myself after the internship ended. Both halves are part of what it taught me.</p></div>
+    <div class="fig" data-toggle data-show="learned">
+      <div class="fig-head"><p>From my own write-up</p>
+        <div class="seg" role="group" aria-label="Reflection"><button type="button" data-set="show:learned" aria-pressed="true">What I learned</button><button type="button" data-set="show:redo" aria-pressed="false">What I should have done</button></div>
+      </div>
+      <ul class="reqs refl" data-set="learned">
+        <li><b class="t">Hands-on technical work</b>I gained hands-on experience in producing and testing sophisticated kerosene systems such as temperature probes and gauge devices.</li>
+        <li><b class="t">Why standards are strict</b>I learned how important it is to follow strict and precise procedures, and the consequences of not following them.</li>
+        <li><b class="t">What a team really is</b>The team I worked with taught me what it means to be part of a group working toward one goal.</li>
+      </ul>
+      <ul class="reqs refl" data-set="redo">
+        <li><b class="t">Document in more detail</b>I took a good amount of notes on my day-to-day tasks. I should have taken more, and in far more detail.</li>
+        <li><b class="t">Take on more</b>I asked for extra responsibilities from time to time. Asking more often would have taught me about things outside my circle.</li>
+        <li><b class="t">Ask for feedback</b>I received feedback many times, but I went out of my way to ask my supervisor only three times. I should have done that far more.</li>
+      </ul>
+    </div>
+  </section>
+
+  </div>
+</div>
+</div>
+
+{{case-next}}

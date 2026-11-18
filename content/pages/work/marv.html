@@ -1,0 +1,411 @@
+<!--
+title: M.A.R.V.: an autonomous drone that finds and recovers a payload
+description: Capstone case study. M.A.R.V. is a fully autonomous quadcopter, a prototype for Mars sample return, that flies indoors with no GPS, finds a coded package among decoys, picks it up with a magnetic mechanism and flies a return path uploaded mid-flight.
+lede: M.A.R.V., the Autonomous Payload Recovery Vehicle, is the senior capstone for AERSP 403A/B at Penn State, built by a team of four. It is a prototype for NASA-style Mars sample return: a quadcopter that flies one fully autonomous run of 300 seconds or less inside an indoor arena with no GPS, searches an 18 by 30 ft area, tells the real package from decoys by reading a code on it, picks it up, and flies home along a return path that the ground station uploads while it is already in the air. It has to weigh under 1 kg, cost under $350, and run on a Raspberry Pi 4 and a Navio2 board.
+-->
+{{case-head}}
+
+<section class="standing track-sec" aria-labelledby="track-h">
+  <div class="wrap">
+    <p class="label">Where the project stands · November 2026</p>
+    <h2 id="track-h">PDR, the payload mechanism and CDR are done. Right now we are on the risk matrix and the QR-reading software.</h2>
+    <ol class="track">
+      <li><span class="st done">Done</span><b>Mission definition</b><span class="when">September 15, 2026</span></li>
+      <li><span class="st done">Done</span><b>Preliminary design review (PDR)</b><span class="when">October 13, 2026</span></li>
+      <li><span class="st done">Done</span><b>Payload mechanism</b><span class="when">My design piece</span></li>
+      <li><span class="st done">Done</span><b>Critical design review (CDR)</b></li>
+      <li class="doing"><span class="st">Now</span><b>Risk matrix</b></li>
+      <li class="doing"><span class="st">Now</span><b>QR-reading software</b><p>Making it work across camera height, image resolution and frame rate.</p></li>
+    </ol>
+  </div>
+</section>
+
+<div class="case-body">
+<div class="wrap">
+  <nav class="toc" aria-label="On this page">
+    <p>On this page</p>
+    <ol>
+      <li><a href="#mission">The mission</a></li>
+      <li><a href="#vehicle">The vehicle</a></li>
+      <li><a href="#trades">Choosing the parts</a></li>
+      <li><a href="#autonomy">How it flies itself</a></li>
+      <li><a href="#payload">Payload mechanism</a></li>
+      <li><a href="#stability">Mass, CG and inertia</a></li>
+      <li><a href="#now">What we are on now</a></li>
+      <li><a href="#limits">Limits</a></li>
+      <li><a href="#lessons">What I took from it</a></li>
+    </ol>
+  </nav>
+
+  <div class="case-main">
+
+  <section class="sec" id="mission">
+    <p class="label"><b>01</b>The mission</p>
+    <h2>Fly alone, find the right package, bring it home</h2>
+    <div class="prose">
+      <p>The need comes from NASA's work on Ingenuity-derived autonomous vehicles for Mars. A sample-return helicopter has to move without external navigation, tell the right sample from the wrong ones, grab it, and accept new instructions mid-flight without a human in the loop. M.A.R.V. is a small indoor stand-in for that: three capability gaps, one vehicle.</p>
+      <p>Our job is to build it to the capstone competition's rules: the most mission goals completed, with the least weight and cost. That strategy shaped every choice below. Each phase of the run is time-limited, and a task that is not working is aborted so the remaining goals still count.</p>
+    </div>
+
+    <ul class="reqs">
+      <li><b>≤ 300 s</b>For one autonomous run, from power-on to disarm.</li>
+      <li><b>&lt; 1 kg</b>Maximum vehicle weight.</li>
+      <li><b>$350</b>Total budget, from US vendors only.</li>
+      <li><b>No GPS</b>Indoor position comes from motion capture (MOCAP).</li>
+    </ul>
+
+    <h3>One run, in seven steps</h3>
+    <div class="tabs side" data-tabs>
+      <div class="tablist" role="tablist" aria-label="Mission steps">
+        <button class="tab" type="button" role="tab"><b>1</b>Pre-flight</button>
+        <button class="tab" type="button" role="tab"><b>2</b>Take off</button>
+        <button class="tab" type="button" role="tab"><b>3</b>Search</button>
+        <button class="tab" type="button" role="tab"><b>4</b>Confirm</button>
+        <button class="tab" type="button" role="tab"><b>5</b>Retrieve</button>
+        <button class="tab" type="button" role="tab"><b>6</b>New route</button>
+        <button class="tab" type="button" role="tab"><b>7</b>Return</button>
+      </div>
+      <div>
+        <div class="tabpanel" role="tabpanel"><h3>Pre-flight</h3><p class="prose">Power on and get a MOCAP lock. Before any flight testing the vehicle also has to pass a Flight Readiness Review under Penn State policy SY45.</p></div>
+        <div class="tabpanel" role="tabpanel"><h3>Take off</h3><p class="prose">Climb and fly to the search zone, with no operator input. A safety pilot holds an RC transmitter with an override and a kill switch, and touches it only if something goes wrong.</p></div>
+        <div class="tabpanel" role="tabpanel"><h3>Search</h3><p class="prose">Fly parallel back-and-forth lanes over the 18 by 30 ft area while the camera flags candidates. The pattern needs no complicated area partitioning and gives full coverage of a rectangle, at the price of repeated turns that add flight time.</p></div>
+        <div class="tabpanel" role="tabpanel"><h3>Confirm</h3><p class="prose">Drop low over a candidate and read the marker on it. A wrong code means a false sample, so the vehicle goes back to searching. The worst-case profile has three of these before the real package.</p></div>
+        <div class="tabpanel" role="tabpanel"><h3>Retrieve</h3><p class="prose">Descend to grab height, take the package, and check that it is really on board. A failed grab is detected and retried, up to three retries, four attempts in total.</p></div>
+        <div class="tabpanel" role="tabpanel"><h3>New route</h3><p class="prose">Hover while the ground station, a laptop on Wi-Fi, uploads the return path. The vehicle does not know its way home until it is already in the air.</p></div>
+        <div class="tabpanel" role="tabpanel"><h3>Return</h3><p class="prose">Fly the uploaded path, land, and disarm. Telemetry (state, phase and video) goes to the ground station through every phase.</p></div>
+      </div>
+    </div>
+
+    <div>
+      <figure class="fig">
+        <div class="plate">{{pic src="marv-arch.png" alt="Top view of the operation zone: a start and land pad, the vehicle taking off, a back-and-forth search pattern, locating and retrieving the sample, then flying a return path through waypoints WP1 to WP5, with the ground station and a safety net at the edges" sizes="(min-width: 1100px) 62vw, 100vw"}}</div>
+        <figcaption class="plate-cap"><span>Fig. 1</span><span>The arena and the mission, step by step.</span><span>Team figure · PDR</span></figcaption>
+      </figure>
+      <figure class="fig">
+        <div class="plate">{{pic src="marv-flight.png" alt="Altitude against time for the worst-case flight: a climb to 6 feet, four search legs separated by three dips to 3 feet for false positives, target identification near 100 seconds, three grab attempts at 0.42 feet of which the third succeeds, a route update received while hovering at 3 feet, then return transit and landing at 212 seconds with the payload on board" sizes="(min-width: 1100px) 62vw, 100vw"}}</div>
+        <figcaption class="plate-cap"><span>Fig. 2</span><span>The worst-case flight: 212 s and 5.06 Wh, with three false positives and three grab attempts.</span><span>Team figure · PDR</span></figcaption>
+      </figure>
+    </div>
+
+    <h3>The requirements that matter most</h3>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Top-level requirements">
+      <table class="data stack">
+        <thead><tr><th scope="col">ID</th><th scope="col">The UAV shall</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">UAV-1</th><td class="txt" data-label="The UAV shall">take off and land autonomously, without operator input.</td></tr>
+          <tr><th scope="row">UAV-2</th><td class="txt" data-label="The UAV shall">navigate with the indoor localization system, with no GPS.</td></tr>
+          <tr><th scope="row">UAV-3</th><td class="txt" data-label="The UAV shall">tell the target package from other objects before retrieving it.</td></tr>
+          <tr><th scope="row">UAV-4</th><td class="txt" data-label="The UAV shall">keep the payload through flight and landing until intentionally released, and detect a failed grab and retry (UAV-4.1).</td></tr>
+          <tr><th scope="row">UAV-5</th><td class="txt" data-label="The UAV shall">receive and fly a return-path update sent mid-flight.</td></tr>
+          <tr><th scope="row">UAV-6</th><td class="txt" data-label="The UAV shall">send state, phase and video telemetry to ground control through every phase.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="vehicle">
+    <p class="label"><b>02</b>The vehicle</p>
+    <h2>A seven-inch quadcopter, sized to carry a 100 g package</h2>
+    <div class="prose">
+      <p>The design is a carbon-fiber quadcopter with a 295 mm, seven-inch frame, four motors with seven-inch propellers, a Raspberry Pi 4 and Navio2 flight computer, a camera mounted under the frame, and the magnetic grabber hanging below. Everything is sized for a thrust-to-weight ratio of at least 1.5 at 0.8 kg.</p>
+    </div>
+
+    <div>
+      <figure class="fig">
+        <div class="plate">{{pic src="marv-3d-iso.png" alt="Two isometric views of the quadcopter CAD model, from above and from below, showing the frame, four motors with propellers, a stacked electronics board, the battery under the frame and the purple magnetic grabber hanging beneath" sizes="(min-width: 1100px) 62vw, 100vw"}}</div>
+        <figcaption class="plate-cap"><span>Fig. 3</span><span>The PDR CAD model, from above and below.</span><span>Team CAD</span></figcaption>
+      </figure>
+      <figure class="fig">
+        <div class="plate">{{pic src="marv-3d-layout.png" alt="Exploded isometric views of the quadcopter with numbered parts and a legend grouping them by structure, power, propulsion, payload and command and data handling" sizes="(min-width: 1100px) 62vw, 100vw"}}</div>
+        <figcaption class="plate-cap"><span>Fig. 4</span><span>The same model with every part numbered and grouped by subsystem.</span><span>Team CAD</span></figcaption>
+      </figure>
+    </div>
+
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Selected components">
+      <table class="data stack">
+        <caption>What was chosen at PDR {{ev reported "Design review"}}</caption>
+        <thead><tr><th scope="col">Part</th><th scope="col">Selection</th><th scope="col" class="n">Qty</th><th scope="col" class="n">Unit mass</th><th scope="col" class="n">Unit cost</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Frame</th><td class="txt" data-label="Selection">295 mm seven-inch carbon-fiber FPV frame</td><td class="n" data-label="Qty">1</td><td class="n" data-label="Unit mass">121 g</td><td class="n" data-label="Unit cost">$34.99</td></tr>
+          <tr><th scope="row">Motors</th><td class="txt" data-label="Selection">BrotherHobby Avenger 2806.5</td><td class="n" data-label="Qty">4</td><td class="n" data-label="Unit mass">41 g</td><td class="n" data-label="Unit cost">$25.99</td></tr>
+          <tr><th scope="row">Propellers</th><td class="txt" data-label="Selection">GEMFAN 7035</td><td class="n" data-label="Qty">4</td><td class="n" data-label="Unit mass">3.3 g</td><td class="n" data-label="Unit cost">$4.20</td></tr>
+          <tr><th scope="row">Speed controller</th><td class="txt" data-label="Selection">45 A four-in-one ESC</td><td class="n" data-label="Qty">1</td><td class="n" data-label="Unit mass">12.5 g</td><td class="n" data-label="Unit cost">$32.90</td></tr>
+          <tr><th scope="row">Battery</th><td class="txt" data-label="Selection">CNHL Black Series 4S 2200 mAh</td><td class="n" data-label="Qty">1</td><td class="n" data-label="Unit mass">183 g</td><td class="n" data-label="Unit cost">$18.00</td></tr>
+          <tr><th scope="row">Avionics</th><td class="txt" data-label="Selection">Raspberry Pi 4 and Navio2, RC receiver, power module, wiring</td><td class="n" data-label="Qty">1</td><td class="n" data-label="Unit mass">about 100 g</td><td class="n" data-label="Unit cost">not priced</td></tr>
+          <tr><th scope="row">Payload mechanism</th><td class="txt" data-label="Selection">Magnetic drop grabber (my design)</td><td class="n" data-label="Qty">1</td><td class="n" data-label="Unit mass">estimate at PDR</td><td class="n" data-label="Unit cost">not priced</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">The five priced parts come to $206.65 against the $350 budget. Avionics and the payload mechanism are not priced in that table. Masses for those two were estimates at PDR; the mass budget below carries the payload mechanism at 80 g.</p>
+
+    <h3>Mass budget, against the 1 kg limit</h3>
+    <figure class="fig">
+      <div class="mbar">
+        <div class="mbar-track" role="img" aria-label="Stacked bar of the mass budget on a scale of 0 to 1000 grams: propulsion 177.2, power 195.5, payload 80, structure 121 and command and data handling 100, totalling 673.7 grams, then 60.46 grams of reserve, leaving about 266 grams to the 1 kilogram limit.">
+          <span class="s1" style="width:17.72%" title="Propulsion 177.2 g"></span>
+          <span class="s2" style="width:19.55%" title="Power 195.5 g"></span>
+          <span class="s3" style="width:8%" title="Payload 80 g"></span>
+          <span class="s4" style="width:12.1%" title="Structure 121 g"></span>
+          <span class="s5" style="width:10%" title="Command and data handling 100 g"></span>
+          <span class="res" style="width:6.046%" title="Reserve 60.46 g"></span>
+          <i class="lim" aria-hidden="true"></i>
+        </div>
+        <div class="mbar-scale"><span>0 g</span><span><b>734 g</b> with reserve</span><span>1 kg limit</span></div>
+        <ul class="mbar-key">
+          <li><i class="s1"></i>Propulsion</li><li><i class="s2"></i>Power</li><li><i class="s3"></i>Payload</li><li><i class="s4"></i>Structure</li><li><i class="s5"></i>Command and data</li><li><i class="res"></i>Reserve</li>
+        </ul>
+      </div>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Mass budget table">
+        <table class="data">
+          <thead><tr><th scope="col">Subsystem</th><th scope="col" class="n">Estimate</th><th scope="col" class="n">Margin</th><th scope="col" class="n">Reserve</th><th scope="col" class="n">With reserve</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Propulsion</th><td class="n">177.2 g</td><td class="n">5%</td><td class="n">8.86 g</td><td class="n">186.06 g</td></tr>
+            <tr><th scope="row">Power</th><td class="n">195.5 g</td><td class="n">10%</td><td class="n">19.55 g</td><td class="n">215.05 g</td></tr>
+            <tr><th scope="row">Payload</th><td class="n">80 g</td><td class="n">20%</td><td class="n">16 g</td><td class="n">96 g</td></tr>
+            <tr><th scope="row">Structure</th><td class="n">121 g</td><td class="n">5%</td><td class="n">6.05 g</td><td class="n">127.05 g</td></tr>
+            <tr><th scope="row">Command and data</th><td class="n">100 g</td><td class="n">10%</td><td class="n">10 g</td><td class="n">110 g</td></tr>
+            <tr class="tot"><th scope="row">Total</th><td class="n hi">673.7 g</td><td class="n"></td><td class="n">60.46 g</td><td class="n hi">734.16 g</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption class="plate-cap"><span>Fig. 5</span><span>The mass budget from the design review. The payload carries the largest margin, 20%.</span><span>Chart {{ev reported "Design review"}}</span></figcaption>
+    </figure>
+  </section>
+
+  <section class="sec" id="trades">
+    <p class="label"><b>03</b>Choosing the parts</p>
+    <h2>Every part came out of a weighted trade study</h2>
+    <div class="prose">
+      <p>The team scored real candidates against weighted criteria. Each criterion is scored from 0 for the worst option to 1 for the best, multiplied by its weight, and summed. Pick a subsystem to see the options, the weights and the result. These studies are team work; the payload mechanism study is the one that led to my design.</p>
+    </div>
+    <figure class="fig">
+      {{include figures/marv-trades.html}}
+      <figcaption class="plate-cap"><span>Fig. 6</span><span>The trade studies from the design review. The selected option is shaded.</span><span>Tables {{ev reported "Design review"}}</span></figcaption>
+    </figure>
+  </section>
+
+  <section class="sec" id="autonomy">
+    <p class="label"><b>04</b>How it flies itself</p>
+    <h2>Three functions, one flight computer</h2>
+    <div class="prose">
+      <p>The mission definition broke the job into three functions. The flight computer, a Raspberry Pi 4 on a Navio2 board running ArduPilot, handles all of them. Position comes from motion capture, attitude from the onboard IMU, and the camera feeds the vision software that finds and checks the package.</p>
+    </div>
+    <div class="fnarch">
+      <div><h3>Fly autonomously</h3><ul>
+        <li><b>1.1</b>Take off</li><li><b>1.2</b>Land</li><li><b>1.3</b>Execute the search pattern</li><li><b>1.4</b>Navigate the return path</li><li><b>1.5</b>Enter the operational zone</li><li><b>1.6</b>Control attitude and altitude</li><li><b>1.7</b>Avoid obstacles</li></ul></div>
+      <div><h3>Recover the payload</h3><ul>
+        <li><b>2.1</b>Identify the sample</li><li><b>2.2</b>Locate objects</li><li><b>2.3</b>Execute the recovery maneuver</li><li><b>2.4</b>Check the payload, and re-recover if needed</li></ul></div>
+      <div><h3>Communicate and process data</h3><ul>
+        <li><b>3.1</b>Receive inputs: manual control, return path, MOCAP</li><li><b>3.2</b>Process IMU, sensor, battery and object-detection data</li><li><b>3.3</b>Check system status</li><li><b>3.4</b>Send state, phase and video data</li><li><b>3.5</b>Re-evaluate</li></ul></div>
+    </div>
+
+    <div>
+      <figure class="fig">
+        <div class="plate">{{pic src="marv-components.png" alt="Component flow block diagram: a ground station with an operator, an RC transmitter and a MOCAP ground-truth system on one side, and on the vehicle a Raspberry Pi 4 with Navio2 connected to the RC receiver, power module, four-in-one ESC, battery, motors and the camera and IMU sensors, with Wi-Fi, 2.4 GHz and PWM links" sizes="(min-width: 1100px) 62vw, 100vw"}}</div>
+        <figcaption class="plate-cap"><span>Fig. 7</span><span>What talks to what: the ground station, the radio links and the vehicle.</span><span>Team figure · PDR</span></figcaption>
+      </figure>
+      <figure class="fig">
+        <div class="plate">{{pic src="marv-flow-search.png" alt="Flow diagram of the search and retrieval phase logic: mocap, IMU and camera feed an EKF navigation block, then guidance steps that check the package, align, descend to an inspection altitude, ask whether a QR code is detected and whether it is the correct one, then descend to pick up, with a limit of three re-alignments" sizes="(min-width: 1100px) 62vw, 100vw"}}</div>
+        <figcaption class="plate-cap"><span>Fig. 8</span><span>The search and retrieval logic. The QR check sits in the middle of it.</span><span>Team figure · PDR</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="sec" id="payload">
+    <p class="label"><b>05</b>Payload mechanism<span class="own">My part</span></p>
+    <h2>A magnet that takes the package without a servo, then with one</h2>
+    <div class="prose">
+      <p>The mechanism has to take a 100 g package, a steel plate on top for a magnet to hold, and carry it through flight and landing, without moving the vehicle's centre of mass or its weight much (PYLD-1 and PYLD-2). I designed it. At PDR the team chose a magnetic drop grabber over morphing grippers, and I took that concept through two designs.</p>
+      <p>The earlier pickup left 1.7 mm to the battery tray and 1.3 mm to the camera, and a package that swings in flight needs more room than that. So the mechanism had to get slimmer and still come in under the 80 g budget.</p>
+    </div>
+
+    <div class="decision">
+      <p class="decision-h">Passive or powered? <span>v4 in October 2026, v5 in November</span></p>
+      <div class="opts">
+        <div class="opt">
+          <h3 class="opt-h">Passive ratchet <em>v4</em></h3>
+          <ul>
+            <li>No servo, no wiring and nothing to command.</li>
+            <li>Landing on the package does the lifting.</li>
+            <li class="con">The vehicle has to land squarely on the package.</li>
+            <li class="con">Travel is limited to the stroke of the tube.</li>
+          </ul>
+        </div>
+        <div class="opt">
+          <h3 class="opt-h">Servo winch <em>v5</em></h3>
+          <ul>
+            <li>150 mm of reach, five times the ratchet's 30 mm.</li>
+            <li>The puck is designed to seat itself in a conical dock.</li>
+            <li class="con">Adds an FS90R servo, a spool and braided line.</li>
+            <li class="con">One more thing to command in flight.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="why"><b>Why I started passive:</b> it removes the most parts. If landing on the package could do the job, the servo's mass and wiring never had to enter the budget. v4 is two PLA tubes around a 30 mm N52 magnet. Landing pushes the inner tube up through ten 3 mm clicks and pawls hold it. <b>Why I then built a winch:</b> reach costs a servo, a spool and some way to put the magnet back in the same place every cycle. The seat was the part I cared about most, so the puck has a cone on top and winding it in pulls it into a matching dock.</p>
+    </div>
+
+    <figure class="fig">
+      <div class="plate pad">{{include figures/marv-pickups.html}}</div>
+      <figcaption class="plate-cap"><span>Fig. 9</span><span>The two pickup designs, hung from the same arm plate. v4 lifts the package 30 mm as the vehicle lands on it. v5 lowers a magnet puck 150 mm on braided line and winds it back into a dock.</span><span>Schematic · not to scale</span></figcaption>
+    </figure>
+
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Clearances before and after v4">
+      <table class="data">
+        <caption>What v4 bought {{ev cad}}</caption>
+        <thead><tr><th scope="col">Check</th><th scope="col" class="n">Earlier pickup</th><th scope="col" class="n">v4 ratchet</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Clearance to battery tray</th><td class="n">1.7 mm</td><td class="n hi">4.5 mm</td></tr>
+          <tr><th scope="row">Clearance to camera</th><td class="n">1.3 mm</td><td class="n hi">4.3 mm</td></tr>
+          <tr><th scope="row">Mechanism mass, against an 80 g budget</th><td class="n">n/a</td><td class="n hi">36.3 g</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>A 0.2 mm problem</h3>
+    <div class="cols mid">
+      <div class="prose">
+        <p>In v5.1 the magnet face sat only 0.2 mm below the rim of its printed housing, close enough to flush that the package's steel plate pressed on the plastic rim. I wanted the magnet to carry the package and the print to carry nothing. In v5.2 I dropped the magnet to 3 mm below the rim, then checked the change against the team's Onshape frame model and the FS90R drawing.</p>
+        <p>The change bought clearance under the battery tray and cost something too: the rim no longer braces the package.</p>
+      </div>
+      <figure class="fig" data-toggle data-rev="51">
+        <div class="fig-head">
+          <p>Docked puck, side view</p>
+          <div class="seg" role="group" aria-label="Winch revision"><button type="button" data-set="rev:51" aria-pressed="true">v5.1</button><button type="button" data-set="rev:52" aria-pressed="false">v5.2</button></div>
+        </div>
+        <div class="plate pad">{{include figures/marv-rev.html}}</div>
+        <figcaption class="plate-cap"><span>Fig. 10</span><span>Switch revisions to see the magnet and package move down.</span><span>Schematic · not to scale</span></figcaption>
+      </figure>
+    </div>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="v5.1 compared with v5.2">
+      <table class="data">
+        <caption>What changed {{ev cad}}</caption>
+        <thead><tr><th scope="col">Check</th><th scope="col" class="n">v5.1</th><th scope="col" class="n">v5.2</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Magnet face below housing rim</th><td class="n">0.2 mm</td><td class="n hi">3 mm</td></tr>
+          <tr><th scope="row">Package to battery tray</th><td class="n">3.9 mm</td><td class="n hi">≈ 6.7 mm</td></tr>
+          <tr><th scope="row">What the steel plate rests on</th><td class="n">printed rim</td><td class="n hi">magnet only</td></tr>
+          <tr><th scope="row">Rim braces the package</th><td class="n">yes</td><td class="n">no</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>A check that avoided a redesign</h3>
+    <div class="prose">
+      <p>The pickup magnet sits 13 to 15 cm from the Navio2's magnetometer. I estimated its field at the board at roughly 3 to 6 times Earth's {{ev estimate "Estimate"}}. Before changing anything I checked whether the vehicle depends on that sensor. It does not: heading comes from motion capture. A fix for a sensor nobody reads would have spent mass for nothing, so the pickup stayed where it was. On an aircraft that steers by compass, the same pickup would need rework.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="stability">
+    <p class="label"><b>06</b>Stability and control analysis<span class="own">My part</span></p>
+    <h2>What a 100 g package does to a 674 g vehicle</h2>
+    <div class="prose">
+      <p>A package that is 13% of the vehicle's mass, hung below it, shifts the centre of gravity and changes how hard the vehicle is to rotate. One set of mass properties would hide that, so I built the mass budget above, took each part from the CAD model at its budgeted mass, and worked out the centre of gravity and the moments of inertia for the empty vehicle and the loaded one. I presented them as the stability and control section of the preliminary design review.</p>
+    </div>
+
+    <figure class="fig" data-toggle data-state="loaded">
+      <div class="fig-head">
+        <p>Empty and loaded</p>
+        <div class="seg" role="group" aria-label="Vehicle loading"><button type="button" data-set="state:empty" aria-pressed="false">Empty</button><button type="button" data-set="state:loaded" aria-pressed="true">Package aboard</button></div>
+      </div>
+      <div>
+        <div class="plate pad" style="max-width:640px;margin-bottom:clamp(20px,3vw,32px)">{{include figures/marv-cg-map.html}}</div>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Mass properties table">
+          <table class="data">
+            <thead><tr><th scope="col">Property</th><th scope="col" class="n c-empty">Empty</th><th scope="col" class="n c-loaded">Loaded</th><th scope="col" class="n">Change</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Mass</th><td class="n c-empty">673.7 g</td><td class="n c-loaded">773.7 g</td><td class="n">+15%</td></tr>
+              <tr><th scope="row">CG, forward</th><td class="n c-empty">−6.2 mm</td><td class="n c-loaded">+0.7 mm</td><td class="n">+6.9 mm</td></tr>
+              <tr><th scope="row">CG, right</th><td class="n c-empty">+0.1 mm</td><td class="n c-loaded">+0.1 mm</td><td class="n">0</td></tr>
+              <tr><th scope="row">CG, up</th><td class="n c-empty">−0.8 mm</td><td class="n c-loaded">−7.9 mm</td><td class="n">−7.1 mm</td></tr>
+              <tr><th scope="row">CG below the propellers</th><td class="n c-empty">29.8 mm</td><td class="n c-loaded">36.9 mm</td><td class="n">+7.1 mm</td></tr>
+              <tr><th scope="row">Pitch inertia, I<sub>xx</sub><span class="u">×10⁻³ kg·m²</span></th><td class="n c-empty">3.80</td><td class="n c-loaded">4.37</td><td class="n hi">+15%</td></tr>
+              <tr><th scope="row">Roll inertia, I<sub>yy</sub></th><td class="n c-empty">3.36</td><td class="n c-loaded">3.69</td><td class="n hi">+10%</td></tr>
+              <tr><th scope="row">Yaw inertia, I<sub>zz</sub></th><td class="n c-empty">6.12</td><td class="n c-loaded">6.43</td><td class="n">+5%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <figcaption class="plate-cap" style="margin-top:16px"><span>Fig. 11</span><span>Values from the CAD model at PDR (LX7 frame and PDR hardware). The plot is to scale, in millimeters from the frame centre. Moments are about the vehicle CG, summed part by part with the parallel-axis theorem; products of inertia are under 4% of the diagonal.</span><span>{{ev cad}}</span></figcaption>
+    </figure>
+
+    <h3>What the numbers mean for the vehicle</h3>
+    <div class="prose">
+      <ul>
+        <li><b>Gripping the package moves the CG about 7 mm forward and 7 mm lower.</b> Loaded, it sits within a millimeter of the frame centre side to side and front to back, so the vehicle stays balanced on its four motors.</li>
+        <li><b>Pitch inertia rises 15% and roll 10%.</b> The same control torque turns the loaded vehicle more slowly, so the flight controller has to be tuned and tested both empty and loaded.</li>
+        <li><b>Yaw inertia is the largest and barely moves, up 5%.</b> Turning flat swings all four motors around the centre. Pitch is 13% above roll because the heavy parts sit front to back.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec" id="now">
+    <p class="label"><b>07</b>What we are on now</p>
+    <h2>The risk matrix, and a QR reader that works at every height</h2>
+
+    <h3>QR-reading software</h3>
+    <div class="prose">
+      <p>The vehicle decides which package is the real one by reading a QR code on it. In the flight profile it searches at about 6 ft, drops to about 3 ft to check a candidate, and grabs at about 0.42 ft, so the code has to be readable from several heights while the Raspberry Pi also runs everything else. We are working on how to make it read reliably across <b>camera height</b>, <b>image resolution</b> and <b>frame rate</b>, and how to tune the three together. No results are on this page yet.</p>
+    </div>
+    <figure class="fig" data-explore>
+      <div class="plate pad">{{include figures/marv-tri.html}}</div>
+      <div class="chips" role="group" aria-label="The three links" style="margin-top:18px">
+        <button class="chip" type="button" data-k="hr" data-title="Height and resolution" data-text="The higher the camera, the fewer pixels land on the code. More resolution puts more pixels on it, so a code that is unreadable at the search height may read fine at the inspection height, or at a higher resolution.">Height and resolution</button>
+        <button class="chip" type="button" data-k="rf" data-title="Resolution and frame rate" data-text="More pixels per frame take longer to process on a Raspberry Pi 4, so the frame rate drops. The reader has to leave enough processing time for the rest of the autonomy software.">Resolution and frame rate</button>
+        <button class="chip" type="button" data-k="fh" data-title="Frame rate and height" data-text="Flying lower makes the code bigger but sweeps it across the image faster. That needs more frames per second, or a slower approach, and a slower approach costs mission time.">Frame rate and height</button>
+      </div>
+      <div class="readout" aria-live="polite"><b data-r-title>Three settings, one reader</b><p data-r-text>Select a link in the diagram, or a button, to see how two of the settings pull on each other.</p></div>
+      <figcaption class="plate-cap"><span>Fig. 12</span><span>The trade we are working through. These are the general relationships, not measured values from our camera.</span><span>Diagram · conceptual</span></figcaption>
+    </figure>
+
+    <h3>Risk matrix</h3>
+    <div class="prose">
+      <p>The team is building the project's risk matrix now. For context, these are the operating conditions documented at PDR that bear on risk.</p>
+    </div>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Operating conditions documented at PDR">
+      <table class="data stack">
+        <thead><tr><th scope="col">Condition</th><th scope="col">What it affects</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Solid floors and netted walls</th><td class="txt" data-label="What it affects">Potential damage during a crash.</td></tr>
+          <tr><th scope="row">Multiple false samples</th><td class="txt" data-label="What it affects">The search and identification algorithm.</td></tr>
+          <tr><th scope="row">The MOCAP system</th><td class="txt" data-label="What it affects">Position verification, and a limit on the search height.</td></tr>
+          <tr><th scope="row">Access to electronics and battery</th><td class="txt" data-label="What it affects">How easily the vehicle can be re-soldered or recharged.</td></tr>
+          <tr><th scope="row">The drone-to-base link</th><td class="txt" data-label="What it affects">Software and interface design for sending information.</td></tr>
+          <tr><th scope="row">Flight Readiness Review, policy SY45</th><td class="txt" data-label="What it affects">What has to be true before any flight testing.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="limits">
+    <p class="label"><b>08</b>Results and limits</p>
+    <h2>What this page does and does not show</h2>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Limits">
+      <table class="data stack">
+        <thead><tr><th scope="col">Item</th><th scope="col">What this page has</th><th scope="col">What it does not have</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Vehicle mass</th><td class="txt" data-label="What this page has">The PDR budget and CAD properties: 673.7 g, 734 g with reserve.</td><td class="txt" data-label="What it does not have">A weighed vehicle.</td></tr>
+          <tr><th scope="row">Mission performance</th><td class="txt" data-label="What this page has">The worst-case profile: 212 s and 5.06 Wh.</td><td class="txt" data-label="What it does not have">A flown run. The profile is a plan.</td></tr>
+          <tr><th scope="row">Payload mechanism</th><td class="txt" data-label="What this page has">Two designs and a revision, with clearances and mass from CAD.</td><td class="txt" data-label="What it does not have">Measured holding or release forces. The ratchet's pawl forces (about 1.5 N to push a click, 5 N to pull free) came from a beam model.</td></tr>
+          <tr><th scope="row">QR reading</th><td class="txt" data-label="What this page has">The problem and the three settings.</td><td class="txt" data-label="What it does not have">Test results.</td></tr>
+          <tr><th scope="row">The inertia numbers</th><td class="txt" data-label="What this page has">CAD values at PDR, with a stated method.</td><td class="txt" data-label="What it does not have">An update for the latest frame and mechanism revision.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="lessons">
+    <p class="label"><b>09</b>What I took from it</p>
+    <h2>Four things I will carry into the next design</h2>
+    <ol class="lessons">
+      <li><b>Put the numbers first.</b>A mass budget and two clearances decided the v4 design before anything was printed.</li>
+      <li><b>Check what a change touches.</b>A magnet is a payload part until it sits 14 cm from a compass. Asking early turned a possible redesign into a note.</li>
+      <li><b>Every fix costs something.</b>Dropping the magnet 3 mm bought clearance and gave up the rim's support. Writing the trade down matters as much as making it.</li>
+      <li><b>Say what is measured and what is estimated.</b>The pawl forces are a model until a printed pair says otherwise, and the review reads that way.</li>
+    </ol>
+  </section>
+
+  </div>
+</div>
+</div>
+
+{{case-next}}

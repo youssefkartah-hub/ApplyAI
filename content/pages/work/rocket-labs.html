@@ -1,0 +1,200 @@
+<!--
+title: Composite airframe structures at Nittany Rocket Labs
+description: Case study. Structures and composites work on a student rocket airframe: manufacturable CAD, fit prototypes before layup, stiffness and buckling checks, and simple FE models compared with hand calculations.
+lede: Nittany Rocket Labs is Penn State's student rocketry team. In the Structures Department we design and build the airframe in carbon fiber. My part is the work before layup: manufacturable CAD, fit prototypes, and the stiffness and buckling checks that tell us whether a part will hold.
+-->
+{{case-head}}
+
+<section class="standing" aria-labelledby="standing-h">
+  <div class="wrap">
+    <p class="label">Where it stands · since September 2025</p>
+    <h2 id="standing-h">This page shows the process I work in and the checks I run before any carbon is cut. It does not publish test numbers yet.</h2>
+    <ul>
+      <li><span class="big">CAD</span><p>Manufacturable models of airframe parts, with fasteners and GD&amp;T</p></li>
+      <li><span class="big">Fit</span><p>3D-printed and laser-cut prototypes for fit and clearance before layup</p></li>
+      <li><span class="big">FEA</span><p>Panel and beam models compared with hand calculations before I trust them</p></li>
+      <li><span class="big">Record</span><p>Design changes, test procedures and results written down so they can be repeated</p></li>
+    </ul>
+    <p class="open"><b>Not shown here yet:</b> stiffness and buckling results, and pictures of my own CAD and prototypes. They are listed under <a href="#limits">what I cannot show yet</a>.</p>
+  </div>
+</section>
+
+<div class="case-body">
+<div class="wrap">
+  <nav class="toc" aria-label="On this page">
+    <p>On this page</p>
+    <ol>
+      <li><a href="#team">What the team builds</a></li>
+      <li><a href="#mine">My checks</a></li>
+      <li><a href="#process">How a part is made</a></li>
+      <li><a href="#problems">Problems we hit</a></li>
+      <li><a href="#photos">From the lab</a></li>
+      <li><a href="#limits">What I cannot show yet</a></li>
+      <li><a href="#lessons">What I took from it</a></li>
+    </ol>
+  </nav>
+
+  <div class="case-main">
+
+  <section class="sec" id="team">
+    <p class="label"><b>01</b>The brief</p>
+    <h2>Four constraints that pull against each other</h2>
+    <div class="prose">
+      <p>Nittany Rocket Labs (NRL) is a student-run organization at Penn State that focuses on practical engineering, teamwork and leadership while designing, building and testing rockets. I am a member of the Structures Department, on structures and composites.</p>
+      <p>The Structures Department designs and builds the rocket's airframe: carbon fiber body tubes, flat composite plates for the fins, bulkheads, tail structures and motor tube assemblies, all with tools students can get access to.</p>
+    </div>
+
+    <h3>What the team is about</h3>
+    <ul class="reqs">
+      <li><b class="t">Flight-ready hardware</b>The focus is on parts that fly, not on models of parts.</li>
+      <li><b class="t">Lab safety and workflow</b>A consistent workflow, with EHS safety training before anyone participates.</li>
+      <li><b class="t">Hands-on fabrication</b>Members make parts from day one, so hardware exposure is immediate.</li>
+      <li><b class="t">Engineering culture</b>A collaborative environment built around learning and the practical application of engineering principles.</li>
+    </ul>
+
+    <h3>The constraints on every part</h3>
+    <ul class="reqs">
+      <li><b class="t">Hold together</b>Structural integrity under flight loads.</li>
+      <li><b class="t">Stay light</b>Every gram in the airframe is a gram the motor has to lift.</li>
+      <li><b class="t">Be buildable</b>Manufacturable with tools students can get access to.</li>
+      <li><b class="t">Fit the calendar</b>Limited materials and limited schedule windows.</li>
+    </ul>
+    <figure class="fig" data-explore>
+      <div class="plate pad">{{include figures/rocket-airframe.html}}</div>
+      <div class="chips" role="group" aria-label="Airframe parts" style="margin-top:18px">
+        <button class="chip" type="button" data-k="body" data-title="Carbon-fiber body tube" data-text="Laid up on a mandrel, vacuum bagged and cured, then demolded, trimmed and inspected for defects, dimensions and fit.">Body tube</button>
+        <button class="chip" type="button" data-k="bulkheads" data-title="Bulkheads" data-text="Modeled in SolidWorks for fit and fasteners, with 3D-printed or laser-cut prototypes to check them before the real part is made.">Bulkheads</button>
+        <button class="chip" type="button" data-k="fins" data-title="Composite fin plates" data-text="Flat composite plates, checked for stiffness and buckling in ANSYS Discovery against deflection limits.">Fin plates</button>
+        <button class="chip" type="button" data-k="motor" data-title="Motor tube assembly" data-text="Runs inside the aft body. Slot and tab alignment, bolt-hole tolerances and assembly clearance are designed in CAD first.">Motor tube</button>
+        <button class="chip" type="button" data-k="tail" data-title="Tail structure" data-text="Closes out the aft end. I evaluated reinforcement for the tail cone.">Tail structure</button>
+      </div>
+      <div class="readout" aria-live="polite"><b data-r-title>Explore the airframe</b><p data-r-text>Select a part in the drawing, or a button, to see what it is and how we build it.</p></div>
+      <figcaption class="plate-cap"><span>Fig. 1</span><span>What the structures team builds. Bulkheads in blue; the motor tube runs inside the aft body.</span><span>Schematic · not to scale</span></figcaption>
+    </figure>
+  </section>
+
+  <section class="sec" id="mine">
+    <p class="label"><b>02</b>My part</p>
+    <h2>Three checks before any carbon is cut</h2>
+    <div class="prose">
+      <p>A composite part that does not fit is expensive scrap, and ANSYS Discovery returns an answer in seconds whether or not the setup behind it is right. So I check fit in cheap material, and I check the simulation against hand calculations.</p>
+    </div>
+
+    <div class="decision">
+      <p class="decision-h">When do we find out a part does not fit? <span>Options</span></p>
+      <div class="opts">
+        <div class="opt">
+          <h3 class="opt-h">At layup</h3>
+          <ul>
+            <li class="con">A part that does not fit is expensive scrap.</li>
+            <li class="con">Wall thickness, slot and tab alignment, bolt-hole tolerances and assembly clearance all have to be right first time.</li>
+          </ul>
+        </div>
+        <div class="opt">
+          <h3 class="opt-h">In a prototype <em>My approach</em></h3>
+          <ul>
+            <li>A mistake costs minutes, not a layup.</li>
+            <li>Fit is settled before any carbon is cut.</li>
+            <li class="con">Adds a prototype step before layup.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="why"><b>What I do:</b> I model parts in SolidWorks for manufacturability, 3D print or laser cut prototypes to check fit and clearance, and add fasteners and GD&amp;T so the part can be built and assembled.</p>
+    </div>
+
+    <h3>Hand checks before I trust the FEA</h3>
+    <div class="prose"><p>I run stiffness and buckling checks against deflection limits, build simple panel and beam FE models, and compare them with hand calculations. If a simple model agrees with a hand calculation, I have a reason to believe the complicated one. I record the changes, procedures and results so the work can be repeated and can feed future SOPs.</p></div>
+    <ul class="eqs">
+      <li><p class="label">Cantilever tip deflection</p><p class="eq"><var>δ</var> = <var>PL</var><sup>3</sup> / 3<var>EI</var></p></li>
+      <li><p class="label">Bending stress</p><p class="eq"><var>σ</var> = <var>Mc</var> / <var>I</var></p></li>
+      <li><p class="label">Euler buckling load</p><p class="eq"><var>P</var><sub>cr</sub> = π<sup>2</sup><var>EI</var> / (<var>KL</var>)<sup>2</sup></p></li>
+    </ul>
+  </section>
+
+  <section class="sec" id="process">
+    <p class="label"><b>03</b>The team's process</p>
+    <h2>From mandrel to inspected part</h2>
+    <div class="prose"><p>This is how the team makes a tube or a plate. My work sits before the first step, in CAD and fit prototypes, and in the checks that decide whether a design is ready.</p></div>
+    <div class="tabs side" data-tabs style="margin-top:28px">
+      <div class="tablist" role="tablist" aria-label="Process steps">
+        <button class="tab" type="button" role="tab"><b>1</b>Mandrel prep</button>
+        <button class="tab" type="button" role="tab"><b>2</b>Layup and vacuum bag</button>
+        <button class="tab" type="button" role="tab"><b>3</b>Cure</button>
+        <button class="tab" type="button" role="tab"><b>4</b>Demold, trim, finish</button>
+        <button class="tab" type="button" role="tab"><b>5</b>Inspect</button>
+      </div>
+      <div>
+        <div class="tabpanel" role="tabpanel"><h3>Mandrel prep</h3><p class="prose">The mandrel is the form a tube is built on. It gets prepared first so the cured part will come off it cleanly. Before anyone touches materials, the team goes through EHS safety training.</p></div>
+        <div class="tabpanel" role="tabpanel"><h3>Layup and vacuum bag</h3><p class="prose">Carbon fiber and epoxy go onto the mandrel or the flat tool, then the part is sealed in a vacuum bag that presses the layers together while the epoxy sets.</p></div>
+        <div class="tabpanel" role="tabpanel"><h3>Cure</h3><p class="prose">The epoxy hardens on its own schedule. This is the step that sets the pace of everything else, which is why other work gets planned around it.</p></div>
+        <div class="tabpanel" role="tabpanel"><h3>Demold, trim and finish</h3><p class="prose">The part comes off the tooling, gets trimmed to size and finished. We run this in parallel with other fabrication, for example demolding tubes while plates are being made.</p></div>
+        <div class="tabpanel" role="tabpanel"><h3>Inspect</h3><p class="prose">Each part is checked for surface defects, dimensional consistency and fit with the parts it mates to.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="problems">
+    <p class="label"><b>04</b>Problems we hit</p>
+    <h2>Five problems, and who handled what</h2>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Problems and responses">
+      <table class="data stack">
+        <thead><tr><th scope="col">Problem</th><th scope="col">Who</th><th scope="col">What was done</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">No epoxy, no build. There were stretches with no epoxy or mandrels.</th><td class="txt" data-label="Who">Team</td><td class="txt" data-label="What was done">Moved that time into future tooling, rocket stands and research on inspection methods. No build was rushed to make up the time.</td></tr>
+          <tr><th scope="row">Short schedule windows. A cure cannot be hurried.</th><td class="txt" data-label="Who">Team</td><td class="txt" data-label="What was done">Ran tasks in parallel, for example demolding tubes while flat plates were being fabricated, so waiting turned into build time.</td></tr>
+          <tr><th scope="row">Will it fit before it is carbon?</th><td class="txt" data-label="Who">Me</td><td class="txt" data-label="What was done">SolidWorks models for manufacturability, 3D-printed or laser-cut fit prototypes, and fasteners and GD&amp;T added before layup.</td></tr>
+          <tr><th scope="row">Trusting the simulation. The software answers whether or not the setup is right.</th><td class="txt" data-label="Who">Me</td><td class="txt" data-label="What was done">Stiffness and buckling checks against deflection limits, and simple panel and beam FE models compared with hand calculations. Changes and results are documented so the procedure repeats.</td></tr>
+          <tr><th scope="row">Is this part good? A composite part can look right and still hide a flaw.</th><td class="txt" data-label="Who">Me, for the team's decisions</td><td class="txt" data-label="What was done">Researched nondestructive evaluation methods for composites, ran a cost and capability trade study for a new curing oven, and evaluated reinforcement for the tail cone. These are inputs to the team's decisions, not outcomes.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="photos">
+    <p class="label"><b>05</b>From the lab</p>
+    <h2>A layup, and a tube coming off its mandrel</h2>
+    <div class="cols l-wide mid">
+      <figure class="fig">
+        <div class="plate">{{pic src="nrl-layup.jpg" alt="Gloved hands rolling carbon fiber onto a mandrel on a lab table covered in release film, with a cut sheet of carbon cloth beside them" sizes="(min-width: 860px) 56vw, 100vw"}}</div>
+        <figcaption class="plate-cap"><span>Fig. 2</span><span>A carbon fiber layup in progress on the lab table.</span><span>Team photo</span></figcaption>
+      </figure>
+      <figure class="fig">
+        <div class="plate">{{pic src="nrl-tube.jpg" alt="A rotary tool trimming the ragged end of a cured carbon-fiber tube still on its aluminum mandrel" sizes="(min-width: 860px) 32vw, 100vw"}}</div>
+        <figcaption class="plate-cap"><span>Fig. 3</span><span>Trimming a demolded carbon fiber tube.</span><span>Team photo</span></figcaption>
+      </figure>
+    </div>
+    <p class="note">Both photos are from my end-of-semester structures review.</p>
+  </section>
+
+  <section class="sec" id="limits">
+    <p class="label"><b>06</b>Results and limits</p>
+    <h2>What I cannot show yet</h2>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="What is missing">
+      <table class="data stack">
+        <thead><tr><th scope="col">Item</th><th scope="col">State today</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Stiffness and buckling results</th><td class="txt" data-label="State today">The checks are part of my process. This page does not publish numbers from them.</td></tr>
+          <tr><th scope="row">Agreement between the FE models and hand calculations</th><td class="txt" data-label="State today">I run the comparison. This page does not quote the result.</td></tr>
+          <tr><th scope="row">Pictures of my CAD and fit prototypes</th><td class="txt" data-label="State today">Not included yet.</td></tr>
+          <tr><th scope="row">Outcome of the oven trade study and the tail-cone evaluation</th><td class="txt" data-label="State today">Inputs to the team's decisions. The decisions are the team's.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="lessons">
+    <p class="label"><b>07</b>What I took from it</p>
+    <h2>Four lessons, from my own end-of-semester review</h2>
+    <ol class="lessons">
+      <li><b>Discipline first is faster later.</b>Early investment in safety and process discipline enabled faster iteration afterwards.</li>
+      <li><b>The shop floor has a vote.</b>Manufacturing reality consistently informed our design decisions.</li>
+      <li><b>Materials set the schedule.</b>Material availability and tooling constraints strongly influenced scheduling and workflow.</li>
+      <li><b>Structure never stands alone.</b>Structural design interacts with cost, inspection and integration.</li>
+    </ol>
+  </section>
+
+  </div>
+</div>
+</div>
+
+{{case-next}}

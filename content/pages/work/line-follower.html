@@ -1,0 +1,197 @@
+<!--
+title: A line-following robot with a hand-written turn
+description: Case study. A four-state MicroPython race program for an XRP robot: proportional and integral line following, and a 180 degree turn built from the gyro and the line sensors because the library's turn command was banned.
+lede: A head-to-head race for class: follow a taped line through an S-bend, turn around at a wall, and get home before the robot in the next lane. The library's turn command was banned, so the 180° turn had to be written from raw sensor readings.
+-->
+{{case-head}}
+
+<section class="standing" aria-labelledby="standing-h">
+  <div class="wrap">
+    <p class="label">Outcome · race day, 13 November 2026</p>
+    <h2 id="standing-h">We raced it head to head, hands off. The turn the rules made hard is the part worth reading about.</h2>
+    <ul>
+      <li><span class="big">1.5<small>m</small></span><p>of black tape with one S-bend, out and back</p></li>
+      <li><span class="big">180<small>°</small></span><p>turn built from gyro and line sensors, with no turn command</p></li>
+      <li><span class="big">≤ 15<small>cm</small></span><p>from the wall starts the turn, confirmed over several readings</p></li>
+      <li><span class="big">4<small>states</small></span><p>in the race program that ran the course on its own</p>{{ev tested}}</li>
+    </ul>
+    <p class="open"><b>Not reproduced here:</b> the gains and lap times from our robot. Those live in the team repository.</p>
+  </div>
+</section>
+
+<div class="case-body">
+<div class="wrap">
+  <nav class="toc" aria-label="On this page">
+    <p class="label">On this page</p>
+    <ol>
+      <li><a href="#race">The race</a></li>
+      <li><a href="#robot">The robot</a></li>
+      <li><a href="#control">One number to steer by</a></li>
+      <li><a href="#states">Four states</a></li>
+      <li><a href="#turn">Decision: the turn</a></li>
+      <li><a href="#faults">Two ways it could fail</a></li>
+      <li><a href="#lessons">What I took from it</a></li>
+    </ol>
+  </nav>
+
+  <div class="case-main">
+
+  <section class="sec" id="race">
+    <p class="label"><b>01</b>The rules</p>
+    <h2>Out, around and back, with nobody touching the robot</h2>
+    <div class="cols l-wide">
+      <figure class="fig">
+        <div class="plate">
+          <video src="../assets/media/lf-race.mp4" poster="{{poster lf-race-poster.jpg}}" width="960" height="496" muted loop playsinline controls preload="none" aria-label="Two robots racing in parallel lanes on a table: out along the tape, around at the wall, and back"></video>
+          <button class="vbtn" type="button" data-state="paused" aria-label="Play video"><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9-5.5z"/></svg><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 1.5h3v11h-3zM8.5 1.5h3v11h-3z"/></svg><span>Play</span></button>
+        </div>
+        <figcaption class="plate-cap"><span>Fig. 4.1</span><span>Race day. Two robots, two lanes, out and back. Cropped to the track.</span><span>Video · 0:10</span></figcaption>
+      </figure>
+      <ul class="reqs" style="grid-template-columns:minmax(0,1fr);margin-block:0">
+        <li><b class="t">Out and back</b>Follow 1.5 m of black tape with a gentle S-bend to a wall, turn around, and return to the start bar.</li>
+        <li><b class="t">No turn command</b>The library's <code>drivetrain.turn()</code> is banned. A team whose code calls it loses the race.</li>
+        <li><b class="t">Hands off</b>Both robots start on one button press. After that the program is on its own, with one restart if it leaves the track.</li>
+        <li><b class="t">Head to head</b>Two identical lanes, 40 cm apart. The first robot back across the finish bar wins.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec" id="robot">
+    <p class="label"><b>02</b>Hardware</p>
+    <h2>What the program has to work with</h2>
+    <div class="prose">
+      <p>The robot is an XRP kit. We did not design the chassis or the electronics; the work was the program and its tuning.</p>
+    </div>
+    <div class="cols mid fig">
+      <figure class="fig">
+        <div class="plate annot" data-pins>
+          {{pic src="lf-top.jpg" alt="The robot from above: drive wheels at the back, the control board in the middle, an ultrasonic rangefinder and two ball casters at the front" sizes="(min-width: 820px) 40vw, 100vw"}}
+          <span class="pin" data-pin="1" style="left:74%;top:51.5%">1</span>
+          <span class="pin" data-pin="2" style="left:47%;top:53%">2</span>
+          <span class="pin" data-pin="3" style="left:28%;top:19%">3</span>
+          <span class="pin" data-pin="4" style="left:82%;top:20.5%">4</span>
+          <span class="pin" data-pin="5" style="left:27%;top:45%">5</span>
+        </div>
+        <figcaption class="plate-cap"><span>Fig. 4.2</span><span>The robot from above.</span><span>Photo</span></figcaption>
+      </figure>
+      <div>
+        <ol class="pin-list" data-pin-list>
+          <li data-pin="1"><b>1</b><span><strong>Ultrasonic rangefinder.</strong> Measures the distance to the wall at the end of the lane.</span></li>
+          <li data-pin="2"><b>2</b><span><strong>Control board.</strong> Runs the MicroPython program, drives the motors, and carries the gyro used to measure the turn.</span></li>
+          <li data-pin="3"><b>3</b><span><strong>Two drive wheels.</strong> Steering is the difference between the left and right motor effort.</span></li>
+          <li data-pin="4"><b>4</b><span><strong>Two ball casters.</strong> They carry the front and let it swing freely.</span></li>
+          <li data-pin="5"><b>5</b><span><strong>Battery lead.</strong> Power from the battery pack plugs in here.</span></li>
+        </ol>
+        <p class="note">Out of sight under the chassis: two reflectance sensors, one each side of the tape. Each reads 0 over white and 1 over black.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="control">
+    <p class="label"><b>03</b>Control law</p>
+    <h2>One number to steer by</h2>
+    <div class="prose">
+      <p>Subtract the right sensor from the left and you get an error, <var>e</var> = L − R. Positive means the tape is to the left, zero means centered. The controller's whole job is to drive that number to zero. We built it up one term at a time, and each term fixed something I could see the last one get wrong.</p>
+    </div>
+    <ul class="eqs">
+      <li><p class="label">1 · Bang-bang</p><p class="eq"><var>u</var> = ±0.15</p><p>Steer by a fixed amount toward the tape. It always overshoots, so the robot weaves, and the weave grows with speed.</p></li>
+      <li><p class="label">2 · Proportional</p><p class="eq"><var>u</var> = <var>K</var><sub>p</sub> <var>e</var></p><p>The two sensors together say how far off the robot is, not just which side. A small drift gets a small correction.</p></li>
+      <li><p class="label">3 · Proportional + integral</p><p class="eq"><var>u</var> = <var>K</var><sub>p</sub> <var>e</var> + <var>K</var><sub>i</sub> ∫<var>e</var> d<var>t</var></p><p>Adds up the leftover error, so a steady pull to one side gets cancelled instead of tolerated.</p></li>
+    </ul>
+    <h3>How we tuned it</h3>
+    <div class="prose">
+      <ul>
+        <li>Change one number between runs, and start from the same spot every time. Otherwise there is no telling which change did what.</li>
+        <li>Raise the gain until the robot starts to oscillate, then back off by 30 to 50 percent.</li>
+        <li>Tune again whenever the base speed changes. The gain that is smooth at one speed oscillates at a higher one.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec" id="states">
+    <p class="label"><b>04</b>Architecture</p>
+    <h2>Four states to run the race</h2>
+    <ol class="states">
+      <li><p class="st"><i>01</i>OUTBOUND</p><p>On every pass of the loop: read both line sensors, compute the error, set the two motor efforts, and check the rangefinder.</p><p class="exit"><b>Exit when</b>the rangefinder reads 15 cm or less several times in a row.</p></li>
+      <li><p class="st"><i>02</i>TURN</p><p>Reset the gyro yaw and spin in place. Slow down early, then creep until a line sensor sees tape.</p><p class="exit"><b>Exit when</b>a sensor finds tape, after about 150° of rotation.</p></li>
+      <li><p class="st"><i>03</i>RETURN</p><p>The same controller with the rangefinder ignored. The bend now curves the other way.</p><p class="exit"><b>Exit when</b>both sensors read black at once: the finish bar.</p></li>
+      <li><p class="st"><i>04</i>DONE</p><p>Motors off, LED green. In a race the clock stops when the first robot crosses the bar.</p></li>
+    </ol>
+  </section>
+
+  <section class="sec" id="turn">
+    <p class="label"><b>05</b>Decision</p>
+    <h2>Turning 180° without the turn command</h2>
+    <div class="prose">
+      <p>The line sensors say nothing while the robot rotates, so the program has to know by some other means when it has turned far enough. It also keeps rotating after the motors are cut: the robot coasts 15 to 20 degrees.</p>
+    </div>
+    <div class="decision">
+      <p class="decision-h">What tells the robot the turn is finished? <span>Options</span></p>
+      <div class="opts">
+        <div class="opt">
+          <h3 class="opt-h">Gyro alone</h3>
+          <ul>
+            <li>Counts degrees from the moment the turn starts.</li>
+            <li class="con">Drifts after a couple of seconds.</li>
+            <li class="con">The coast after the motors stop lands it off the line.</li>
+          </ul>
+        </div>
+        <div class="opt">
+          <h3 class="opt-h">Gyro, then the tape <em>Chosen</em></h3>
+          <ul>
+            <li>Spin fast on the gyro and slow down before 180°.</li>
+            <li>Creep until a line sensor finds the tape, the best reference for the last few degrees.</li>
+            <li class="con">The tape the robot just left looks the same as the way home.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="why"><b>How the last problem is handled:</b> the program ignores the line sensors until the gyro shows about 150° of rotation, so the line the robot just left is never mistaken for the return path.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="faults">
+    <p class="label"><b>06</b>Failure handling</p>
+    <h2>Two ways it could fail, and what the program does about each</h2>
+    <div class="cols">
+      <div>
+        <h3>One bad reading</h3>
+        <div class="prose">
+          <p>The rangefinder returns 65535 when it sees nothing, and it can catch a glimpse of the neighboring lane's wall. A single false reading would start the turn in the middle of the track.</p>
+          <p>A real wall keeps being there and a glitch does not, so the program requires several readings in a row at 15 cm or less before it leaves the outbound state. Nobody may touch a robot after the start, so a false turn would cost the team's one restart.</p>
+        </div>
+      </div>
+      <figure class="fig">
+        <div class="plate">{{pic src="lf-sensor.jpg" alt="Close-up of the ultrasonic rangefinder in its white mount at the front of the robot, with a ball caster behind it" sizes="(min-width: 820px) 40vw, 100vw"}}</div>
+        <figcaption class="plate-cap"><span>Fig. 4.3</span><span>The rangefinder that decides when to turn.</span><span>Photo</span></figcaption>
+      </figure>
+    </div>
+    <h3>A robot that pulls to one side</h3>
+    <div class="prose">
+      <p>If one motor is slightly weaker, a proportional controller settles beside the line. It needs a leftover error to produce the correction that cancels the pull. More gain shrinks that offset but never removes it, and too much gain brings the oscillation back.</p>
+      <p>The integral term adds up the leftover error until the correction holds on its own. It is clamped so it cannot wind up, and it is reset whenever the state changes.</p>
+    </div>
+    <figure class="fig">
+      <div class="cols">
+        <div class="plate">{{pic src="lf-robot.jpg" alt="The robot on a desk beside a laptop: a brown XRP chassis with a red control board, jumper wires and an ultrasonic rangefinder at the front" sizes="(min-width: 820px) 40vw, 100vw"}}</div>
+        <div class="plate">{{pic src="lf-front.jpg" alt="The robot seen from the front on a lab bench, rangefinder in the middle and a caster on each arm" sizes="(min-width: 820px) 40vw, 100vw"}}</div>
+      </div>
+      <figcaption class="plate-cap" style="border-top:1px solid var(--ink);margin-top:10px"><span>Fig. 4.4</span><span>The robot on the bench, plugged into the laptop for programming.</span><span>Photos</span></figcaption>
+    </figure>
+  </section>
+
+  <section class="sec" id="lessons">
+    <p class="label"><b>07</b>What I took from it</p>
+    <h2>Four things a 1.5 m line taught me</h2>
+    <ol class="lessons">
+      <li><b>Earn each term.</b>Bang-bang first, then proportional, then integral. Each step fixes one thing I could see the last one get wrong.</li>
+      <li><b>Every sensor fails in its own way.</b>The gyro drifts, the rangefinder glitches, the line sensors go blind in a turn. The program is mostly about which one to trust when.</li>
+      <li><b>A gain is only right at one speed.</b>The setting that is smooth at one base speed oscillates at a higher one. Faster means tuning again.</li>
+      <li><b>The demo is the test.</b>Code that runs on the bench and code that survives a start with hands off are two different things.</li>
+    </ol>
+  </section>
+
+  </div>
+</div>
+</div>
+
+{{case-next}}

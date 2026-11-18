@@ -1,0 +1,212 @@
+<!--
+title: ApplyAI: a command center for my job search
+description: Case study. A local dashboard, one Python server and one HTML page, that runs a job search and a daily routine from one screen, built on the rule that it scores only the inputs I control.
+lede: ApplyAI began as a React prototype that scored job postings against my résumé. It grew into a dashboard on my laptop, later renamed SARAH, that holds my job search and my daily routine on one screen. It is built on one rule: score yourself only on the inputs you control.
+-->
+{{case-head}}
+
+<section class="standing" aria-labelledby="standing-h">
+  <div class="wrap">
+    <p class="label">Where it stands · October 2026</p>
+    <h2 id="standing-h">It runs on my laptop and holds my job search. The screens below use sample data, not my real applications.</h2>
+    <ul>
+      <li><span class="big">47</span><p>commits, June 7 to October 28</p>{{ev reported "From the repository"}}</li>
+      <li><span class="big">2</span><p>files: one Python server and one HTML page</p>{{ev reported "From the repository"}}</li>
+      <li><span class="big">6,841</span><p>lines across the two</p>{{ev reported "From the repository"}}</li>
+      <li><span class="big">10<small>a day</small></span><p>applications is the number it holds me to: 8 in the US, 2 outside</p></li>
+    </ul>
+  </div>
+</section>
+
+<div class="case-body">
+<div class="wrap">
+  <nav class="toc" aria-label="On this page">
+    <p>On this page</p>
+    <ol>
+      <li><a href="#idea">The idea</a></li>
+      <li><a href="#screens">The screens</a></li>
+      <li><a href="#fit">How it fits together</a></li>
+      <li><a href="#grew">How it grew</a></li>
+      <li><a href="#problems">Problems and fixes</a></li>
+      <li><a href="#limits">Limits</a></li>
+      <li><a href="#lessons">What I took from it</a></li>
+    </ol>
+  </nav>
+
+  <div class="case-main">
+
+  <section class="sec" id="idea">
+    <p class="label"><b>01</b>The idea</p>
+    <h2>A job search is hundreds of small actions. I wanted one place that tells me the next one.</h2>
+    <div class="cols l-wide">
+      <div class="prose">
+        <p>Applying for full-time roles while finishing a degree means hundreds of applications, each with its own emails, dates and status. A spreadsheet could store them. It could not tell me what to do this morning.</p>
+        <p>So the tracker became a dashboard: it reads the applications, works out today's pace and who needs a follow-up, and puts one next move at the top of the screen.</p>
+        <p>I built it with Claude Code, and the commit history says so: the commits are co-authored.</p>
+      </div>
+      <ul class="reqs" style="grid-template-columns:minmax(0,1fr);margin-block:0">
+        <li><b class="t">Inputs, never outcomes</b>It scores what I did today: applications sent, training done. Replies arrive on their own schedule.</li>
+        <li><b class="t">Local first</b>It runs on my laptop. The features that call an outside AI are opt-in, and the core works without them.</li>
+        <li><b class="t">Two files</b>One Python server and one HTML page, so I can read all of it.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec" id="screens">
+    <p class="label"><b>02</b>The screens</p>
+    <h2>Eight screens, from the first one I open each day</h2>
+    <div class="tabs side" data-tabs>
+      <div class="tablist" role="tablist" aria-label="Screens">
+        <button class="tab" type="button" role="tab">Today</button>
+        <button class="tab" type="button" role="tab">Say it in a sentence</button>
+        <button class="tab" type="button" role="tab">Pace and follow-ups</button>
+        <button class="tab" type="button" role="tab">What is working</button>
+        <button class="tab" type="button" role="tab">Every application</button>
+        <button class="tab" type="button" role="tab">Activity calendar</button>
+        <button class="tab" type="button" role="tab">Resume Match</button>
+        <button class="tab" type="button" role="tab">Goals</button>
+      </div>
+      <div>
+        <div class="tabpanel" role="tabpanel"><h3>Today</h3><p class="prose">The first screen answers one question: what do I do next? Under it sit the day's numbers, and every one of them is an input I control.</p><div class="plate">{{pic src="sarah-today.jpg" alt="SARAH's Today screen: the next move, a rundown of the day, today's numbers for training, body, mind and applications, and today's list" sizes="(min-width: 900px) 56vw, 100vw"}}</div></div>
+        <div class="tabpanel" role="tabpanel"><h3>Say it in a sentence</h3><p class="prose">Type "email the recruiter tomorrow at 3pm" and it becomes a dated task with a reminder. The same bar logs anything else.</p><div class="plate">{{pic src="sarah-command.jpg" alt="The command bar after typing a sentence: a new task, email the recruiter, due tomorrow at 3 PM" sizes="(min-width: 900px) 56vw, 100vw"}}</div></div>
+        <div class="tabpanel" role="tabpanel"><h3>Pace and follow-ups</h3><p class="prose">Progress against a daily goal of 10 applications, 8 in the US and 2 outside, and a worklist of applications that have been silent for a week, each with a follow-up email ready to copy.</p><div class="plate">{{pic src="sarah-insights.jpg" alt="Job Insights: totals, the daily goal of 10 applications, today's pace and a follow-up worklist" sizes="(min-width: 900px) 56vw, 100vw"}}</div></div>
+        <div class="tabpanel" role="tabpanel"><h3>What is working</h3><p class="prose">The funnel, applications per week, which kinds of roles get interviews, and which ones reject within three days.</p><div class="plate">{{pic src="sarah-insights2.jpg" alt="Job Insights: pipeline funnel, applications per week, insights and quick-rejection patterns" sizes="(min-width: 900px) 56vw, 100vw"}}</div></div>
+        <div class="tabpanel" role="tabpanel"><h3>Every application</h3><p class="prose">One table for all of them. Notion is the source of truth, and edits made here are kept on the laptop on top of it.</p><div class="plate">{{pic src="sarah-apps.jpg" alt="The applications table with company, role, country, date, status and source" sizes="(min-width: 900px) 56vw, 100vw"}}</div></div>
+        <div class="tabpanel" role="tabpanel"><h3>Activity calendar</h3><p class="prose">A month at a glance: how many applications went out each day.</p><div class="plate">{{pic src="sarah-calendar.jpg" alt="Activity calendar for a month, each day shaded by the number of applications sent" sizes="(min-width: 900px) 56vw, 100vw"}}</div></div>
+        <div class="tabpanel" role="tabpanel"><h3>Resume Match</h3><p class="prose">Paste a posting and a local engine scores it against my resume by stated requirements and keywords. No API key, and nothing leaves the laptop.</p><div class="plate">{{pic src="sarah-match.jpg" alt="Resume Match: a local analysis scoring a posting 64 out of 100 with a breakdown" sizes="(min-width: 900px) 56vw, 100vw"}}</div></div>
+        <div class="tabpanel" role="tabpanel"><h3>Goals</h3><p class="prose">Write a goal in plain English and it becomes phases and daily steps that feed the Today screen.</p><div class="plate">{{pic src="sarah-goals.jpg" alt="Goals: a plain-English goal broken into phases and daily steps" sizes="(min-width: 900px) 56vw, 100vw"}}</div></div>
+      </div>
+    </div>
+    <p class="note">The real app, running locally. The applications on these screens are sample data with invented companies, and the faith, family, school and money views are left out on purpose.</p>
+  </section>
+
+  <section class="sec" id="fit">
+    <p class="label"><b>03</b>Architecture</p>
+    <h2>Notion holds the truth, the laptop does the thinking</h2>
+    <figure class="fig" data-explore>
+      <div class="plate pad">{{include figures/sarah-arch.html}}</div>
+      <div class="chips" role="group" aria-label="Parts of SARAH" style="margin-top:18px">
+        <button class="chip" type="button" data-k="notion" data-title="Notion" data-text="My job application tracker lives in a Notion database, and that database is the single source of truth. The server only reads it, and caches the answer for 20 seconds so Notion is never hammered.">Notion</button>
+        <button class="chip" type="button" data-k="cal" data-title="Google Calendar" data-text="Two-way sync with a calendar of its own. A task with a time is written to that calendar, and events from my calendar show up in the Today screen.">Calendar</button>
+        <button class="chip" type="button" data-k="server" data-title="Local server" data-text="One Python file, 2,692 lines. It serves exactly one page, answers that page through a small JSON API, and listens on this laptop only.">Local server</button>
+        <button class="chip" type="button" data-k="page" data-title="The page" data-text="One HTML file, 4,149 lines: Today, Job Insights, the applications table, the activity calendar, Goals and Resume Match.">The page</button>
+        <button class="chip" type="button" data-k="local" data-title="Local data" data-text="Everything about my day stays in one file on the laptop. Edits I make to an application are also kept locally, layered over the Notion data, so Notion itself is never changed.">Local data</button>
+        <button class="chip" type="button" data-k="opt" data-title="Opt-in services" data-text="Each of these is switched on separately and the core works without all of them: Claude for the AI review and the voice assistant's brain, a text-to-speech voice, my course site, and a read-only view of a brokerage account.">Opt-in services</button>
+      </div>
+      <div class="readout" aria-live="polite"><b data-r-title>How the pieces fit</b><p data-r-text>Select a block in the drawing, or a button, to see what it does.</p></div>
+      <figcaption class="plate-cap"><span>Fig. 1</span><span>The system as built. Line counts are from the repository.</span><span>Diagram · conceptual</span></figcaption>
+    </figure>
+  </section>
+
+  <section class="sec" id="grew">
+    <p class="label"><b>04</b>History</p>
+    <h2>Five months, commit by commit</h2>
+    <figure class="fig" data-explore>
+      <div class="plate pad">{{include figures/sarah-growth.html}}</div>
+      <div class="chips" role="group" aria-label="Milestones" style="margin-top:18px">
+        <button class="chip" type="button" data-k="0" data-title="June 13 · A tracker that reads the inbox" data-text="The first week. A Gmail sync files every application under its email thread and only ever moves a status forward. The data then moves into Notion, and an insights engine starts counting what comes back. Page 493 lines, server 218.">June 13</button>
+        <button class="chip" type="button" data-k="1" data-title="July 3 · From tracker to personal OS" data-text="The funnel, the daily pace and a follow-up worklist arrive at the end of June. Then the dashboard grows past the job search and starts to hold the whole day. Page 1,280 lines, server 249.">July 3</button>
+        <button class="chip" type="button" data-k="2" data-title="July 8 · It talks" data-text="A voice assistant. It always works by pattern matching, with a natural voice and a Claude brain as options that can be switched on. Page 1,713 lines, server 546.">July 8</button>
+        <button class="chip" type="button" data-k="3" data-title="July 16 · SARAH 2.0" data-text="Five phases in two days, and the name. Set-by-set training logs are removed by design. Page 2,788 lines, server 734.">July 16</button>
+        <button class="chip" type="button" data-k="4" data-title="September 22 · Lead measures" data-text="The rebuild around inputs I control. Planner, inbox, habits, deep-work timer and budgets are removed, two-way calendar sync goes in, and the vanishing-applications bug is fixed. Resume Match had become a local, no-key engine in August. Page 3,387 lines, server 1,637.">September 22</button>
+        <button class="chip" type="button" data-k="5" data-title="October 28 · Hardened and extended" data-text="Early October brings courses, a read-only brokerage view and the security hardening. The last commit adds today's list, with reminders. Page 4,149 lines, server 2,692.">October 28</button>
+      </div>
+      <div class="readout" aria-live="polite"><b data-r-title>How the code grew</b><p data-r-text>Select a point on the chart, or a date, to see what changed in that commit.</p></div>
+      <figcaption class="plate-cap"><span>Fig. 2</span><span>Lines of code in the page and the server at six commits, read from the repository. The shaded band under the line is the server; the band above it is the page.</span><span>Chart {{ev reported "From the repository"}}</span></figcaption>
+    </figure>
+  </section>
+
+  <section class="sec" id="problems">
+    <p class="label"><b>05</b>Problems and fixes</p>
+    <h2>Six problems, and how I worked through them</h2>
+
+    <h3>A tracker I had to feed by hand</h3>
+    <div class="prose"><p>Every reply meant opening the tracker and updating a row, and a tracker that depends on me remembering falls behind within days. The emails already hold the status. The risk is an old or automatic email overwriting newer news.</p>
+      <p>I wrote a Gmail sync that files each application under its email thread and runs a status machine that only moves forward. A day later I moved the tracker itself into Notion and made it the single source of truth, with the dashboard as a reader. A late "thanks for applying" can no longer undo an interview, and there is one copy of the data instead of several.</p></div>
+
+    <h3>Measuring the wrong thing</h3>
+    <div class="prose"><p>By September the app had a planner, an inbox, habits, a deep-work timer and budgets. It measured many things, and few of them were things I could act on today. A reply arrives weeks after the work that earned it, so the only thing I can actually do today is the input.</p>
+      <p>I rebuilt the app around lead measures. The daily goal is 10 applications, 8 in the US and 2 outside, counted live from the tracker. The planner, inbox, habits, timer and budgets came out. That was one commit: 1,431 lines added and 828 removed {{ev reported "From the repository"}}.</p></div>
+
+    <h3>Applications that vanished</h3>
+    <div class="prose"><p>I archived one application and several others disappeared with it. I reproduced it before touching anything: four identical rows and one archive click turned six rows into two. That pointed at how a row was identified. Rows were keyed by company and position, in lowercase.</p>
+      <p>I changed the identity to the Notion page id, kept old edits only where they still pointed at exactly one row, and added a read-only diagnostic script. Archiving now hides one row, and the header counts what is hidden. Try both versions.</p></div>
+    <figure class="fig">
+      <div class="bug" data-bug>
+        <div class="bug-top">
+          <div class="seg" role="group" aria-label="Version"><button type="button" data-mode="old" aria-pressed="true">Before the fix</button><button type="button" data-mode="new" aria-pressed="false">After the fix</button></div>
+          <p class="bug-count"><b data-n>6</b>rows showing <em data-arch></em></p>
+        </div>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Demonstration table">
+          <table>
+            <thead><tr><th scope="col">Company and role</th><th scope="col">Applied</th><th scope="col">Stored under</th><th scope="col"><span class="vh">Action</span></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="bug-say" data-say aria-live="polite">Archive any one of the four identical rows.</p>
+        <button type="button" class="ghost-btn" data-reset>Reset the table</button>
+      </div>
+      <figcaption class="plate-cap"><span>Fig. 3</span><span>A demonstration with invented rows. The four identical ones stand for the same job title posted more than once by one company.</span><span>Demonstration</span></figcaption>
+    </figure>
+
+    <h3>My own server, handing out my keys</h3>
+    <div class="prose"><p>The app was starting to hold course and brokerage data, and its server would send key files to anyone who asked the right way. A list of forbidden files only stops what I thought to put on it. A list of allowed things fails closed.</p>
+      <p>The server now serves exactly one page. Its API refuses requests that come from another site and bodies that are not JSON, the page cannot be framed, new files are readable only by me, and an old helper that listened on every network interface is gone.</p></div>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Requests before and after the fix">
+      <table class="data stack">
+        <caption>The same requests, before and after</caption>
+        <thead><tr><th scope="col">Request</th><th scope="col">Before</th><th scope="col">After</th><th scope="col">Why</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">GET the dashboard page</th><td class="txt" data-label="Before">Served</td><td class="txt" data-label="After">Served</td><td class="txt" data-label="Why">The one page the server exists to serve.</td></tr>
+          <tr><th scope="row">GET a key file with an encoded underscore</th><td class="txt" data-label="Before">File sent</td><td class="txt" data-label="After">Not found</td><td class="txt" data-label="Why">The old blocklist compared the raw address. An encoded underscore did not match the list, so the file went out.</td></tr>
+          <tr><th scope="row">GET <code>/.git/config</code></th><td class="txt" data-label="Before">File sent</td><td class="txt" data-label="After">Not found</td><td class="txt" data-label="Why">The repository's own folder was downloadable too. Serving only one page closes this without listing it.</td></tr>
+          <tr><th scope="row">HEAD a blocked file</th><td class="txt" data-label="Before">Check skipped</td><td class="txt" data-label="After">Not found</td><td class="txt" data-label="Why">The old check ran on GET requests. A HEAD request went around it.</td></tr>
+          <tr><th scope="row">POST to the API, from another site</th><td class="txt" data-label="Before">Accepted</td><td class="txt" data-label="After">Refused</td><td class="txt" data-label="Why">A page on another site could call the local API from my browser. The API now refuses requests marked cross-site, or with a foreign or missing origin, and anything that is not JSON.</td></tr>
+          <tr><th scope="row">GET the page, inside a frame</th><td class="txt" data-label="Before">Allowed</td><td class="txt" data-label="After">Denied</td><td class="txt" data-label="Why">Another site could have loaded the dashboard inside an invisible frame.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Features that needed a paid key</h3>
+    <div class="prose"><p>The first Resume Match needed an AI API key. No key, no feature, and every use had a cost. The useful core of each feature is simple enough to run locally, so the AI should be an upgrade I can switch on.</p>
+      <p>I rebuilt Resume Match as a local engine that reads a posting's stated requirements and keywords and checks them against my resume, with the AI review as an opt-in. The voice assistant follows the same rule: it always works by pattern matching, with Claude as an optional brain. The core runs with no key and sends nothing anywhere, and the match screen says plainly what a local analysis can and cannot judge.</p></div>
+
+    <h3>Where it started: ranking postings</h3>
+    <div class="prose"><p>The very first version was a React prototype called ApplyAI: a live job feed scored against my resume. Asking for jobs from the last 3 days returned nothing, because new postings take time to be indexed. Fresh matters, but it should be a weight in the ranking instead of a filter that empties the feed.</p>
+      <p>I pulled the past week of postings and blended match with freshness: 65% match score, 35% how recently it was posted. The formula is straight from the prototype's code.</p></div>
+    <div class="callout">
+      <p class="label">The ranking formula</p>
+      <p><b>rank = 0.65 × match + 0.35 × freshness</b>, where freshness = max(0, 100 − 3.5 × hours since posted).</p>
+      <p>A strong match posted 3.4 days ago (match 82) scores 53.3. A weaker match posted this morning (match 50, 10 hours old) scores 55.3, so the fresher posting ranks first. The feed is never empty, and it still favors new postings. {{ev calculated}}</p>
+    </div>
+  </section>
+
+  <section class="sec" id="limits">
+    <p class="label"><b>06</b>Limits</p>
+    <h2>What this page does not claim</h2>
+    <div class="prose">
+      <ul>
+        <li><b>The screens are sample data.</b> The companies are invented, and some views are left out on purpose.</li>
+        <li><b>It scores inputs, not outcomes.</b> By design it cannot tell me whether ten applications a day is the right number.</li>
+        <li><b>The ranking weights are the prototype's.</b> This page does not claim they are optimal.</li>
+        <li><b>It was built with an AI pair programmer.</b> Claude Code co-authored the commits, and I read and directed all of it.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec" id="lessons">
+    <p class="label"><b>07</b>What I took from it</p>
+    <h2>Four things I took from building it</h2>
+    <ol class="lessons">
+      <li><b>Measure what you control.</b>Ten applications is a day I can finish. An interview is something that happens to me later.</li>
+      <li><b>Identity is a design decision.</b>Calling two rows the same because they look the same cost me data on screen. Every record needs a name that only it has.</li>
+      <li><b>Running locally is not the same as being safe.</b>A server on my own laptop still answers whoever can reach it. Allow what is needed and refuse the rest.</li>
+      <li><b>Removing is building.</b>The best single commit took 828 lines out. The app got better when it did less.</li>
+    </ol>
+  </section>
+
+  </div>
+</div>
+</div>
+
+{{case-next}}

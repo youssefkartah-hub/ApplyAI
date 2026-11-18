@@ -1,0 +1,279 @@
+{
+  "lf-front": {
+    "w": 1440,
+    "h": 1080,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "lf-race-poster": {
+    "w": 960,
+    "h": 496,
+    "widths": [
+      720,
+      960
+    ]
+  },
+  "lf-robot": {
+    "w": 1440,
+    "h": 1081,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "lf-sensor": {
+    "w": 1440,
+    "h": 960,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "lf-top": {
+    "w": 1400,
+    "h": 1400,
+    "widths": [
+      720,
+      1400
+    ]
+  },
+  "marv-3d-iso": {
+    "w": 1440,
+    "h": 835,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "marv-3d-layout": {
+    "w": 1440,
+    "h": 979,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "marv-3d-top": {
+    "w": 1440,
+    "h": 1058,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "marv-arch": {
+    "w": 1440,
+    "h": 810,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "marv-components": {
+    "w": 1440,
+    "h": 712,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "marv-flight": {
+    "w": 1440,
+    "h": 609,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "marv-flow-control": {
+    "w": 1440,
+    "h": 810,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "marv-flow-search": {
+    "w": 1440,
+    "h": 810,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "nrl-layup": {
+    "w": 1400,
+    "h": 1050,
+    "widths": [
+      720,
+      1400
+    ]
+  },
+  "nrl-tube": {
+    "w": 684,
+    "h": 1068,
+    "widths": [
+      684
+    ]
+  },
+  "portrait": {
+    "w": 880,
+    "h": 1100,
+    "widths": [
+      720,
+      880
+    ]
+  },
+  "roomly-ai-room": {
+    "w": 1280,
+    "h": 800,
+    "widths": [
+      720,
+      1280
+    ]
+  },
+  "roomly-dashboard": {
+    "w": 1440,
+    "h": 900,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "roomly-m-home": {
+    "w": 640,
+    "h": 1385,
+    "widths": [
+      640
+    ]
+  },
+  "roomly-m-room": {
+    "w": 640,
+    "h": 1385,
+    "widths": [
+      640
+    ]
+  },
+  "roomly-room": {
+    "w": 1280,
+    "h": 800,
+    "widths": [
+      720,
+      1280
+    ]
+  },
+  "roomly-sell-details": {
+    "w": 1440,
+    "h": 900,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "roomly-sell-photos": {
+    "w": 1440,
+    "h": 900,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "roomly-tag": {
+    "w": 1280,
+    "h": 800,
+    "widths": [
+      720,
+      1280
+    ]
+  },
+  "safran-bench": {
+    "w": 1440,
+    "h": 1081,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "sarah-apps": {
+    "w": 1440,
+    "h": 900,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "sarah-calendar": {
+    "w": 1440,
+    "h": 900,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "sarah-command": {
+    "w": 1200,
+    "h": 750,
+    "widths": [
+      720,
+      1200
+    ]
+  },
+  "sarah-goals": {
+    "w": 1440,
+    "h": 900,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "sarah-insights": {
+    "w": 1440,
+    "h": 900,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "sarah-insights2": {
+    "w": 1440,
+    "h": 900,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "sarah-match": {
+    "w": 1440,
+    "h": 900,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "sarah-today": {
+    "w": 1440,
+    "h": 900,
+    "widths": [
+      720,
+      1440
+    ]
+  },
+  "uav-build-poster": {
+    "w": 960,
+    "h": 632,
+    "widths": [
+      720,
+      960
+    ]
+  },
+  "uav-parts": {
+    "w": 1440,
+    "h": 511,
+    "widths": [
+      720,
+      1440
+    ]
+  }
+}

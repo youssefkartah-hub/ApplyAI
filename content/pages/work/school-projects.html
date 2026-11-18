@@ -1,0 +1,174 @@
+<!--
+title: Four school projects, each checked a second way
+description: Case study. A carbon-reinforced beam test with uncertainty, lift on a transonic airfoil computed two ways, a CFD drag study checked on three meshes, and a root solver that reports its own failures.
+lede: A structures lab, two computational projects and an independent CFD study. Each one ends in a number I can defend line by line, and each has a check built in that could have proved me wrong.
+-->
+{{case-head}}
+
+<section class="standing" aria-labelledby="standing-h">
+  <div class="wrap">
+    <p class="label">Results</p>
+    <h2 id="standing-h">Four results. Each was reached by a second route before I reported it.</h2>
+    <ul>
+      <li><span class="big">+30.5<small>± 0.6%</small></span><p>bending stiffness from carbon reinforcement, for 18.6% more weight</p>{{ev measured}}</li>
+      <li><span class="big">0.4<small>%</small></span><p>between two independent lift calculations, NACA 0012 at Mach 0.70</p>{{ev calculated}}</li>
+      <li><span class="big">≈12<small>%</small></span><p>lower drag on an EV body, with the trend checked on 3 mesh densities</p>{{ev simulated}}</li>
+      <li><span class="big">188.49<small>m/s</small></span><p>minimum-drag speed of a 737-800 at FL350, from our own solver</p>{{ev calculated}}</li>
+    </ul>
+    <p class="open"><b>Limits:</b> the two beam methods do not quite overlap, the airfoil work starts from CFD output I did not generate, and the EV result is a prediction from simulation. Each section says so where it applies.</p>
+  </div>
+</section>
+
+<div class="case-body">
+<div class="wrap">
+  <nav class="toc" aria-label="On this page">
+    <p class="label">On this page</p>
+    <ol>
+      <li><a href="#beam">Beam test</a></li>
+      <li><a href="#airfoil">Transonic airfoil</a></li>
+      <li><a href="#ev">EV drag study</a></li>
+      <li><a href="#solver">Root solver</a></li>
+      <li><a href="#habits">The habits</a></li>
+    </ol>
+  </nav>
+
+  <div class="case-main">
+
+  <section class="sec" id="beam">
+    <p class="label"><b>01</b>Measured · AERSP 305W structures lab · Fall 2026</p>
+    <h2>Is carbon-fiber reinforcement worth its weight?</h2>
+    <div class="cols mid">
+      <div class="prose">
+        <p>The question was whether bonding carbon fiber to an aluminum I-beam buys more stiffness than the weight it adds.</p>
+        <p>I measured the flexural rigidity of a plain beam and a reinforced one, five runs each, by two routes: from how far the beam deflects under load, and from the strain under the same loads.</p>
+        <p>A percentage means little without its uncertainty, so I carried the error through to the final ratio.</p>
+      </div>
+      <figure class="fig">
+        <div class="plate pad">{{include figures/home-analysis.html}}</div>
+        <figcaption class="plate-cap"><span>Fig. 3.1</span><span>Plain and reinforced beams: rigidity by deflection, weight, and rigidity per weight.</span><span>Chart · measured</span></figcaption>
+      </figure>
+    </div>
+
+    <h3>Do the two methods agree?</h3>
+    <div class="cols mid r-wide">
+      <div class="prose">
+        <p>Not quite. The strain route reads lower, at +27 ± 2%. Its interval reaches 29%, and the deflection interval starts at 29.9%.</p>
+        <p>The headline number is the deflection result, which is the tighter of the two. I show the strain result beside it because the gap is information: something separates the two methods that the stated uncertainties do not cover.</p>
+      </div>
+      <figure class="fig">
+        <div class="plate pad">{{include figures/analysis-intervals.html}}</div>
+        <figcaption class="plate-cap"><span>Fig. 3.2</span><span>The same stiffness gain by two routes. The shaded band is the gap between the intervals.</span><span>Chart · measured</span></figcaption>
+      </figure>
+    </div>
+
+    <div class="callout">
+      <p class="label">Result {{ev measured}}</p>
+      <p>The reinforced beam is 30.5 ± 0.6% stiffer for 18.6% more weight, a 10.1 ± 0.5% gain in stiffness per pound. For a part sized by stiffness, the reinforcement pays for its weight.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="airfoil">
+    <p class="label"><b>02</b>Calculated from CFD data · AERSP 424 · Python · Fall 2026</p>
+    <h2>Forces on a transonic airfoil, from raw CFD output</h2>
+    <div class="cols mid">
+      <div class="prose">
+        <p>The starting point was scattered viscous CFD output for a NACA 0012 at Mach 0.70 and 3.04° angle of attack. I did not run the simulation. The task was to get the forces out of the raw field and show they could be trusted.</p>
+        <p>Raw data comes with no answer key, so I computed lift by two independent routes: from the circulation around a contour enclosing the airfoil, and from the surface pressure. Drag came from two wake surveys. I also mapped the supersonic pocket on the upper surface, which ends in a shock near 30% of chord.</p>
+      </div>
+      <figure class="fig">
+        <div class="plate pad">{{include figures/analysis-naca.html}}</div>
+        <figcaption class="plate-cap"><span>Fig. 3.3</span><span>Where each quantity was taken: the circulation contour, the shock, and the two wake stations.</span><span>Schematic · not to scale</span></figcaption>
+      </figure>
+    </div>
+
+    <div class="table-wrap fig" tabindex="0" role="region" aria-label="Airfoil results">
+      <table class="data">
+        <caption>Results {{ev calculated}}</caption>
+        <thead><tr><th scope="col">Quantity, and how I got it</th><th scope="col" class="n">Value</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Lift coefficient<span class="u">from circulation, and from surface pressure</span></th><td class="n hi">0.503 and 0.501</td></tr>
+          <tr><th scope="row">Agreement between the two<span class="u">the check</span></th><td class="n hi">within 0.4%</td></tr>
+          <tr><th scope="row">Drag coefficient<span class="u">wake surveys at two stations</span></th><td class="n">0.0149</td></tr>
+          <tr><th scope="row">Lift to drag</th><td class="n">33.5</td></tr>
+          <tr><th scope="row">Peak Mach number<span class="u">in the upper-surface supersonic pocket</span></th><td class="n">1.31</td></tr>
+          <tr><th scope="row">Shock position<span class="u">where the pocket ends</span></th><td class="n">≈ 0.30 c</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">I also compared the coefficients with NASA wind-tunnel data for the same airfoil.</p>
+  </section>
+
+  <section class="sec" id="ev">
+    <p class="label"><b>03</b>Simulated · independent study · ANSYS Fluent · 2025</p>
+    <h2>Less drag on an EV body, without starving the cooling</h2>
+    <div class="cols mid">
+      <div class="prose">
+        <p>How much drag can come off an electric vehicle body without starving the battery and motor of cooling air?</p>
+        <p>I ran steady RANS simulations in ANSYS Fluent on 7 geometry variants that changed the body contours, the underbody and the wheel covers.</p>
+        <p>A drag change of a few percent can be the mesh talking. I checked every trend on 3 mesh densities before trusting it. That made 21 runs, so I scripted the post-processing in MATLAB, which took it from 10 minutes a run to 3.</p>
+        <p>I also studied boundary-layer behavior and the surface-finish assumptions in the model, to inform the choice of material and finish and the coating smoothness a design would need. The MATLAB scripts ran the parametric sweeps and organized the results with basic statistics.</p>
+      </div>
+      <figure class="fig">
+        <div class="plate pad">{{include figures/analysis-ev.html}}</div>
+        <figcaption class="plate-cap"><span>Fig. 3.4</span><span>The run matrix. I checked every trend on all three meshes before trusting it.</span><span>Diagram · study design</span></figcaption>
+      </figure>
+    </div>
+    <div class="callout">
+      <p class="label">Result {{ev simulated}}</p>
+      <p>About 12% lower drag coefficient, with the cooling flow kept. This is a prediction from simulation.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="solver">
+    <p class="label"><b>04</b>Calculated · AERSP 424 · Python · with one teammate · Fall 2026</p>
+    <h2>A root solver that knows when it has failed</h2>
+    <div class="cols l-wide">
+      <div class="prose">
+        <p>At what speed is a 737-800's drag lowest, and at which two speeds is it 10% above that?</p>
+        <p>My teammate and I wrote a Newton-Raphson solver from scratch, with five stopping conditions, and ran it on the drag model at cruise altitude and at sea level.</p>
+        <p>The hard part was the bookkeeping. A solver that stops has not necessarily succeeded, so ours counts a run as a success only when the residual is actually met. We defended the work in a 15-minute oral exam.</p>
+      </div>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Solver results">
+        <table class="data">
+          <caption>Results {{ev calculated}}</caption>
+          <thead><tr><th scope="col">Quantity</th><th scope="col" class="n">Value</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Minimum-drag speed, FL350</th><td class="n hi">188.49 m/s</td></tr>
+            <tr><th scope="row">Minimum-drag speed, sea level</th><td class="n">104.98 m/s</td></tr>
+            <tr><th scope="row">Drag at 110% of minimum, FL350</th><td class="n">151.0 and 235.3 m/s</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <figure class="fig" id="nr-fig">
+      <div class="cols mid l-wide">
+        <div class="plate pad">{{include figures/analysis-drag.html}}</div>
+        <div>
+          <div class="ctrl js-only" style="margin-top:0">
+            <label>Start the search at<input type="range" id="nr-v0" min="125" max="295" step="1" value="270" aria-label="Starting airspeed for the search, in meters per second"><output id="nr-v0-o">270 m/s</output></label>
+            <button class="btn-sm" type="button" id="nr-run">▶ Run Newton's method</button>
+          </div>
+          <div class="verdict" aria-live="polite"><b id="nr-t">Where is drag 10% above its minimum?</b><p id="nr-d">Pick a starting speed and run the search. Then start it near 188 m/s, at the bottom of the curve, and watch what a flat tangent does.</p></div>
+        </div>
+      </div>
+      <figcaption class="plate-cap" style="border-top:1px solid var(--ink);margin-top:16px"><span>Fig. 3.5</span><span>The drag model at FL350 with the three solutions marked. The search beside it runs Newton's method live on the same curve. It is a demonstration written for this page, separate from the course code.</span><span>Chart · calculated</span></figcaption>
+    </figure>
+  </section>
+
+  <section class="sec" id="habits">
+    <p class="label"><b>05</b>What I took from them</p>
+    <h2>Four habits these projects built</h2>
+    <ol class="lessons">
+      <li><b>Get the answer twice.</b>Lift from circulation and from pressure. Stiffness from deflection and from strain. Drag on three meshes. If two routes disagree, I have found something.</li>
+      <li><b>A solver must know when it failed.</b>Stopping is easy. Reporting honestly why it stopped is the part worth writing.</li>
+      <li><b>Carry the uncertainty.</b>30.5% is a claim. 30.5 ± 0.6% is a measurement.</li>
+      <li><b>Automate the repeat work.</b>Seven minutes saved per run is what made 21 runs reasonable.</li>
+    </ol>
+  </section>
+
+  </div>
+</div>
+</div>
+
+{{case-next}}

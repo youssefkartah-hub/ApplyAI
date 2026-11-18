@@ -1,0 +1,189 @@
+<!--
+title: Three UAVs, designed and built on my own
+description: Case study. Three self-funded UAV builds: an autonomous mapping aircraft on Pixhawk, a quadcopter frame checked in FEA and tuned from 12 flight logs, and a thermal-imaging drone for crop irrigation now in assembly.
+lede: Three builds on my own time and money: an autonomous mapping UAV, a quadcopter frame that I designed and then tuned from its own flight logs, and a thermal-imaging drone for crop irrigation that is on my desk now.
+-->
+{{case-head}}
+
+<section class="standing" aria-labelledby="standing-h">
+  <div class="wrap">
+    <p class="label">Where it stands · November 2026</p>
+    <h2 id="standing-h">Two of the builds have flown. The third is being assembled.</h2>
+    <ul>
+      <li><span class="big">30<small>%</small></span><p>cut from the mapping UAV's build cost by a component trade study</p><span class="ev ev-plain">Parts cost</span></li>
+      <li><span class="big">SF ≥ 1.5</span><p>at the arm root of the quadcopter frame, held with no added mass</p>{{ev simulated}}</li>
+      <li><span class="big">12<small>logs</small></span><p>of flight data behind the PID retune that removed a hover oscillation</p>{{ev measured "Flight logs"}}</li>
+      <li><span class="big">3<small>frames</small></span><p>designed in SolidWorks, each checked in ANSYS Discovery</p>{{ev simulated}}</li>
+    </ul>
+    <p class="open"><b>Still open:</b> the thermal-imaging drone has not flown. Its airframe is going together and its avionics are on the bench, shown under <a href="#bench">on the bench now</a>.</p>
+  </div>
+</section>
+
+<div class="case-body">
+<div class="wrap">
+  <nav class="toc" aria-label="On this page">
+    <p class="label">On this page</p>
+    <ol>
+      <li><a href="#builds">The three builds</a></li>
+      <li><a href="#budget">Decide, then buy</a></li>
+      <li><a href="#autopilot">An autopilot I can take back</a></li>
+      <li><a href="#frame">Frame: shape before mass</a></li>
+      <li><a href="#tuning">Tuning from the log</a></li>
+      <li><a href="#bench">On the bench now</a></li>
+      <li><a href="#limits">Limits</a></li>
+      <li><a href="#lessons">What I took from it</a></li>
+    </ol>
+  </nav>
+
+  <div class="case-main">
+
+  <section class="sec" id="builds">
+    <p class="label"><b>01</b>The brief</p>
+    <h2>Nobody assigns these. I set the problem, pay for the parts and find the answers.</h2>
+    <div class="table-wrap fig" tabindex="0" role="region" aria-label="The three builds">
+      <table class="data stack">
+        <thead><tr><th scope="col">Build</th><th scope="col">What it is for</th><th scope="col">Tools</th><th scope="col">Status</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Mapping UAV</th><td class="txt" data-label="What it is for">Flies a grid over a field on its own and brings back the photos for a stitched map.</td><td class="txt" data-label="Tools">Pixhawk, Mission Planner, MATLAB</td><td class="txt" data-label="Status"><b>Flown.</b> Autonomous waypoint missions.</td></tr>
+          <tr><th scope="row">Quadcopter frame and controls</th><td class="txt" data-label="What it is for">A frame I designed and checked in simulation, then tuned in flight from its own logs.</td><td class="txt" data-label="Tools">SolidWorks, ANSYS Discovery, Simulink</td><td class="txt" data-label="Status"><b>Flown.</b> Retuned from 12 logs.</td></tr>
+          <tr><th scope="row">Thermal irrigation drone</th><td class="txt" data-label="What it is for">Carries a thermal camera over farmland to flag the patches getting less water than the rest of the field.</td><td class="txt" data-label="Tools">Pixhawk</td><td class="txt" data-label="Status"><b>In assembly.</b> Not flown.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="prose">
+      <p>I am self-taught on all three and I handle each one end to end. The third build is aimed at field monitoring on farmland in Morocco, where a thermal map can show which parts of a field the irrigation is missing.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="budget">
+    <p class="label"><b>02</b>Constraint · my own money</p>
+    <h2>Decide on paper, then buy</h2>
+    <div class="prose">
+      <p>On a self-funded build, every component is a purchase I have to justify to myself. Propulsion, battery and frame also depend on each other, so choosing them one at a time means paying for the mismatch later.</p>
+      <p>Before ordering anything for the mapping UAV I ran component-level trade studies across all three together. The build cost came down 30% <span class="ev ev-plain">Parts cost</span>.</p>
+      <p>I also chose motors, propellers and battery parameters through propulsion analysis and weight reduction, with a target of about 30% more flight endurance {{ev estimate "Target"}}. That is a target. This page does not report a measured endurance.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="autopilot">
+    <p class="label"><b>03</b>Integration · mapping UAV</p>
+    <h2>An autopilot I can take back</h2>
+    <div class="cols mid">
+      <div class="prose">
+        <p>An autopilot only works when the flight controller, GPS and compass, telemetry radio, speed controllers and RC link all agree with each other. I integrated them around a Pixhawk and planned the missions in Mission Planner.</p>
+        <p>The aircraft flies fully autonomous waypoint missions {{ev tested}}. For mapping I planned grid missions for orthomosaic maps, tuning image overlap, altitude and flight path together. Those three are one decision: more overlap stitches more reliably but costs passes, and passes cost battery.</p>
+      </div>
+      <figure class="fig">
+        <div class="plate pad">{{include figures/uav-arch.html}}</div>
+        <figcaption class="plate-cap"><span>Fig. 2.1</span><span>How the mapping UAV is wired, from ground station to propellers.</span><span>Diagram · conceptual</span></figcaption>
+      </figure>
+    </div>
+
+    <div class="callout">
+      <p class="label">Decision · who has the aircraft</p>
+      <p>An aircraft that flies itself still needs a way for me to take it back. I kept the RC link live as a manual override through every autonomous flight, and treated it as part of the design from the start.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="frame">
+    <p class="label"><b>04</b>Structure · quadcopter frame</p>
+    <h2>Change the shape before adding mass</h2>
+    <div class="prose">
+      <p>The root of each arm carries the load from its motor. The easy fix for a weak root is more material, and more material is more weight to lift.</p>
+      <p>I iterated three frame designs in SolidWorks and checked each one in ANSYS Discovery. The result holds a safety factor of at least 1.5 at the arm root, with no added mass {{ev simulated}}.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="tuning">
+    <p class="label"><b>05</b>Controls · quadcopter</p>
+    <h2>A hover that would not settle</h2>
+    <div class="prose">
+      <p>The quadcopter had a persistent oscillation in hover. The logs record what the vehicle actually did, so I tuned from those and not from how the flight felt.</p>
+      <p>I analyzed 12 flight logs and retuned the PID gains in Simulink. The oscillation is gone {{ev measured "Flight logs"}}.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="bench">
+    <p class="label"><b>06</b>Current build · thermal irrigation drone</p>
+    <h2>On the bench now</h2>
+    <div class="prose">
+      <p>The third build will carry a thermal camera. The airframe is being assembled and the avionics are on my desk. Nothing in this section has flown.</p>
+    </div>
+
+    <figure class="fig">
+      <div class="plate annot-scroll" tabindex="0" role="region" aria-label="Annotated photo of the avionics, scrolls sideways on small screens">
+        <div class="annot" data-pins>
+          {{pic src="uav-parts.jpg" alt="Drone components laid out on a desk: a propeller, a 30 amp speed controller, a Pixhawk flight controller, a GPS and compass module, a buzzer, an I2C splitter and a FlySky receiver" sizes="(min-width: 1080px) 70vw, 760px"}}
+          <span class="pin" data-pin="1" style="left:11.5%;top:24%">1</span>
+          <span class="pin" data-pin="2" style="left:32.8%;top:12%">2</span>
+          <span class="pin" data-pin="3" style="left:40.8%;top:30%">3</span>
+          <span class="pin" data-pin="4" style="left:50.5%;top:38%">4</span>
+          <span class="pin" data-pin="5" style="left:45.6%;top:62%">5</span>
+          <span class="pin" data-pin="6" style="left:11.0%;top:79.2%">6</span>
+          <span class="pin" data-pin="7" style="left:80.7%;top:86.5%">7</span>
+        </div>
+      </div>
+      <figcaption class="plate-cap"><span>Fig. 2.2</span><span>Avionics for the current build, on my desk.</span><span>Photo</span></figcaption>
+      <ol class="pin-list cols" data-pin-list>
+        <li data-pin="1"><b>1</b><span><strong>Propeller</strong></span></li>
+        <li data-pin="2"><b>2</b><span><strong>30 A ESC.</strong> Drives one motor.</span></li>
+        <li data-pin="3"><b>3</b><span><strong>Pixhawk.</strong> The flight controller.</span></li>
+        <li data-pin="4"><b>4</b><span><strong>GPS and compass module</strong></span></li>
+        <li data-pin="5"><b>5</b><span><strong>Buzzer.</strong> Status tones.</span></li>
+        <li data-pin="6"><b>6</b><span><strong>I2C splitter.</strong> Shares the sensor bus.</span></li>
+        <li data-pin="7"><b>7</b><span><strong>FlySky FS-iA6B.</strong> RC receiver.</span></li>
+      </ol>
+    </figure>
+
+    <div class="cols mid">
+      <figure class="fig">
+        <div class="plate">
+          <video src="../assets/media/uav-build.mp4" poster="{{poster uav-build-poster.jpg}}" width="960" height="632" muted loop playsinline controls preload="none" aria-label="Timelapse of me assembling a quadcopter airframe at my desk"></video>
+          <button class="vbtn" type="button" data-state="paused" aria-label="Play video"><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9-5.5z"/></svg><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 1.5h3v11h-3zM8.5 1.5h3v11h-3z"/></svg><span>Play</span></button>
+        </div>
+        <figcaption class="plate-cap"><span>Fig. 2.3</span><span>The airframe going together at my desk.</span><span>Timelapse · 0:28</span></figcaption>
+      </figure>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Implemented and planned">
+        <table class="data">
+          <caption>Implemented and planned</caption>
+          <thead><tr><th scope="col">Item</th><th scope="col">State</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Airframe assembly</th><td class="txt">Under way</td></tr>
+            <tr><th scope="row">Flight controller, GPS, ESCs, RC receiver</th><td class="txt">On the bench, Fig. 2.2</td></tr>
+            <tr><th scope="row">Thermal camera payload</th><td class="txt">Planned</td></tr>
+            <tr><th scope="row">Flights over farmland</th><td class="txt">Planned</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="limits">
+    <p class="label"><b>07</b>Results and limits</p>
+    <h2>What these results do and do not show</h2>
+    <div class="prose">
+      <ul>
+        <li><b>The safety factor is a simulation result.</b> It comes from ANSYS Discovery at the arm root, and it is not a load test.</li>
+        <li><b>The tuning result comes from flight logs.</b> Twelve of them, recorded on the quadcopter itself.</li>
+        <li><b>The thermal drone's mission is a plan.</b> No part of it has been demonstrated in flight.</li>
+        <li><b>The endurance gain is a target.</b> I have not measured it, so I do not claim it.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec" id="lessons">
+    <p class="label"><b>08</b>What I took from it</p>
+    <h2>Four things the builds taught me</h2>
+    <ol class="lessons">
+      <li><b>Decide on paper, then buy.</b>A trade study is cheap. The wrong motor is not.</li>
+      <li><b>The log is the truth.</b>Twelve flight logs pointed at the fix for a hover that would not settle.</li>
+      <li><b>Autonomy needs a way back.</b>The manual override is part of the design from the start.</li>
+      <li><b>Shape before mass.</b>Three iterations found the stiffness without paying for it in weight.</li>
+    </ol>
+  </section>
+
+  </div>
+</div>
+</div>
+
+{{case-next}}

@@ -1,0 +1,37 @@
+<!--
+bar: none
+class: home
+-->
+<header class="cover" id="top">
+  <div class="cover-in">
+    <div class="cover-text">
+      <p class="kind appear" style="--d:.1s">Aerospace Engineering · Penn State · Class of 2027</p>
+      <h1 class="name" id="name"><span class="mask"><span style="--d:.05s">Youssef</span></span> <span class="mask"><span style="--d:.18s">Kartah</span></span></h1>
+      <p class="intro appear" style="--d:.55s">I design and build small autonomous aircraft, the structures that go on them and the software around them. I check every design with an analysis or a test before I trust it.</p>
+      <p class="intro-2 appear" style="--d:.65s">{{site.availability}}</p>
+      <div class="cover-actions appear" style="--d:.78s">
+        <a class="btn btn-white" href="{{site.resumePdf}}" target="_blank" rel="noopener">Open résumé {{arrow}}</a>
+        <a class="btn btn-line" href="{{site.resumePdf}}" download>Download PDF</a>
+      </div>
+      <ul class="connect appear" style="--d:.9s" aria-label="Ways to connect">
+        <li><a href="mailto:{{site.email}}">{{site.email}}</a><button class="copy" type="button" data-copy="{{site.email}}">Copy</button></li>
+        <li><a href="{{site.linkedin}}" rel="me noopener" target="_blank">LinkedIn {{arrow}}</a></li>
+      </ul>
+    </div>
+    <figure class="window-wrap">
+      <div class="window">{{pic src="portrait.jpg" alt="Portrait of Youssef Kartah" sizes="400px" eager="true"}}</div>
+    </figure>
+  </div>
+  <a class="cue appear" style="--d:1.2s" href="#enter"><i aria-hidden="true"></i>Scroll</a>
+</header>
+
+<section class="gate" id="enter" aria-labelledby="gate-note">
+  <div class="gate-in">
+    <p class="gate-note" id="gate-note">Eight projects, from the composites lab and my own drones to software and coursework.</p>
+    <a class="go" href="projects.html" data-go><span class="go-t">Projects</span><span class="go-ar" aria-hidden="true">{{arrow}}</span></a>
+  </div>
+</section>
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Person","name":"{{site.name}}","description":"{{site.tagline}}","email":"mailto:{{site.email}}","sameAs":["{{site.linkedin}}"],"affiliation":{"@type":"CollegeOrUniversity","name":"The Pennsylvania State University"}}
+</script>
