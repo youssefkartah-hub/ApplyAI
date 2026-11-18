@@ -1,0 +1,78 @@
+<div class="tabs side" data-tabs>
+  <div class="tablist" role="tablist" aria-label="Trade studies">
+    <button class="tab" type="button" role="tab">Battery</button>
+    <button class="tab" type="button" role="tab">ESC</button>
+    <button class="tab" type="button" role="tab">Frame</button>
+    <button class="tab" type="button" role="tab">Motors</button>
+    <button class="tab" type="button" role="tab">Propellers</button>
+    <button class="tab" type="button" role="tab">Payload</button>
+  </div>
+  <div>
+    <div class="tabpanel" role="tabpanel"><h3>Battery: a 4S pack of about 2200 mAh</h3><p class="prose">The target was a 4S (14.8 V) pack of at least 2000 mAh plus a buffer, about 2200 mAh. Each criterion is scored from 0 (worst option) to 1 (best), multiplied by its weight and summed.</p>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Battery trade study"><table class="data trade">
+        <thead><tr><th scope="col">Criterion</th><th scope="col" class="n">Weight</th><th scope="col" class="n">OVONIC 4S 2200 mAh 130C</th><th scope="col" class="n win">CNHL Black Series 4S 2200 mAh 40C</th><th scope="col" class="n">ATTU 4S 2200 mAh 45C</th></tr></thead><tbody>
+          <tr><th scope="row">Weight</th><td class="n">40%</td><td class="n">200 g</td><td class="n win">183 g</td><td class="n">180 g</td></tr>
+          <tr><th scope="row">Cost</th><td class="n">30%</td><td class="n">$20</td><td class="n win">$18</td><td class="n">$31</td></tr>
+          <tr><th scope="row">Volume</th><td class="n">30%</td><td class="n">6.0 in³</td><td class="n win">5.7 in³</td><td class="n">5.3 in³</td></tr>
+          <tr class="tot"><th scope="row">Final score</th><td class="n"></td><td class="n">0.254</td><td class="n win hi">0.769</td><td class="n">0.700</td></tr>
+          <tr class="tot"><th scope="row">Rank</th><td class="n"></td><td class="n">3</td><td class="n win hi">1</td><td class="n">2</td></tr>
+        </tbody></table></div>
+      <p class="note"><b>Selected:</b> CNHL Black Series 4S 2200 mAh 40C. The CNHL pack nearly covers five worst-case flights, is very light (183 g) and cheap ($18). Its drawback is that it has no reputation yet, which the team flagged.</p>
+    </div>
+    <div class="tabpanel" role="tabpanel"><h3>Speed controller: a 45 A four-in-one board</h3><p class="prose">Expected maximum current draw is 20 A with a 1300 kV motor on a 4S pack. Reviews carry half the weight; the team noted they are very important for boards.</p>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="ESC trade study"><table class="data trade">
+        <thead><tr><th scope="col">Criterion</th><th scope="col" class="n">Weight</th><th scope="col" class="n win">45A 4-in-1 ESC 2-6S BLHeli_S</th><th scope="col" class="n">Racerstar 35A BLHeli_S 4-in-1</th><th scope="col" class="n">V45A Lite ESC 45A</th></tr></thead><tbody>
+          <tr><th scope="row">Weight</th><td class="n">10%</td><td class="n win">12.5 g</td><td class="n">13 g</td><td class="n">13 g</td></tr>
+          <tr><th scope="row">Cost</th><td class="n">40%</td><td class="n win">$32.90</td><td class="n">$42.00</td><td class="n">$22.90</td></tr>
+          <tr><th scope="row">Reviews (rating out of 1)</th><td class="n">50%</td><td class="n win">0.8</td><td class="n">0.9</td><td class="n">none</td></tr>
+          <tr class="tot"><th scope="row">Final score</th><td class="n"></td><td class="n win hi">0.735</td><td class="n">0.500</td><td class="n">0.400</td></tr>
+          <tr class="tot"><th scope="row">Rank</th><td class="n"></td><td class="n win hi">1</td><td class="n">2</td><td class="n">3</td></tr>
+        </tbody></table></div>
+      <p class="note"><b>Selected:</b> 45A 4-in-1 ESC 2-6S BLHeli_S. Four out of five stars across 23 reviews, and the second cheapest option at $33.</p>
+    </div>
+    <div class="tabpanel" role="tabpanel"><h3>Frame: a 295 mm carbon-fiber FPV frame</h3><p class="prose">A qualitative pass came first, weighing weight, cost, durability, ease of getting it, repairability and space. It favored buying an FPV frame and adding custom plates. The quantitative study then compared three real frames.</p>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Frame trade study"><table class="data trade">
+        <thead><tr><th scope="col">Criterion</th><th scope="col" class="n">Weight</th><th scope="col" class="n">Readytosky 295 mm HD 7-inch kit</th><th scope="col" class="n win">295 mm 7-inch carbon-fiber FPV frame</th><th scope="col" class="n">YoungRC F450 kit</th></tr></thead><tbody>
+          <tr><th scope="row">Weight</th><td class="n">40%</td><td class="n">141 g</td><td class="n win">121 g</td><td class="n">394 g</td></tr>
+          <tr><th scope="row">Cost</th><td class="n">30%</td><td class="n">$37.99</td><td class="n win">$34.99</td><td class="n">$21.99</td></tr>
+          <tr><th scope="row">Space for avionics (1 = roomy)</th><td class="n">10%</td><td class="n">0</td><td class="n win">0</td><td class="n">1</td></tr>
+          <tr><th scope="row">Durability (1 = carbon fiber)</th><td class="n">20%</td><td class="n">1</td><td class="n win">1</td><td class="n">0.5</td></tr>
+          <tr class="tot"><th scope="row">Final score</th><td class="n"></td><td class="n">0.571</td><td class="n win hi">0.656</td><td class="n">0.400</td></tr>
+          <tr class="tot"><th scope="row">Rank</th><td class="n"></td><td class="n">2</td><td class="n win hi">1</td><td class="n">3</td></tr>
+        </tbody></table></div>
+      <p class="note"><b>Selected:</b> 295 mm 7-inch carbon-fiber FPV frame. The lightest frame at 121 g, second cheapest, and carbon fiber. It is tight on space, with potential for custom mountings. The structures requirement is a bare frame of no more than 150 g.</p>
+    </div>
+    <div class="tabpanel" role="tabpanel"><h3>Motors: BrotherHobby Avenger 2806.5</h3><p class="prose">The requirement behind this study is at least 300 g of static thrust per motor and propeller at the minimum battery voltage, and a thrust-to-weight ratio of at least 1.5 for a 0.8 kg vehicle.</p>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Motors trade study"><table class="data trade">
+        <thead><tr><th scope="col">Criterion</th><th scope="col" class="n">Weight</th><th scope="col" class="n">Readytosky 2807 1300 kV</th><th scope="col" class="n">EMAX ECO II 2807 1300 kV</th><th scope="col" class="n win">BrotherHobby Avenger 2806.5</th></tr></thead><tbody>
+          <tr><th scope="row">Weight</th><td class="n">50%</td><td class="n">53 g</td><td class="n">47.5 g</td><td class="n win">41 g</td></tr>
+          <tr><th scope="row">Cost</th><td class="n">30%</td><td class="n">$10.99</td><td class="n">$19.49</td><td class="n win">$25.99</td></tr>
+          <tr><th scope="row">Efficiency at 300 g thrust</th><td class="n">20%</td><td class="n">5.67 g/W</td><td class="n">5.41 g/W</td><td class="n win">5.62 g/W</td></tr>
+          <tr class="tot"><th scope="row">Final score</th><td class="n"></td><td class="n">0.500</td><td class="n">0.359</td><td class="n win hi">0.662</td></tr>
+          <tr class="tot"><th scope="row">Rank</th><td class="n"></td><td class="n">2</td><td class="n">3</td><td class="n win hi">1</td></tr>
+        </tbody></table></div>
+      <p class="note"><b>Selected:</b> BrotherHobby Avenger 2806.5. The lightest and the most expensive. The team traded cost for about 50 g of weight across four motors, for more flight time, better efficiency and a better chance of completing the mission.</p>
+    </div>
+    <div class="tabpanel" role="tabpanel"><h3>Propellers: GEMFAN 7035</h3><p class="prose">Larger propellers are more efficient, with diminishing returns, but they need a much bigger and heavier frame and turn at lower RPM with less maneuverability. The study compared two seven-inch propellers.</p>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Propellers trade study"><table class="data trade">
+        <thead><tr><th scope="col">Criterion</th><th scope="col" class="n">Weight</th><th scope="col" class="n win">GEMFAN 7035</th><th scope="col" class="n">GEMFAN 7042</th></tr></thead><tbody>
+          <tr><th scope="row">Weight</th><td class="n">40%</td><td class="n win">3.29 g</td><td class="n">5.49 g</td></tr>
+          <tr><th scope="row">Cost</th><td class="n">40%</td><td class="n win">$4.20</td><td class="n">$5.48</td></tr>
+          <tr><th scope="row">Control</th><td class="n">20%</td><td class="n win">low</td><td class="n">high</td></tr>
+          <tr class="tot"><th scope="row">Final score</th><td class="n"></td><td class="n win hi">0.800</td><td class="n">0.200</td></tr>
+          <tr class="tot"><th scope="row">Rank</th><td class="n"></td><td class="n win hi">1</td><td class="n">2</td></tr>
+        </tbody></table></div>
+      <p class="note"><b>Selected:</b> GEMFAN 7035. The lightest and the least expensive option.</p>
+    </div>
+    <div class="tabpanel" role="tabpanel"><h3>Payload mechanism: a magnetic drop grabber</h3><p class="prose">This one was qualitative, because the candidates were concepts and not parts on a shelf. Low weight meant an estimated mass under 100 g and low cost under $30. Low complexity meant little to no moving parts and no electronics. Low size meant it could sit outside the avionics and battery space.</p>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Payload mechanism trade study"><table class="data trade">
+        <thead><tr><th scope="col">Criterion</th><th scope="col" class="n win">Magnetic drop grabber</th><th scope="col" class="n">Morphing grippers</th></tr></thead><tbody>
+          <tr><th scope="row">Weight</th><td class="n win hi">Low</td><td class="n">Medium</td></tr>
+          <tr><th scope="row">Cost</th><td class="n win hi">Low</td><td class="n">Medium</td></tr>
+          <tr><th scope="row">Complexity</th><td class="n win hi">Low</td><td class="n">High</td></tr>
+          <tr><th scope="row">Size</th><td class="n win hi">Low</td><td class="n">High</td></tr>
+        </tbody></table></div>
+      <p class="note"><b>Selected:</b> the magnetic drop grabber. It is the part of the vehicle I designed, and it has its own section below.</p>
+    </div>
+  </div>
+</div>

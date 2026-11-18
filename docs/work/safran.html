@@ -20,7 +20,7 @@
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
 <link rel="preload" href="../assets/fonts/archivo-expanded.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="../assets/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="../assets/css/site.css?v=f27bd35f">
+<link rel="stylesheet" href="../assets/css/site.css?v=88d9bf73">
 <script>
 document.documentElement.className = 'js';
 try { if (sessionStorage.getItem('go')) { sessionStorage.removeItem('go'); document.documentElement.classList.add('arriving'); } } catch (e) {}
@@ -79,9 +79,15 @@ try { if (sessionStorage.getItem('go')) { sessionStorage.removeItem('go'); docum
   <section class="sec" id="job">
     <p class="label"><b>01</b>The job</p>
     <h2>Test the part, and leave a record that proves it</h2>
-    <div class="prose">
-      <p>From June to August 2024 I assisted in the production and testing of kerosene systems, including temperature probes and gauge devices, working with the production and test team on their performance and dependability, at Safran Aerosystems in Tiflet, Morocco.</p>
-      <p>The work ran on industry-standard procedures. A work instruction says how each test is run, a traveler follows each part, and a part that falls outside its specification is held until someone can show why.</p>
+    <div class="cols mid">
+      <div class="prose">
+        <p>From June to August 2024 I assisted in the production and testing of kerosene systems, including temperature probes and gauge devices, working with the production and test team on their performance and dependability, at Safran Aerosystems in Tiflet, Morocco.</p>
+        <p>The work ran on industry-standard procedures. A work instruction says how each test is run, a traveler follows each part, and a part that falls outside its specification is held until someone can show why.</p>
+      </div>
+      <figure class="fig">
+        <div class="plate"><img src="../assets/media/safran-bench-1440.webp" srcset="../assets/media/safran-bench-720.webp 720w, ../assets/media/safran-bench-1440.webp 1440w" sizes="(min-width: 860px) 46vw, 100vw" width="1440" height="1081" alt="A test station monitor showing a dialog that reads TEST MAUVAIS, with buttons to retest or stop" loading="lazy" decoding="async"></div>
+        <figcaption class="plate-cap"><span>Fig. 1</span><span><b>A failed test, July 2024.</b> "Test mauvais" is a failed result, and the two buttons are retest and stop. The log behind the dialog is blurred on purpose.</span><span>Photo</span></figcaption>
+      </figure>
     </div>
   </section>
 
@@ -118,7 +124,7 @@ try { if (sessionStorage.getItem('go')) { sessionStorage.removeItem('go'); docum
         <button class="chip" type="button" data-k="3" data-title="3 · Root cause data packs" data-text="I compiled each pack within 24 to 48 hours of a failure: test traces, as-built versus spec comparisons, and photos. They helped close 2 nonconformance reports.">3 · Root cause</button>
       </div>
       <div class="readout" aria-live="polite"><b data-r-title>The test-to-closure loop</b><p data-r-text>Select a numbered marker, or a button, to see what I changed there and what it did.</p></div>
-      <figcaption class="plate-cap"><span>Fig. 1</span><span>A simplified picture of the loop as I worked in it. Blue outlines mark the steps I changed.</span><span>Diagram · conceptual</span></figcaption>
+      <figcaption class="plate-cap"><span>Fig. 2</span><span>A simplified picture of the loop as I worked in it. Blue outlines mark the steps I changed.</span><span>Diagram · conceptual</span></figcaption>
     </figure>
   </section>
 
@@ -188,13 +194,13 @@ try { if (sessionStorage.getItem('go')) { sessionStorage.removeItem('go'); docum
 
 
 <nav class="next" aria-label="More projects">
-  <a class="next-main" href="../work/roomly.html" data-go>
+  <a class="next-main" href="../work/line-follower.html" data-go>
     <span class="next-k">Next project</span>
-    <span class="next-t">Roomly</span>
-    <span class="next-d">A move-out marketplace for students. You photograph a room once, a vision model drafts a priced listing for every item, and buyers walk through the room in 3D.</span>
+    <span class="next-t">Line-following race robot</span>
+    <span class="next-d">A race robot that follows a taped line, turns 180° at a wall without the library's turn command, and runs home against the robot in the next lane.</span>
     <span class="next-ar" aria-hidden="true"><svg class="ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span>
   </a>
-  <div class="next-side"><a href="../work/analysis.html" data-go><span>Previous</span> Analysis, checked twice</a><a href="../projects.html" data-go><span>All projects</span> Back to the list</a></div>
+  <div class="next-side"><a href="../work/marv.html" data-go><span>Previous</span> M.A.R.V. capstone drone</a><a href="../projects.html" data-go><span>All projects</span> Back to the list</a></div>
 </nav>
 
 </main>
@@ -227,6 +233,6 @@ try { if (sessionStorage.getItem('go')) { sessionStorage.removeItem('go'); docum
 </footer>
 
 
-<script src="../assets/js/site.js?v=d067b3f2" defer></script>
+<script src="../assets/js/site.js?v=bede4751" defer></script>
 </body>
 </html>

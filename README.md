@@ -48,8 +48,9 @@ if one is broken. Files in `docs/assets/` are edited in place and not generated.
 
 Projects appear in the order they are listed in `content/projects.json`, and
 the "next project" link at the bottom of each case study follows the same order.
-The current order runs from the project with the most footage and documentation
-to the one with the least. To reorder, move an entry up or down and rebuild.
+The current order is: Nittany Rocket Labs, self-built drones, the M.A.R.V.
+capstone, Safran, the line-following robot, ApplyAI, Roomly, school projects.
+To reorder, move an entry up or down and rebuild.
 
 ## Common jobs
 

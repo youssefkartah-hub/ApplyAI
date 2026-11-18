@@ -9,6 +9,25 @@
   var canHover = window.matchMedia && matchMedia('(hover: hover)').matches;
   var root = document.documentElement;
 
+  /* ---------- every page opens at its top ----------
+     Browsers (and the viewers that embed this site) can restore an old scroll position
+     after a navigation. Take scroll restoration over, and put the page at its top unless
+     the link asked for a section (#hash) or the visitor has already started scrolling. */
+  try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) {}
+  var userScrolled = false;
+  ['wheel', 'touchstart', 'keydown', 'pointerdown'].forEach(function (ev) {
+    window.addEventListener(ev, function () { userScrolled = true; }, { passive: true, once: true });
+  });
+  function toTop() {
+    if (userScrolled || location.hash) return;
+    try { window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, 0); }
+    /* also asks any frame this page sits in to show the top of the page */
+    try { root.scrollIntoView({ block: 'start', behavior: 'instant' }); } catch (e) {}
+  }
+  toTop();
+  window.addEventListener('load', function () { toTop(); setTimeout(toTop, 150); setTimeout(toTop, 600); });
+  window.addEventListener('pageshow', function (e) { if (e.persisted) { userScrolled = false; toTop(); } });
+
   /* ---------- page transition: a blue curtain between pages ---------- */
   var curtain = $('.curtain');
   function go(url) {
